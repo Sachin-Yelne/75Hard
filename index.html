@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#23262B">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="75 Hard">
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=IBM+Plex+Sans:wght@400;600;700&family=Oswald:wght@700&display=swap" rel="stylesheet">
+<title>75 Hard — The Wall</title>
+<style>
+  :root{
+    --bg:#23262B;
+    --panel:#2B2F35;
+    --panel-2:#30343A;
+    --mortar:#494D52;
+    --mortar-light:#5c6167;
+    --brick:#B5533C;
+    --brick-hi:#C9694F;
+    --brick-dark:#8C3F2D;
+    --crack:#3A3D42;
+    --crack-line:#17181A;
+    --caution:#E8B330;
+    --caution-dark:#B98A1D;
+    --chalk:#F1EDE4;
+    --chalk-dim:#9B9790;
+    --chalk-dimmer:#716D67;
+    --good:#7EA672;
+    --radius:6px;
+    --font-display:'Oswald', sans-serif;
+    --font-body:'IBM Plex Sans', sans-serif;
+    --font-mono:'IBM Plex Mono', monospace;
+  }
+
+  * { box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background:var(--bg);
+    background-image:
+      radial-gradient(ellipse at top left, rgba(255,255,255,0.03), transparent 60%),
+      radial-gradient(ellipse at bottom right, rgba(0,0,0,0.25), transparent 60%);
+    color:var(--chalk);
+    font-family:var(--font-body);
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  #app{ max-width:960px; margin:0 auto; padding:20px 16px 60px; }
+
+  /* ---------- Header ---------- */
+  header{ text-align:center; padding:18px 0 10px; position:relative; }
+  .site-tape{
+    display:inline-block;
+    font-family:var(--font-mono);
+    font-size:10px;
+    letter-spacing:3px;
+    color:var(--bg);
+    background:repeating-linear-gradient(45deg, var(--caution), var(--caution) 10px, #1c1c1c 10px, #1c1c1c 20px);
+    padding:3px 14px;
+    border-radius:2px;
+    margin-bottom:14px;
+    font-weight:600;
+  }
+  h1{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:clamp(38px,9vw,64px);
+    letter-spacing:2px;
+    margin:0;
+    text-transform:uppercase;
+    color:var(--chalk);
+    text-shadow:2px 2px 0 var(--crack-line);
+  }
+  h1 span{ color:var(--brick-hi); }
+  .subtitle{
+    font-family:var(--font-mono);
+    color:var(--chalk-dim);
+    font-size:13px;
+    letter-spacing:2px;
+    margin-top:6px;
+    text-transform:uppercase;
+  }
+
+  .stat-row{
+    display:flex;
+    justify-content:center;
+    gap:10px;
+    margin-top:18px;
+    flex-wrap:wrap;
+  }
+  .stat-chip{
+    background:var(--panel);
+    border:1px solid var(--mortar);
+    border-radius:var(--radius);
+    padding:10px 18px;
+    text-align:center;
+    min-width:100px;
+  }
+  .stat-chip .num{
+    font-family:var(--font-mono);
+    font-size:26px;
+    font-weight:700;
+    color:var(--caution);
+    line-height:1;
+  }
+  .stat-chip.streak .num{ color:var(--good); }
+  .stat-chip .lbl{
+    font-family:var(--font-mono);
+    font-size:9px;
+    letter-spacing:1.5px;
+    color:var(--chalk-dim);
+    text-transform:uppercase;
+    margin-top:4px;
+  }
+
+  /* ---------- Profile toggle ---------- */
+  .profile-toggle{
+    display:flex;
+    justify-content:center;
+    gap:10px;
+    margin:26px 0 8px;
+  }
+  .tag-btn{
+    font-family:var(--font-display);
+    text-transform:uppercase;
+    letter-spacing:1.5px;
+    font-size:15px;
+    background:var(--panel-2);
+    border:2px solid var(--mortar);
+    color:var(--chalk-dim);
+    padding:9px 24px;
+    border-radius:3px;
+    cursor:pointer;
+    transition:all .15s ease;
+    position:relative;
+  }
+  .tag-btn::before{
+    content:'';
+    position:absolute; left:10px; top:-2px;
+    width:6px; height:6px; border-radius:50%;
+    background:var(--mortar-light);
+  }
+  .tag-btn.active{
+    border-color:var(--caution);
+    color:var(--chalk);
+    background:var(--panel);
+    box-shadow:0 0 0 1px rgba(232,179,48,0.25);
+  }
+  .tag-btn.active::before{ background:var(--caution); }
+
+  /* ---------- Wall section ---------- */
+  .wall-section{
+    margin-top:22px;
+    background:var(--panel);
+    border:1px solid var(--mortar);
+    border-radius:var(--radius);
+    padding:18px 16px 22px;
+  }
+  .wall-header{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    margin-bottom:14px;
+    padding-bottom:10px;
+    border-bottom:1px dashed var(--mortar);
+  }
+  .wall-header h2{
+    font-family:var(--font-display);
+    text-transform:uppercase;
+    letter-spacing:1.5px;
+    font-size:18px;
+    margin:0;
+    color:var(--chalk);
+  }
+  .wall-header .pct{
+    font-family:var(--font-mono);
+    font-size:13px;
+    color:var(--chalk-dim);
+  }
+
+  .wall{ display:flex; flex-direction:column; gap:3px; }
+  .brick-row{ display:flex; gap:3px; }
+  .brick-row.offset{ margin-left:16px; }
+  .brick{
+    flex:1;
+    height:22px;
+    border-radius:2px;
+    cursor:pointer;
+    position:relative;
+    border:1px solid var(--crack-line);
+    transition:transform .1s ease;
+  }
+  .brick:active{ transform:scale(0.94); }
+
+  .brick.future{
+    background:transparent;
+    border:1px dashed var(--mortar);
+    cursor:default;
+  }
+  .brick.done{
+    background:linear-gradient(160deg, var(--brick-hi), var(--brick) 55%, var(--brick-dark));
+    box-shadow:inset 0 -3px 0 rgba(0,0,0,0.25), inset 0 2px 0 rgba(255,255,255,0.08);
+  }
+  .brick.missed{
+    background:
+      repeating-linear-gradient(115deg, var(--crack) 0 4px, var(--crack-line) 4px 5px);
+    opacity:0.85;
+  }
+  .brick.today{
+    background:var(--panel-2);
+    border:2px solid var(--caution);
+    box-shadow:0 0 0 2px rgba(232,179,48,0.2);
+    animation:pulse 2.4s ease-in-out infinite;
+  }
+  .brick.today.done{
+    background:linear-gradient(160deg, var(--brick-hi), var(--brick) 55%, var(--brick-dark));
+  }
+  @keyframes pulse{
+    0%,100%{ box-shadow:0 0 0 2px rgba(232,179,48,0.15); }
+    50%{ box-shadow:0 0 0 5px rgba(232,179,48,0.28); }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .brick.today{ animation:none; }
+  }
+
+  .wall-legend{
+    display:flex;
+    gap:16px;
+    flex-wrap:wrap;
+    margin-top:14px;
+    font-family:var(--font-mono);
+    font-size:10px;
+    color:var(--chalk-dimmer);
+    letter-spacing:0.5px;
+  }
+  .wall-legend .item{ display:flex; align-items:center; gap:5px; }
+  .swatch{ width:10px; height:10px; border-radius:2px; display:inline-block; }
+  .swatch.done{ background:var(--brick); }
+  .swatch.missed{ background:var(--crack); border:1px solid var(--crack-line); }
+  .swatch.today{ border:2px solid var(--caution); background:transparent; }
+  .swatch.future{ border:1px dashed var(--mortar); }
+
+  /* ---------- Checklist drawer ---------- */
+  .drawer{
+    margin-top:22px;
+    background:var(--panel);
+    border:1px solid var(--caution);
+    border-radius:var(--radius);
+    padding:18px 16px 20px;
+    box-shadow:0 8px 24px rgba(0,0,0,0.25);
+  }
+  .drawer-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    margin-bottom:14px;
+  }
+  .drawer-head h3{
+    font-family:var(--font-display);
+    text-transform:uppercase;
+    font-size:16px;
+    letter-spacing:1.5px;
+    margin:0;
+    color:var(--chalk);
+  }
+  .drawer-head .date{
+    font-family:var(--font-mono);
+    font-size:12px;
+    color:var(--chalk-dim);
+  }
+  .task{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:11px 10px;
+    border-radius:4px;
+    cursor:pointer;
+    border:1px solid transparent;
+    transition:background .12s ease;
+  }
+  .task:hover{ background:rgba(255,255,255,0.03); }
+  .task + .task{ border-top:1px dashed var(--mortar); }
+  .task .box{
+    width:20px; height:20px;
+    border-radius:3px;
+    border:2px solid var(--mortar-light);
+    flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    font-size:13px;
+    color:transparent;
+    transition:all .12s ease;
+  }
+  .task.checked .box{
+    background:var(--good);
+    border-color:var(--good);
+    color:#12180f;
+  }
+  .task .info{ flex:1; }
+  .task .label{
+    font-family:var(--font-body);
+    font-weight:600;
+    font-size:14px;
+    color:var(--chalk);
+  }
+  .task.checked .label{ color:var(--chalk-dim); text-decoration:line-through; text-decoration-color:var(--chalk-dimmer); }
+  .task .desc{
+    font-family:var(--font-body);
+    font-size:12px;
+    color:var(--chalk-dimmer);
+    margin-top:1px;
+  }
+  .drawer-note{
+    font-family:var(--font-mono);
+    font-size:11px;
+    color:var(--chalk-dimmer);
+    margin-top:12px;
+    text-align:center;
+  }
+
+  /* ---------- Footer ---------- */
+  footer{
+    margin-top:30px;
+    text-align:center;
+  }
+  .reset-link{
+    font-family:var(--font-mono);
+    font-size:11px;
+    color:var(--chalk-dimmer);
+    background:none;
+    border:none;
+    text-decoration:underline;
+    cursor:pointer;
+    letter-spacing:0.5px;
+  }
+  .reset-link:hover{ color:var(--brick-hi); }
+
+  .toast{
+    position:fixed;
+    bottom:20px; left:50%;
+    transform:translateX(-50%) translateY(20px);
+    background:var(--panel-2);
+    border:1px solid var(--caution);
+    color:var(--chalk);
+    font-family:var(--font-mono);
+    font-size:12px;
+    padding:10px 18px;
+    border-radius:4px;
+    opacity:0;
+    transition:all .25s ease;
+    pointer-events:none;
+    z-index:50;
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  .loading{
+    text-align:center;
+    font-family:var(--font-mono);
+    color:var(--chalk-dim);
+    padding:60px 0;
+    letter-spacing:1px;
+  }
+
+  .complete-banner{
+    margin-top:22px;
+    text-align:center;
+    padding:24px;
+    background:var(--panel);
+    border:2px solid var(--good);
+    border-radius:var(--radius);
+  }
+  .complete-banner h2{
+    font-family:var(--font-display);
+    text-transform:uppercase;
+    color:var(--good);
+    font-size:28px;
+    margin:0 0 6px;
+  }
+  .complete-banner p{ color:var(--chalk-dim); font-family:var(--font-mono); font-size:13px; }
+</style>
+</head>
+<body>
+<div id="app"><div class="loading">LAYING THE FIRST BRICK…</div></div>
+
+<script>
+const storage = {
+  async get(key){
+    try{
+      const value = localStorage.getItem(key);
+      return value == null ? null : { value };
+    }catch(e){
+      return null;
+    }
+  },
+  async set(key, value){
+    localStorage.setItem(key, value);
+  }
+};
+
+const TASKS = [
+  { id:'diet',     label:'Diet',            desc:'No cheat meals, no alcohol' },
+  { id:'workout1', label:'Workout 1',       desc:'45 minutes' },
+  { id:'workout2', label:'Workout 2',       desc:'45 minutes, outdoors' },
+  { id:'water',    label:'1 Gallon Water',  desc:'' },
+  { id:'read',     label:'Read 10 Pages',   desc:'Non-fiction' }
+];
+const PROFILES = [
+  { id:'sachin', label:'Sachin' },
+  { id:'aarya',  label:'Aarya' }
+];
+const TOTAL_DAYS = 75;
+
+let state = {
+  startDate: null,
+  data: { sachin: {}, aarya: {} },
+  activeProfile: 'sachin',
+  selectedDay: null
+};
+
+function dateStr(d){ return d.toISOString().slice(0,10); }
+function addDays(dateISO, n){
+  const d = new Date(dateISO + 'T00:00:00Z');
+  d.setUTCDate(d.getUTCDate() + n);
+  return dateStr(d);
+}
+function todayISO(){ return dateStr(new Date()); }
+function dayIndexFor(dateISO){
+  const start = new Date(state.startDate + 'T00:00:00Z');
+  const cur = new Date(dateISO + 'T00:00:00Z');
+  return Math.round((cur - start) / 86400000) + 1;
+}
+function isAllDone(entry){
+  if(!entry) return false;
+  return TASKS.every(t => entry[t.id]);
+}
+
+async function loadState(){
+  try{
+    const meta = await storage.get('75hard:meta');
+    if(meta && meta.value){
+      state.startDate = JSON.parse(meta.value).startDate;
+    } else {
+      state.startDate = todayISO();
+      await storage.set('75hard:meta', JSON.stringify({ startDate: state.startDate }));
+    }
+  }catch(e){
+    state.startDate = todayISO();
+    try{ await storage.set('75hard:meta', JSON.stringify({ startDate: state.startDate })); }catch(e2){}
+  }
+
+  for(const p of PROFILES){
+    try{
+      const res = await storage.get('75hard:' + p.id);
+      state.data[p.id] = res && res.value ? JSON.parse(res.value) : {};
+    }catch(e){
+      state.data[p.id] = {};
+    }
+  }
+}
+
+async function saveProfileData(profileId){
+  try{
+    await storage.set('75hard:' + profileId, JSON.stringify(state.data[profileId]));
+  }catch(e){
+    showToast('Save failed — storage may be full');
+  }
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  if(!t) return;
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(()=> t.classList.remove('show'), 1800);
+}
+
+function currentStreak(profileId){
+  const today = todayISO();
+  const todayIdx = dayIndexFor(today);
+  let streak = 0;
+  for(let d = Math.min(todayIdx, TOTAL_DAYS); d >= 1; d--){
+    const iso = addDays(state.startDate, d-1);
+    const entry = state.data[profileId][iso];
+    if(d === todayIdx){
+      // today only counts once fully complete
+      if(isAllDone(entry)) streak++;
+      else continue;
+    } else {
+      if(isAllDone(entry)) streak++;
+      else break;
+    }
+  }
+  return streak;
+}
+
+function completionCount(profileId){
+  const todayIdx = Math.min(dayIndexFor(todayISO()), TOTAL_DAYS);
+  let count = 0;
+  for(let d=1; d<=todayIdx; d++){
+    const iso = addDays(state.startDate, d-1);
+    if(isAllDone(state.data[profileId][iso])) count++;
+  }
+  return count;
+}
+
+function buildWallHTML(profileId){
+  const todayIdx = dayIndexFor(todayISO());
+  const perRow = 15;
+  let rows = [];
+  for(let r=0; r < Math.ceil(TOTAL_DAYS/perRow); r++){
+    let bricks = '';
+    for(let c=0; c<perRow; c++){
+      const day = r*perRow + c + 1;
+      if(day > TOTAL_DAYS) break;
+      const iso = addDays(state.startDate, day-1);
+      const entry = state.data[profileId][iso];
+      let cls = 'brick ';
+      if(day > todayIdx) cls += 'future';
+      else if(day === todayIdx) cls += 'today' + (isAllDone(entry) ? ' done' : '');
+      else cls += isAllDone(entry) ? 'done' : 'missed';
+      bricks += `<div class="${cls}" data-profile="${profileId}" data-day="${day}" title="Day ${day} — ${iso}"></div>`;
+    }
+    rows.push(`<div class="brick-row ${r % 2 === 1 ? 'offset' : ''}">${bricks}</div>`);
+  }
+  return rows.join('');
+}
+
+function render(){
+  const todayIdx = dayIndexFor(todayISO());
+  const app = document.getElementById('app');
+
+  if(todayIdx > TOTAL_DAYS){
+    app.innerHTML = `
+      <header>
+        <div class="site-tape">75 HARD</div>
+        <h1>THE <span>WALL</span></h1>
+        <div class="subtitle">75 / 75 — Challenge Window Closed</div>
+      </header>
+      <div class="complete-banner">
+        <h2>Wall's up.</h2>
+        <p>Sachin: ${completionCount('sachin')}/75 days · Aarya: ${completionCount('aarya')}/75 days</p>
+      </div>
+      <footer><button class="reset-link" id="resetBtn">Start a new wall</button></footer>
+      <div class="toast" id="toast"></div>
+    `;
+    document.getElementById('resetBtn').onclick = handleReset;
+    return;
+  }
+
+  const active = state.activeProfile;
+  const day = state.selectedDay || Math.min(todayIdx, TOTAL_DAYS);
+  const selIso = addDays(state.startDate, day-1);
+  const isToday = day === todayIdx;
+  const entry = state.data[active][selIso] || {};
+
+  app.innerHTML = `
+    <header>
+      <div class="site-tape">75 HARD</div>
+      <h1>THE <span>WALL</span></h1>
+      <div class="subtitle">Day ${Math.min(todayIdx,TOTAL_DAYS)} of ${TOTAL_DAYS}</div>
+      <div class="stat-row">
+        <div class="stat-chip streak"><div class="num">${currentStreak('sachin')}</div><div class="lbl">Sachin Streak</div></div>
+        <div class="stat-chip streak"><div class="num">${currentStreak('aarya')}</div><div class="lbl">Aarya Streak</div></div>
+      </div>
+    </header>
+
+    <div class="profile-toggle">
+      ${PROFILES.map(p => `<button class="tag-btn ${p.id===active?'active':''}" data-profile="${p.id}">${p.label}</button>`).join('')}
+    </div>
+
+    ${PROFILES.map(p => `
+      <div class="wall-section">
+        <div class="wall-header">
+          <h2>${p.label}'s Wall</h2>
+          <span class="pct">${completionCount(p.id)}/${Math.min(todayIdx,TOTAL_DAYS)} days laid</span>
+        </div>
+        <div class="wall">${buildWallHTML(p.id)}</div>
+        <div class="wall-legend">
+          <span class="item"><span class="swatch done"></span>Complete</span>
+          <span class="item"><span class="swatch missed"></span>Missed</span>
+          <span class="item"><span class="swatch today"></span>Today</span>
+          <span class="item"><span class="swatch future"></span>Ahead</span>
+        </div>
+      </div>
+    `).join('')}
+
+    <div class="drawer">
+      <div class="drawer-head">
+        <h3>${PROFILES.find(p=>p.id===active).label} — Day ${day}${isToday ? ' (Today)' : ''}</h3>
+        <span class="date">${selIso}</span>
+      </div>
+      ${isToday || day <= todayIdx ? TASKS.map(t => `
+        <div class="task ${entry[t.id] ? 'checked' : ''}" data-task="${t.id}">
+          <div class="box">${entry[t.id] ? '✓' : ''}</div>
+          <div class="info">
+            <div class="label">${t.label}</div>
+            ${t.desc ? `<div class="desc">${t.desc}</div>` : ''}
+          </div>
+        </div>
+      `).join('') : `<div class="drawer-note">This day hasn't happened yet.</div>`}
+      <div class="drawer-note">${isToday ? 'Tap a brick above to review another day.' : "Tap today's brick to jump back."}</div>
+    </div>
+
+    <footer>
+      <button class="reset-link" id="resetBtn">Reset &amp; start a new wall</button>
+    </footer>
+    <div class="toast" id="toast"></div>
+  `;
+
+  // wire events
+  app.querySelectorAll('.brick').forEach(b => {
+    b.addEventListener('click', () => {
+      const d = parseInt(b.dataset.day, 10);
+      const prof = b.dataset.profile;
+      if(d > todayIdx) return;
+      state.activeProfile = prof;
+      state.selectedDay = d;
+      render();
+    });
+  });
+
+  app.querySelectorAll('.tag-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.activeProfile = btn.dataset.profile;
+      state.selectedDay = null;
+      render();
+    });
+  });
+
+  if(isToday || day <= todayIdx){
+    app.querySelectorAll('.task').forEach(el => {
+      el.addEventListener('click', async () => {
+        const taskId = el.dataset.task;
+        if(!state.data[active][selIso]) state.data[active][selIso] = {};
+        state.data[active][selIso][taskId] = !state.data[active][selIso][taskId];
+        render();
+        await saveProfileData(active);
+        showToast(isAllDone(state.data[active][selIso]) ? 'Brick laid ✓' : 'Saved');
+      });
+    });
+  }
+
+  const resetBtn = document.getElementById('resetBtn');
+  if(resetBtn) resetBtn.onclick = handleReset;
+}
+
+async function handleReset(){
+  if(!confirm("Start a brand new 75-day wall? This clears both Sachin's and Aarya's progress.")) return;
+  state.startDate = todayISO();
+  state.data = { sachin:{}, aarya:{} };
+  state.selectedDay = null;
+  try{
+    await storage.set('75hard:meta', JSON.stringify({ startDate: state.startDate }));
+    await saveProfileData('sachin');
+    await saveProfileData('aarya');
+  }catch(e){}
+  render();
+  showToast('New wall started');
+}
+
+(async function init(){
+  await loadState();
+  render();
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  }
+})();
+</script>
+</body>
+</html>
