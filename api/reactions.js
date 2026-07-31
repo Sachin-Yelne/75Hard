@@ -1,0 +1,85 @@
+const { getSql } = require('./lib/db');
+
+const PROFILES = ['sachin', 'aarya'];
+const EMOJIS = ['🔥', '💪', '👏', '🫡', '❤️'];
+
+let tableReady = false;
+
+async function ensureTable(sql) {
+  if (tableReady) return;
+  await sql`
+    CREATE TABLE IF NOT EXISTS reactions (
+      from_profile text NOT NULL,
+      to_profile   text NOT NULL,
+      day_date     date NOT NULL,
+      emoji        text NOT NULL,
+      created_at   timestamptz NOT NULL DEFAULT now(),
+      PRIMARY KEY (from_profile, to_profile, day_date, emoji)
+    )
+  `;
+  tableReady = true;
+}
+
+module.exports = async function handler(req, res) {
+  const sql = getSql();
+
+  try {
+    await ensureTable(sql);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Reactions unavailable' });
+  }
+
+  if (req.method === 'GET') {
+    try {
+      const rows = await sql`
+        SELECT from_profile, to_profile, day_date::text AS day_date, emoji
+        FROM reactions
+      `;
+      return res.status(200).json({
+        reactions: rows.map((r) => ({
+          from: r.from_profile,
+          to: r.to_profile,
+          date: r.day_date,
+          emoji: r.emoji
+        }))
+      });
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ error: 'Failed to load reactions' });
+    }
+  }
+
+  if (req.method === 'POST') {
+    try {
+      const { from, to, date, emoji } = req.body || {};
+      if (!PROFILES.includes(from) || !PROFILES.includes(to) || !date || !EMOJIS.includes(emoji)) {
+        return res.status(400).json({ error: 'from, to, date, and a supported emoji are required' });
+      }
+
+      const existing = await sql`
+        DELETE FROM reactions
+        WHERE from_profile = ${from} AND to_profile = ${to}
+          AND day_date = ${date}::date AND emoji = ${emoji}
+        RETURNING emoji
+      `;
+
+      if (existing.length) {
+        return res.status(200).json({ ok: true, active: false });
+      }
+
+      await sql`
+        INSERT INTO reactions (from_profile, to_profile, day_date, emoji)
+        VALUES (${from}, ${to}, ${date}::date, ${emoji})
+        ON CONFLICT DO NOTHING
+      `;
+      return res.status(200).json({ ok: true, active: true });
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ error: 'Failed to save reaction' });
+    }
+  }
+
+  res.setHeader('Allow', 'GET, POST');
+  return res.status(405).json({ error: 'Method not allowed' });
+};
