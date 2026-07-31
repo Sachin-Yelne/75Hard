@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#23262B">
+<meta name="theme-color" content="#08090C">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="75 Hard">
 <link rel="manifest" href="/manifest.json">
@@ -12,660 +13,1740 @@
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=IBM+Plex+Sans:wght@400;600;700&family=Oswald:wght@700&display=swap" rel="stylesheet">
-<title>75 Hard — The Wall</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<title>75 Hard</title>
 <style>
-  :root{
-    --bg:#23262B;
-    --panel:#2B2F35;
-    --panel-2:#30343A;
-    --mortar:#494D52;
-    --mortar-light:#5c6167;
-    --brick:#B5533C;
-    --brick-hi:#C9694F;
-    --brick-dark:#8C3F2D;
-    --crack:#3A3D42;
-    --crack-line:#17181A;
-    --caution:#E8B330;
-    --caution-dark:#B98A1D;
-    --chalk:#F1EDE4;
-    --chalk-dim:#9B9790;
-    --chalk-dimmer:#716D67;
-    --good:#7EA672;
-    --radius:6px;
-    --font-display:'Oswald', sans-serif;
-    --font-body:'IBM Plex Sans', sans-serif;
-    --font-mono:'IBM Plex Mono', monospace;
-  }
+:root{
+  --bg:#08090C;
+  --bg-soft:#0D0F15;
+  --surface:#13161E;
+  --surface-2:#1A1E28;
+  --surface-3:#232833;
+  --line:rgba(255,255,255,.07);
+  --line-2:rgba(255,255,255,.14);
 
-  * { box-sizing:border-box; }
-  html,body{ margin:0; padding:0; }
-  body{
-    background:var(--bg);
-    background-image:
-      radial-gradient(ellipse at top left, rgba(255,255,255,0.03), transparent 60%),
-      radial-gradient(ellipse at bottom right, rgba(0,0,0,0.25), transparent 60%);
-    color:var(--chalk);
-    font-family:var(--font-body);
-    min-height:100vh;
-    -webkit-font-smoothing:antialiased;
-  }
+  --txt:#F4F6F9;
+  --txt-2:#98A0AE;
+  --txt-3:#5D6472;
 
-  #app{ max-width:960px; margin:0 auto; padding:20px 16px 60px; }
+  --fire:#FF6B35;
+  --fire-2:#F7386B;
+  --violet:#A855F7;
+  --violet-2:#5B6CFF;
+  --lime:#B8FF3B;
+  --green:#22C55E;
+  --danger:#FF3B5C;
 
-  /* ---------- Header ---------- */
-  header{ text-align:center; padding:18px 0 10px; position:relative; }
-  .site-tape{
-    display:inline-block;
-    font-family:var(--font-mono);
-    font-size:10px;
-    letter-spacing:3px;
-    color:var(--bg);
-    background:repeating-linear-gradient(45deg, var(--caution), var(--caution) 10px, #1c1c1c 10px, #1c1c1c 20px);
-    padding:3px 14px;
-    border-radius:2px;
-    margin-bottom:14px;
-    font-weight:600;
-  }
-  h1{
-    font-family:var(--font-display);
-    font-weight:700;
-    font-size:clamp(38px,9vw,64px);
-    letter-spacing:2px;
-    margin:0;
-    text-transform:uppercase;
-    color:var(--chalk);
-    text-shadow:2px 2px 0 var(--crack-line);
-  }
-  h1 span{ color:var(--brick-hi); }
-  .subtitle{
-    font-family:var(--font-mono);
-    color:var(--chalk-dim);
-    font-size:13px;
-    letter-spacing:2px;
-    margin-top:6px;
-    text-transform:uppercase;
-  }
+  --sachin:#FF6B35;
+  --sachin-2:#F7386B;
+  --aarya:#A855F7;
+  --aarya-2:#5B6CFF;
 
-  .stat-row{
-    display:flex;
-    justify-content:center;
-    gap:10px;
-    margin-top:18px;
-    flex-wrap:wrap;
-  }
-  .stat-chip{
-    background:var(--panel);
-    border:1px solid var(--mortar);
-    border-radius:var(--radius);
-    padding:10px 18px;
-    text-align:center;
-    min-width:100px;
-  }
-  .stat-chip .num{
-    font-family:var(--font-mono);
-    font-size:26px;
-    font-weight:700;
-    color:var(--caution);
-    line-height:1;
-  }
-  .stat-chip.streak .num{ color:var(--good); }
-  .stat-chip .lbl{
-    font-family:var(--font-mono);
-    font-size:9px;
-    letter-spacing:1.5px;
-    color:var(--chalk-dim);
-    text-transform:uppercase;
-    margin-top:4px;
-  }
+  --r:16px;
+  --r-lg:24px;
+  --display:'Archivo',system-ui,sans-serif;
+  --body:'Inter',system-ui,-apple-system,sans-serif;
 
-  /* ---------- Profile toggle ---------- */
-  .profile-toggle{
-    display:flex;
-    justify-content:center;
-    gap:10px;
-    margin:26px 0 8px;
-  }
-  .tag-btn{
-    font-family:var(--font-display);
-    text-transform:uppercase;
-    letter-spacing:1.5px;
-    font-size:15px;
-    background:var(--panel-2);
-    border:2px solid var(--mortar);
-    color:var(--chalk-dim);
-    padding:9px 24px;
-    border-radius:3px;
-    cursor:pointer;
-    transition:all .15s ease;
-    position:relative;
-  }
-  .tag-btn::before{
-    content:'';
-    position:absolute; left:10px; top:-2px;
-    width:6px; height:6px; border-radius:50%;
-    background:var(--mortar-light);
-  }
-  .tag-btn.active{
-    border-color:var(--caution);
-    color:var(--chalk);
-    background:var(--panel);
-    box-shadow:0 0 0 1px rgba(232,179,48,0.25);
-  }
-  .tag-btn.active::before{ background:var(--caution); }
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bot:env(safe-area-inset-bottom,0px);
+  --tabbar:calc(62px + var(--safe-bot));
+  --col:560px;
+}
 
-  /* ---------- Wall section ---------- */
-  .wall-section{
-    margin-top:22px;
-    background:var(--panel);
-    border:1px solid var(--mortar);
-    border-radius:var(--radius);
-    padding:18px 16px 22px;
-  }
-  .wall-header{
-    display:flex;
-    align-items:baseline;
-    justify-content:space-between;
-    margin-bottom:14px;
-    padding-bottom:10px;
-    border-bottom:1px dashed var(--mortar);
-  }
-  .wall-header h2{
-    font-family:var(--font-display);
-    text-transform:uppercase;
-    letter-spacing:1.5px;
-    font-size:18px;
-    margin:0;
-    color:var(--chalk);
-  }
-  .wall-header .pct{
-    font-family:var(--font-mono);
-    font-size:13px;
-    color:var(--chalk-dim);
-  }
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;height:100%;overflow:hidden;}
+body{
+  background:var(--bg);
+  color:var(--txt);
+  font-family:var(--body);
+  -webkit-font-smoothing:antialiased;
+  overscroll-behavior:none;
+}
+button{font-family:inherit;color:inherit;background:none;border:none;padding:0;cursor:pointer;}
+h1,h2,h3,h4{margin:0;font-family:var(--display);}
+.num{font-variant-numeric:tabular-nums;}
 
-  .wall{ display:flex; flex-direction:column; gap:3px; }
-  .brick-row{ display:flex; gap:3px; }
-  .brick-row.offset{ margin-left:16px; }
-  .brick{
-    flex:1;
-    height:22px;
-    border-radius:2px;
-    cursor:pointer;
-    position:relative;
-    border:1px solid var(--crack-line);
-    transition:transform .1s ease;
-  }
-  .brick:active{ transform:scale(0.94); }
+/* profile accent — set on any container */
+[data-p="sachin"]{--p:var(--sachin);--p2:var(--sachin-2);}
+[data-p="aarya"]{--p:var(--aarya);--p2:var(--aarya-2);}
 
-  .brick.future{
-    background:transparent;
-    border:1px dashed var(--mortar);
-    cursor:default;
-  }
-  .brick.done{
-    background:linear-gradient(160deg, var(--brick-hi), var(--brick) 55%, var(--brick-dark));
-    box-shadow:inset 0 -3px 0 rgba(0,0,0,0.25), inset 0 2px 0 rgba(255,255,255,0.08);
-  }
-  .brick.missed{
-    background:
-      repeating-linear-gradient(115deg, var(--crack) 0 4px, var(--crack-line) 4px 5px);
-    opacity:0.85;
-  }
-  .brick.today{
-    background:var(--panel-2);
-    border:2px solid var(--caution);
-    box-shadow:0 0 0 2px rgba(232,179,48,0.2);
-    animation:pulse 2.4s ease-in-out infinite;
-  }
-  .brick.today.done{
-    background:linear-gradient(160deg, var(--brick-hi), var(--brick) 55%, var(--brick-dark));
-  }
-  @keyframes pulse{
-    0%,100%{ box-shadow:0 0 0 2px rgba(232,179,48,0.15); }
-    50%{ box-shadow:0 0 0 5px rgba(232,179,48,0.28); }
-  }
-  @media (prefers-reduced-motion: reduce){
-    .brick.today{ animation:none; }
-  }
+/* ══════════════ shell ══════════════ */
+#screen{
+  position:fixed;inset:0;bottom:0;
+  overflow-y:auto;overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;
+  padding:calc(var(--safe-top) + 8px) 18px calc(var(--tabbar) + 28px);
+}
+#screen.flush{padding:0;overflow:hidden;}
 
-  .wall-legend{
-    display:flex;
-    gap:16px;
-    flex-wrap:wrap;
-    margin-top:14px;
-    font-family:var(--font-mono);
-    font-size:10px;
-    color:var(--chalk-dimmer);
-    letter-spacing:0.5px;
-  }
-  .wall-legend .item{ display:flex; align-items:center; gap:5px; }
-  .swatch{ width:10px; height:10px; border-radius:2px; display:inline-block; }
-  .swatch.done{ background:var(--brick); }
-  .swatch.missed{ background:var(--crack); border:1px solid var(--crack-line); }
-  .swatch.today{ border:2px solid var(--caution); background:transparent; }
-  .swatch.future{ border:1px dashed var(--mortar); }
+/* Phone-first, but it still has to look deliberate in a desktop browser:
+   hold everything to a single centred column instead of stretching. */
+#screen:not(.flush) > *{max-width:var(--col);margin-left:auto;margin-right:auto;}
+.feed{max-width:var(--col);margin:0 auto;}
+.sheet{max-width:var(--col);margin:0 auto;}
+#tabbar{
+  padding-left:max(0px,calc((100% - var(--col))/2));
+  padding-right:max(0px,calc((100% - var(--col))/2));
+}
 
-  /* ---------- Checklist drawer ---------- */
-  .drawer{
-    margin-top:22px;
-    background:var(--panel);
-    border:1px solid var(--caution);
-    border-radius:var(--radius);
-    padding:18px 16px 20px;
-    box-shadow:0 8px 24px rgba(0,0,0,0.25);
-  }
-  .drawer-head{
-    display:flex;
-    justify-content:space-between;
-    align-items:baseline;
-    margin-bottom:14px;
-  }
-  .drawer-head h3{
-    font-family:var(--font-display);
-    text-transform:uppercase;
-    font-size:16px;
-    letter-spacing:1.5px;
-    margin:0;
-    color:var(--chalk);
-  }
-  .drawer-head .date{
-    font-family:var(--font-mono);
-    font-size:12px;
-    color:var(--chalk-dim);
-  }
-  .task{
-    display:flex;
-    align-items:center;
-    gap:12px;
-    padding:11px 10px;
-    border-radius:4px;
-    cursor:pointer;
-    border:1px solid transparent;
-    transition:background .12s ease;
-  }
-  .task:hover{ background:rgba(255,255,255,0.03); }
-  .task + .task{ border-top:1px dashed var(--mortar); }
-  .task .box{
-    width:20px; height:20px;
-    border-radius:3px;
-    border:2px solid var(--mortar-light);
-    flex-shrink:0;
-    display:flex; align-items:center; justify-content:center;
-    font-size:13px;
-    color:transparent;
-    transition:all .12s ease;
-  }
-  .task.checked .box{
-    background:var(--good);
-    border-color:var(--good);
-    color:#12180f;
-  }
-  .task .info{ flex:1; }
-  .task .label{
-    font-family:var(--font-body);
-    font-weight:600;
-    font-size:14px;
-    color:var(--chalk);
-  }
-  .task.checked .label{ color:var(--chalk-dim); text-decoration:line-through; text-decoration-color:var(--chalk-dimmer); }
-  .task .desc{
-    font-family:var(--font-body);
-    font-size:12px;
-    color:var(--chalk-dimmer);
-    margin-top:1px;
-  }
-  .drawer-note{
-    font-family:var(--font-mono);
-    font-size:11px;
-    color:var(--chalk-dimmer);
-    margin-top:12px;
-    text-align:center;
-  }
+/* ══════════════ tab bar ══════════════ */
+#tabbar{
+  position:fixed;left:0;right:0;bottom:0;z-index:40;
+  height:var(--tabbar);
+  padding-bottom:var(--safe-bot);
+  display:grid;grid-template-columns:repeat(4,1fr);
+  background:rgba(10,11,15,.82);
+  backdrop-filter:blur(20px) saturate(160%);
+  -webkit-backdrop-filter:blur(20px) saturate(160%);
+  border-top:1px solid var(--line);
+}
+#tabbar[hidden]{display:none;}
+.tab{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  color:var(--txt-3);font-size:9.5px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;
+  transition:color .18s ease;position:relative;
+}
+.tab svg{width:23px;height:23px;stroke-width:1.9;fill:none;stroke:currentColor;
+  stroke-linecap:round;stroke-linejoin:round;transition:transform .22s cubic-bezier(.34,1.56,.64,1);}
+.tab.on{color:var(--txt);}
+.tab.on svg{transform:translateY(-1px) scale(1.1);}
+.tab.on::after{
+  content:'';position:absolute;top:6px;width:26px;height:26px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,107,53,.28),transparent 70%);
+}
+.tab .dot{
+  position:absolute;top:9px;right:calc(50% - 16px);
+  width:7px;height:7px;border-radius:50%;background:var(--danger);
+  border:2px solid #0A0B0F;
+}
 
-  /* ---------- Footer ---------- */
-  footer{
-    margin-top:30px;
-    text-align:center;
-  }
-  .reset-link{
-    font-family:var(--font-mono);
-    font-size:11px;
-    color:var(--chalk-dimmer);
-    background:none;
-    border:none;
-    text-decoration:underline;
-    cursor:pointer;
-    letter-spacing:0.5px;
-  }
-  .reset-link:hover{ color:var(--brick-hi); }
+/* ══════════════ generic bits ══════════════ */
+.eyebrow{
+  font-size:10px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:var(--txt-3);
+}
+.card{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;
+}
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:6px 0 18px;
+}
+.topbar .title{font-size:19px;font-weight:800;letter-spacing:-.4px;}
+.topbar .sub{font-size:11.5px;color:var(--txt-3);font-weight:600;margin-top:1px;}
+.icon-btn{
+  width:38px;height:38px;border-radius:12px;display:grid;place-items:center;
+  background:var(--surface);border:1px solid var(--line);color:var(--txt-2);
+}
+.icon-btn svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.9;
+  stroke-linecap:round;stroke-linejoin:round;}
 
-  .toast{
-    position:fixed;
-    bottom:20px; left:50%;
-    transform:translateX(-50%) translateY(20px);
-    background:var(--panel-2);
-    border:1px solid var(--caution);
-    color:var(--chalk);
-    font-family:var(--font-mono);
-    font-size:12px;
-    padding:10px 18px;
-    border-radius:4px;
-    opacity:0;
-    transition:all .25s ease;
-    pointer-events:none;
-    z-index:50;
-  }
-  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+.avatar{
+  width:30px;height:30px;border-radius:50%;display:grid;place-items:center;flex-shrink:0;
+  font-family:var(--display);font-size:12.5px;font-weight:800;color:#0A0B0F;
+  background:linear-gradient(135deg,var(--p),var(--p2));
+}
+.avatar.lg{width:42px;height:42px;font-size:17px;}
+.avatar.ring-on{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--p);}
 
-  .loading{
-    text-align:center;
-    font-family:var(--font-mono);
-    color:var(--chalk-dim);
-    padding:60px 0;
-    letter-spacing:1px;
-  }
+/* ══════════════ TODAY ══════════════ */
+.hero{
+  position:relative;display:flex;flex-direction:column;align-items:center;
+  padding:6px 0 4px;
+}
+.hero::before{
+  content:'';position:absolute;top:-40px;left:50%;transform:translateX(-50%);
+  width:340px;height:340px;border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle,color-mix(in srgb,var(--p) 22%,transparent),transparent 65%);
+  filter:blur(20px);opacity:.85;transition:opacity .4s ease;
+}
+.hero.complete::before{
+  background:radial-gradient(circle,rgba(184,255,59,.3),transparent 65%);
+}
+.ring-wrap{position:relative;width:232px;height:232px;}
+.ring{width:100%;height:100%;transform:rotate(0deg);}
+.ring .seg-bg{stroke:rgba(255,255,255,.07);}
+/* dasharray is set as an inline style, never here — a CSS rule would outrank
+   the per-segment value and collapse every arc into a dot. */
+.ring .seg-fg{
+  stroke:url(#ringgrad);
+  /* butt cap while empty: a round cap paints a visible dot at zero length */
+  stroke-linecap:butt;
+  transition:stroke-dasharray .55s cubic-bezier(.34,1.3,.5,1);
+}
+.ring .seg-fg.lit{stroke-linecap:round;}
+.hero.complete .ring .seg-fg{stroke:url(#ringdone);}
+.ring .seg-fg.lit{filter:drop-shadow(0 0 6px color-mix(in srgb,var(--p) 60%,transparent));}
+.ring-center{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;pointer-events:none;
+}
+.ring-count{
+  font-family:var(--display);font-weight:900;font-size:64px;line-height:.9;letter-spacing:-2px;
+  background:linear-gradient(160deg,var(--p),var(--p2));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+/* background-image, not the `background` shorthand — the shorthand would reset
+   background-clip:text and paint a solid block over the digit. */
+.ring-count.done{background-image:linear-gradient(160deg,var(--lime),var(--green));}
+.ring-of{font-size:12px;font-weight:700;color:var(--txt-3);letter-spacing:1.4px;margin-top:7px;}
+.ring-day{
+  font-family:var(--display);font-size:11px;font-weight:800;letter-spacing:2.4px;
+  color:var(--txt-2);margin-top:10px;text-transform:uppercase;
+}
+@keyframes ringPop{0%{transform:scale(1)}40%{transform:scale(1.055)}100%{transform:scale(1)}}
+.ring-wrap.pop{animation:ringPop .42s cubic-bezier(.34,1.56,.64,1);}
 
-  .complete-banner{
-    margin-top:22px;
-    text-align:center;
-    padding:24px;
-    background:var(--panel);
-    border:2px solid var(--good);
-    border-radius:var(--radius);
-  }
-  .complete-banner h2{
-    font-family:var(--font-display);
-    text-transform:uppercase;
-    color:var(--good);
-    font-size:28px;
-    margin:0 0 6px;
-  }
-  .complete-banner p{ color:var(--chalk-dim); font-family:var(--font-mono); font-size:13px; }
+/* streak + countdown pills */
+.pill-row{display:flex;gap:10px;justify-content:center;margin-top:14px;flex-wrap:wrap;}
+.pill{
+  display:flex;align-items:center;gap:7px;
+  background:var(--surface);border:1px solid var(--line);
+  border-radius:999px;padding:8px 15px;
+}
+.pill .v{font-family:var(--display);font-size:16px;font-weight:800;letter-spacing:-.3px;}
+.pill .k{font-size:10px;font-weight:700;letter-spacing:1.1px;color:var(--txt-3);text-transform:uppercase;}
+.pill.streak{border-color:rgba(255,107,53,.35);background:linear-gradient(135deg,rgba(255,107,53,.14),rgba(247,56,107,.07));}
+.pill.streak .v{color:var(--fire);}
+.pill.danger{border-color:rgba(255,59,92,.45);background:rgba(255,59,92,.1);animation:breathe 2.2s ease-in-out infinite;}
+.pill.danger .v,.pill.danger .k{color:var(--danger);}
+@keyframes breathe{0%,100%{box-shadow:0 0 0 0 rgba(255,59,92,0)}50%{box-shadow:0 0 0 6px rgba(255,59,92,.09)}}
+@keyframes flicker{0%,100%{transform:scale(1) rotate(0)}25%{transform:scale(1.14) rotate(-5deg)}60%{transform:scale(.96) rotate(4deg)}}
+.flame{display:inline-block;font-size:15px;animation:flicker 2.6s ease-in-out infinite;}
+
+/* head-to-head */
+.h2h{margin-top:22px;}
+.h2h-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px;}
+.h2h-head .lead{font-size:11px;font-weight:700;color:var(--txt-2);}
+.h2h-head .lead b{color:var(--txt);}
+.vs-card{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+  padding:14px 15px;display:flex;flex-direction:column;gap:13px;
+}
+.vs-row{display:flex;align-items:center;gap:11px;}
+.vs-row .who{font-size:13px;font-weight:700;width:62px;flex-shrink:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.vs-bar{
+  flex:1;height:9px;border-radius:999px;background:rgba(255,255,255,.06);overflow:hidden;
+}
+.vs-bar i{
+  display:block;height:100%;border-radius:999px;
+  background:linear-gradient(90deg,var(--p),var(--p2));
+  transition:width .6s cubic-bezier(.34,1.2,.5,1);
+}
+.vs-row .score{font-family:var(--display);font-size:13px;font-weight:800;width:34px;text-align:right;color:var(--txt-2);}
+.vs-row.win .score{color:var(--lime);}
+
+/* task list */
+.tasks{margin-top:24px;display:flex;flex-direction:column;gap:9px;}
+.task{
+  position:relative;display:flex;align-items:center;gap:13px;
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+  padding:14px 15px;overflow:hidden;
+  transition:border-color .2s ease,transform .12s ease;
+}
+.task::before{
+  content:'';position:absolute;inset:0;opacity:0;
+  background:linear-gradient(100deg,color-mix(in srgb,var(--p) 20%,transparent),transparent 72%);
+  transition:opacity .3s ease;
+}
+.task:active{transform:scale(.985);}
+.task.on{border-color:color-mix(in srgb,var(--p) 45%,transparent);}
+.task.on::before{opacity:1;}
+.task .emo{
+  width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-size:19px;
+  background:var(--surface-2);flex-shrink:0;position:relative;z-index:1;
+  transition:background .2s ease;
+}
+.task.on .emo{background:color-mix(in srgb,var(--p) 22%,var(--surface-2));}
+.task.just .emo{animation:pop .45s cubic-bezier(.34,1.56,.64,1);}
+@keyframes pop{0%{transform:scale(1)}45%{transform:scale(1.32) rotate(-8deg)}100%{transform:scale(1)}}
+.task .meta{flex:1;min-width:0;position:relative;z-index:1;text-align:left;}
+.task .label{display:block;font-size:14.5px;font-weight:700;letter-spacing:-.2px;}
+.task .desc{display:block;font-size:11.5px;color:var(--txt-3);margin-top:2px;font-weight:500;}
+.task.on .label{color:var(--txt-2);}
+.check{
+  width:26px;height:26px;border-radius:50%;flex-shrink:0;position:relative;z-index:1;
+  border:2px solid var(--line-2);display:grid;place-items:center;
+  transition:background .22s ease,border-color .22s ease,transform .22s cubic-bezier(.34,1.56,.64,1);
+}
+.check svg{width:14px;height:14px;stroke:#0A0B0F;stroke-width:3.4;fill:none;
+  stroke-linecap:round;stroke-linejoin:round;
+  stroke-dasharray:22;stroke-dashoffset:22;transition:stroke-dashoffset .28s ease .06s;}
+.task.on .check{background:linear-gradient(135deg,var(--p),var(--p2));border-color:transparent;transform:scale(1.06);}
+.task.on .check svg{stroke-dashoffset:0;}
+
+/* photo CTA */
+.photo-cta{
+  margin-top:16px;display:flex;align-items:center;gap:13px;
+  background:var(--surface);border:1px dashed var(--line-2);border-radius:var(--r);
+  padding:14px 15px;width:100%;text-align:left;
+}
+.photo-cta .emo{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;
+  font-size:19px;background:var(--surface-2);flex-shrink:0;}
+.photo-cta .meta{flex:1;min-width:0;text-align:left;}
+.photo-cta .label{display:block;font-size:14.5px;font-weight:700;}
+.photo-cta .desc{display:block;font-size:11.5px;color:var(--txt-3);margin-top:2px;font-weight:500;}
+.photo-cta.filled{border-style:solid;border-color:color-mix(in srgb,var(--p) 40%,transparent);}
+.photo-cta .thumb{width:40px;height:40px;border-radius:12px;object-fit:cover;flex-shrink:0;}
+
+/* ══════════════ WALL ══════════════ */
+.seg-toggle{
+  display:flex;gap:4px;background:var(--surface);border:1px solid var(--line);
+  border-radius:12px;padding:4px;margin-bottom:18px;
+}
+.seg-toggle button{
+  flex:1;padding:9px 0;border-radius:9px;font-size:12.5px;font-weight:700;color:var(--txt-3);
+  transition:all .2s ease;
+}
+.seg-toggle button.on{background:var(--surface-3);color:var(--txt);}
+
+.wall-card{margin-bottom:16px;}
+.wall-top{display:flex;align-items:center;gap:11px;margin-bottom:15px;}
+.wall-top .name{font-size:14px;font-weight:700;flex:1;}
+.wall-top .tally{font-family:var(--display);font-size:13px;font-weight:800;color:var(--p);}
+.grid{display:grid;grid-template-columns:repeat(10,1fr);gap:5px;}
+.cell{
+  aspect-ratio:1;border-radius:5px;position:relative;
+  background:rgba(255,255,255,.045);
+  transition:transform .12s ease;
+}
+.cell:active{transform:scale(.86);}
+.cell.done{background:linear-gradient(150deg,var(--p),var(--p2));}
+.cell.miss{background:rgba(255,255,255,.045);box-shadow:inset 0 0 0 1px rgba(255,59,92,.28);}
+/* Needs its own keyframes: `breathe` animates box-shadow outright, which would
+   drop the inset ring and leave today's cell invisible. */
+.cell.today{background:transparent;box-shadow:inset 0 0 0 2px var(--p);animation:cellToday 2.2s ease-in-out infinite;}
+@keyframes cellToday{
+  0%,100%{box-shadow:inset 0 0 0 2px var(--p),0 0 0 0 color-mix(in srgb,var(--p) 30%,transparent);}
+  50%{box-shadow:inset 0 0 0 2px var(--p),0 0 0 4px color-mix(in srgb,var(--p) 0%,transparent);}
+}
+.cell.today.done{background:linear-gradient(150deg,var(--p),var(--p2));}
+.cell.future{background:rgba(255,255,255,.03);}
+.cell.pic::after{
+  content:'';position:absolute;top:2px;right:2px;width:4px;height:4px;border-radius:50%;
+  background:#fff;opacity:.85;
+}
+.cell.mile{box-shadow:inset 0 0 0 1px rgba(255,255,255,.28);}
+.cell.mile.done{box-shadow:inset 0 0 0 1px rgba(255,255,255,.5);}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:14px;}
+.legend span{display:flex;align-items:center;gap:5px;font-size:10px;font-weight:600;color:var(--txt-3);}
+.legend i{width:9px;height:9px;border-radius:3px;display:block;}
+
+/* badges */
+.badges{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:9px;margin-top:12px;}
+.badge{
+  background:var(--surface);border:1px solid var(--line);border-radius:14px;
+  padding:13px 8px;text-align:center;opacity:.32;filter:grayscale(1);
+  transition:all .25s ease;
+}
+.badge.got{opacity:1;filter:none;border-color:color-mix(in srgb,var(--p) 38%,transparent);
+  background:linear-gradient(160deg,color-mix(in srgb,var(--p) 13%,var(--surface)),var(--surface));}
+.badge .ic{font-size:24px;line-height:1;}
+.badge .nm{font-size:9.5px;font-weight:700;margin-top:7px;letter-spacing:.2px;line-height:1.25;}
+.badge .dy{font-size:9px;color:var(--txt-3);margin-top:2px;font-weight:600;}
+
+/* ══════════════ FEED ══════════════ */
+.feed{
+  height:100%;overflow-y:auto;scroll-snap-type:y mandatory;
+  -webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+}
+.post{
+  height:100%;scroll-snap-align:start;scroll-snap-stop:always;
+  position:relative;display:flex;align-items:center;justify-content:center;
+  background:#000;overflow:hidden;
+}
+.post img{width:100%;height:100%;object-fit:cover;}
+.post .shade{
+  position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(180deg,rgba(0,0,0,.6) 0%,transparent 22%,transparent 48%,rgba(0,0,0,.82) 100%);
+}
+.post-top{
+  position:absolute;top:calc(var(--safe-top) + 14px);left:16px;right:16px;
+  display:flex;align-items:center;gap:10px;
+}
+.post-top .nm{font-size:13.5px;font-weight:700;}
+.post-top .dy{font-size:11px;color:rgba(255,255,255,.62);font-weight:600;margin-top:1px;}
+.post-bot{position:absolute;left:16px;right:16px;bottom:calc(var(--tabbar) + 16px);}
+.post-chips{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:11px;}
+.chip{
+  font-size:10px;font-weight:700;padding:5px 9px;border-radius:999px;
+  background:rgba(255,255,255,.14);backdrop-filter:blur(8px);
+  border:1px solid rgba(255,255,255,.16);
+}
+.chip.full{background:linear-gradient(135deg,var(--lime),var(--green));color:#0A0B0F;border-color:transparent;}
+.kudos-row{display:flex;align-items:center;gap:8px;}
+.kudo{
+  display:flex;align-items:center;gap:6px;padding:8px 13px;border-radius:999px;
+  background:rgba(255,255,255,.12);backdrop-filter:blur(10px);
+  border:1px solid rgba(255,255,255,.16);font-size:13px;font-weight:700;
+  transition:transform .16s cubic-bezier(.34,1.56,.64,1),background .2s ease;
+}
+.kudo:active{transform:scale(.9);}
+.kudo.mine{background:linear-gradient(135deg,var(--fire),var(--fire-2));border-color:transparent;}
+.kudo .n{font-family:var(--display);font-size:12px;}
+@keyframes burst{
+  0%{transform:translate(-50%,-50%) scale(.2);opacity:0}
+  25%{transform:translate(-50%,-50%) scale(1.25);opacity:1}
+  55%{transform:translate(-50%,-50%) scale(.95);opacity:1}
+  100%{transform:translate(-50%,-50%) scale(1.5);opacity:0}
+}
+.burst{
+  position:absolute;top:50%;left:50%;font-size:96px;pointer-events:none;
+  animation:burst .85s cubic-bezier(.2,.7,.4,1) forwards;z-index:5;
+}
+.feed-empty{
+  height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:14px;padding:0 40px;text-align:center;
+}
+.feed-empty .ic{font-size:52px;}
+.feed-empty h3{font-size:19px;font-weight:800;}
+.feed-empty p{font-size:13px;color:var(--txt-3);line-height:1.5;margin:0;}
+
+/* ══════════════ RIVALS ══════════════ */
+.podium{display:flex;gap:11px;margin-bottom:20px;}
+.pod{
+  flex:1;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+  padding:18px 12px;text-align:center;position:relative;overflow:hidden;
+}
+.pod.lead{border-color:color-mix(in srgb,var(--p) 50%,transparent);
+  background:linear-gradient(170deg,color-mix(in srgb,var(--p) 15%,var(--surface)),var(--surface));}
+.pod .crown{position:absolute;top:9px;right:11px;font-size:15px;}
+.pod .big{font-family:var(--display);font-size:38px;font-weight:900;letter-spacing:-1.5px;line-height:1;
+  background:linear-gradient(160deg,var(--p),var(--p2));
+  -webkit-background-clip:text;background-clip:text;color:transparent;margin-top:9px;}
+.pod .lbl{font-size:10px;font-weight:700;letter-spacing:1.2px;color:var(--txt-3);
+  text-transform:uppercase;margin-top:7px;}
+
+.stat-list{display:flex;flex-direction:column;gap:11px;}
+.srow{display:flex;align-items:center;gap:12px;}
+.srow .nm{font-size:12.5px;font-weight:600;width:96px;flex-shrink:0;}
+.dual{flex:1;display:flex;flex-direction:column;gap:4px;}
+.dual .bar{height:7px;border-radius:999px;background:rgba(255,255,255,.06);overflow:hidden;}
+.dual .bar i{display:block;height:100%;border-radius:999px;transition:width .6s cubic-bezier(.34,1.2,.5,1);}
+.dual .bar.a i{background:linear-gradient(90deg,var(--sachin),var(--sachin-2));}
+.dual .bar.b i{background:linear-gradient(90deg,var(--aarya),var(--aarya-2));}
+.srow .pc{font-family:var(--display);font-size:11px;font-weight:800;color:var(--txt-3);
+  width:62px;text-align:right;line-height:1.5;}
+.sect{margin-top:26px;}
+.sect > .eyebrow{margin-bottom:11px;display:block;}
+
+/* ══════════════ sheets / modals ══════════════ */
+#sheet-root{position:fixed;inset:0;z-index:60;pointer-events:none;}
+.scrim{
+  position:absolute;inset:0;background:rgba(0,0,0,.62);
+  backdrop-filter:blur(3px);opacity:0;transition:opacity .28s ease;
+}
+.sheet{
+  position:absolute;left:0;right:0;bottom:0;
+  background:var(--bg-soft);border-top:1px solid var(--line-2);
+  border-radius:24px 24px 0 0;
+  padding:10px 18px calc(24px + var(--safe-bot));
+  max-height:88%;overflow-y:auto;
+  transform:translateY(100%);transition:transform .34s cubic-bezier(.3,1,.4,1);
+}
+#sheet-root.open{pointer-events:auto;}
+#sheet-root.open .scrim{opacity:1;}
+#sheet-root.open .sheet{transform:translateY(0);}
+.grabber{width:38px;height:4px;border-radius:99px;background:var(--line-2);margin:0 auto 16px;}
+.sheet-head{display:flex;align-items:center;gap:11px;margin-bottom:16px;}
+.sheet-head .t{font-size:17px;font-weight:800;letter-spacing:-.3px;}
+.sheet-head .s{font-size:11.5px;color:var(--txt-3);font-weight:600;margin-top:2px;}
+
+.btn{
+  display:block;width:100%;padding:14px;border-radius:13px;text-align:center;
+  font-size:14px;font-weight:700;background:var(--surface-2);border:1px solid var(--line);
+  transition:transform .12s ease;
+}
+.btn:active{transform:scale(.98);}
+.btn.primary{background:linear-gradient(135deg,var(--p,var(--fire)),var(--p2,var(--fire-2)));
+  border-color:transparent;color:#0A0B0F;}
+.btn.ghost{background:transparent;color:var(--txt-2);}
+.btn.danger{background:transparent;border-color:rgba(255,59,92,.35);color:var(--danger);}
+.btn + .btn{margin-top:9px;}
+
+.photo-box{
+  border-radius:14px;overflow:hidden;background:var(--surface);border:1px solid var(--line);
+  min-height:150px;display:grid;place-items:center;margin-bottom:11px;
+}
+.photo-box img{width:100%;max-height:340px;object-fit:cover;display:block;}
+.photo-box .none{font-size:12px;color:var(--txt-3);padding:44px 0;font-weight:600;}
+
+/* identity picker */
+.pick{
+  position:fixed;inset:0;z-index:80;background:var(--bg);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:32px;
+}
+.pick h2{font-size:26px;font-weight:900;letter-spacing:-.8px;}
+.pick p{font-size:13.5px;color:var(--txt-3);margin:0 0 18px;text-align:center;}
+.pick-btn{
+  width:100%;max-width:300px;display:flex;align-items:center;gap:14px;
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:15px 16px;
+  transition:transform .12s ease,border-color .2s ease;
+}
+.pick-btn:active{transform:scale(.98);}
+.pick-btn .nm{font-size:16px;font-weight:700;}
+
+/* celebration */
+#celebrate{
+  position:fixed;inset:0;z-index:70;display:none;
+  flex-direction:column;align-items:center;justify-content:center;gap:8px;
+  background:rgba(8,9,12,.93);backdrop-filter:blur(8px);text-align:center;padding:32px;
+}
+#celebrate.on{display:flex;}
+@keyframes celebIn{
+  0%{transform:scale(.55) translateY(24px);opacity:0}
+  55%{transform:scale(1.06) translateY(0);opacity:1}
+  100%{transform:scale(1);opacity:1}
+}
+#celebrate .inner{animation:celebIn .62s cubic-bezier(.2,1.2,.4,1);}
+#celebrate .ic{font-size:70px;}
+#celebrate .big{
+  font-family:var(--display);font-size:44px;font-weight:900;letter-spacing:-1.6px;line-height:1;margin-top:12px;
+  background:linear-gradient(150deg,var(--lime),var(--green));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+#celebrate .sub{font-size:14px;color:var(--txt-2);margin-top:12px;font-weight:600;line-height:1.5;}
+#celebrate .hint{font-size:11px;color:var(--txt-3);margin-top:26px;font-weight:600;letter-spacing:.6px;}
+
+#fx{position:fixed;inset:0;z-index:75;pointer-events:none;display:none;}
+
+#toast{
+  position:fixed;left:50%;bottom:calc(var(--tabbar) + 16px);z-index:90;
+  transform:translate(-50%,14px);opacity:0;pointer-events:none;
+  background:var(--surface-3);border:1px solid var(--line-2);
+  border-radius:999px;padding:10px 18px;font-size:12.5px;font-weight:600;
+  transition:opacity .24s ease,transform .24s ease;white-space:nowrap;
+  max-width:calc(100vw - 40px);overflow:hidden;text-overflow:ellipsis;
+}
+#toast.on{opacity:1;transform:translate(-50%,0);}
+
+.boot{height:100%;display:grid;place-items:center;color:var(--txt-3);
+  font-size:12px;font-weight:700;letter-spacing:2px;}
+
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition-duration:.01ms!important;}
+}
 </style>
 </head>
 <body>
-<div id="app"><div class="loading">LAYING THE FIRST BRICK…</div></div>
+
+<div id="screen"><div class="boot">LOADING…</div></div>
+
+<nav id="tabbar" hidden></nav>
+<canvas id="fx"></canvas>
+<div id="sheet-root"></div>
+<div id="celebrate"></div>
+<div id="toast"></div>
 
 <script>
-const storage = {
-  async get(key){
-    try{
-      const value = localStorage.getItem(key);
-      return value == null ? null : { value };
-    }catch(e){
-      return null;
-    }
-  },
-  async set(key, value){
-    localStorage.setItem(key, value);
-  }
-};
-
-const TASKS = [
-  { id:'diet',     label:'Diet',            desc:'No cheat meals, no alcohol' },
-  { id:'workout1', label:'Workout 1',       desc:'45 minutes' },
-  { id:'workout2', label:'Workout 2',       desc:'45 minutes, outdoors' },
-  { id:'water',    label:'1 Gallon Water',  desc:'' },
-  { id:'read',     label:'Read 10 Pages',   desc:'Non-fiction' }
-];
-const PROFILES = [
-  { id:'sachin', label:'Sachin' },
-  { id:'aarya',  label:'Aarya' }
-];
+/* ════════════════════════════════════════════════
+   CONFIG
+   ════════════════════════════════════════════════ */
 const TOTAL_DAYS = 75;
 
-let state = {
-  startDate: null,
-  data: { sachin: {}, aarya: {} },
-  activeProfile: 'sachin',
-  selectedDay: null
+const TASKS = [
+  { id:'diet',     emo:'🥗', label:'Diet',        desc:'No cheat meals, no alcohol' },
+  { id:'workout1', emo:'💪', label:'Workout 1',   desc:'45 minutes' },
+  { id:'workout2', emo:'🌤️', label:'Workout 2',   desc:'45 minutes, outdoors' },
+  { id:'water',    emo:'💧', label:'Water',       desc:'1 gallon' },
+  { id:'read',     emo:'📖', label:'Read',        desc:'10 pages, non-fiction' }
+];
+
+const PROFILES = [
+  { id:'sachin', label:'Sachin', initial:'S' },
+  { id:'aarya',  label:'Aarya',  initial:'A' }
+];
+
+const BADGES = [
+  { d:1,  ic:'🧱', nm:'First Brick' },
+  { d:3,  ic:'⚡', nm:'Momentum' },
+  { d:7,  ic:'🥉', nm:'One Week' },
+  { d:14, ic:'🥈', nm:'Fortnight' },
+  { d:21, ic:'🧠', nm:'Habit Locked' },
+  { d:30, ic:'🥇', nm:'One Month' },
+  { d:45, ic:'⛰️', nm:'Past Halfway' },
+  { d:60, ic:'🚀', nm:'Home Stretch' },
+  { d:75, ic:'👑', nm:'75 Hard' }
+];
+
+const KUDOS = ['🔥','💪','👏','🫡','❤️'];
+const MILESTONES = new Set(BADGES.map(b => b.d));
+
+/* ════════════════════════════════════════════════
+   API
+   ════════════════════════════════════════════════ */
+const api = {
+  async getState(){
+    const r = await fetch('/api/state');
+    if(!r.ok) throw new Error('load failed');
+    return r.json();
+  },
+  async saveDay(profileId, date, tasks){
+    const r = await fetch('/api/state', {
+      method:'PUT',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({ profileId, date, tasks })
+    });
+    if(!r.ok) throw new Error('save failed');
+  },
+  async getReactions(){
+    const r = await fetch('/api/reactions');
+    if(!r.ok) throw new Error('reactions failed');
+    return r.json();
+  },
+  async react(from, to, date, emoji){
+    const r = await fetch('/api/reactions', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({ from, to, date, emoji })
+    });
+    if(!r.ok) throw new Error('react failed');
+    return r.json();
+  },
+  async uploadPhoto(profileId, date, contentType, dataBase64){
+    const r = await fetch(`/api/photos?profile=${encodeURIComponent(profileId)}&date=${encodeURIComponent(date)}`, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({ profileId, date, contentType, dataBase64 })
+    });
+    if(!r.ok) throw new Error('upload failed');
+  },
+  async deletePhoto(profileId, date){
+    const r = await fetch(`/api/photos?profile=${encodeURIComponent(profileId)}&date=${encodeURIComponent(date)}`, {
+      method:'DELETE'
+    });
+    if(!r.ok) throw new Error('delete failed');
+  },
+  photoUrl(profileId, date){
+    const v = state.photoV[`${profileId}|${date}`] || 0;
+    return `/api/photos?profile=${encodeURIComponent(profileId)}&date=${encodeURIComponent(date)}&v=${v}`;
+  },
+  async reset(startDate){
+    const r = await fetch('/api/reset', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({ startDate })
+    });
+    if(!r.ok) throw new Error('reset failed');
+    return r.json();
+  }
 };
 
-function dateStr(d){ return d.toISOString().slice(0,10); }
-function addDays(dateISO, n){
-  const d = new Date(dateISO + 'T00:00:00Z');
-  d.setUTCDate(d.getUTCDate() + n);
-  return dateStr(d);
+/* ════════════════════════════════════════════════
+   STATE
+   ════════════════════════════════════════════════ */
+const state = {
+  startDate: null,
+  data: { sachin:{}, aarya:{} },
+  photoDays: { sachin:[], aarya:[] },
+  photoV: {},
+  reactions: [],
+  me: localStorage.getItem('me') || null,
+  tab: 'today',
+  wallView: 'both',
+  online: true
+};
+
+const me   = () => state.me;
+const them = () => state.me === 'sachin' ? 'aarya' : 'sachin';
+const nameOf = id => PROFILES.find(p => p.id === id).label;
+const initialOf = id => PROFILES.find(p => p.id === id).initial;
+
+/* ════════════════════════════════════════════════
+   DATES — all local, never UTC. A habit tracker that
+   rolls over at 7pm local time is worse than useless.
+   ════════════════════════════════════════════════ */
+function isoOf(d){
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
-function todayISO(){ return dateStr(new Date()); }
-function dayIndexFor(dateISO){
-  const start = new Date(state.startDate + 'T00:00:00Z');
-  const cur = new Date(dateISO + 'T00:00:00Z');
-  return Math.round((cur - start) / 86400000) + 1;
+function todayISO(){ return isoOf(new Date()); }
+function parseISO(iso){
+  const [y,m,d] = iso.split('-').map(Number);
+  return new Date(y, m-1, d);
 }
-function isAllDone(entry){
-  if(!entry) return false;
-  return TASKS.every(t => entry[t.id]);
+function addDays(iso, n){
+  const d = parseISO(iso);
+  d.setDate(d.getDate() + n);
+  return isoOf(d);
+}
+function dayIndex(iso){
+  const ms = parseISO(iso) - parseISO(state.startDate);
+  return Math.round(ms / 86400000) + 1;
+}
+function isoForDay(n){ return addDays(state.startDate, n-1); }
+function todayIndex(){ return dayIndex(todayISO()); }
+function fmtDate(iso){
+  return parseISO(iso).toLocaleDateString(undefined, { weekday:'short', month:'short', day:'numeric' });
+}
+function msToMidnight(){
+  const now = new Date();
+  const mid = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  return mid - now;
+}
+function fmtCountdown(ms){
+  const total = Math.max(0, Math.floor(ms/1000));
+  const h = Math.floor(total/3600);
+  const m = Math.floor((total%3600)/60);
+  const s = total % 60;
+  return h > 0 ? `${h}h ${String(m).padStart(2,'0')}m` : `${m}m ${String(s).padStart(2,'0')}s`;
 }
 
-async function loadState(){
+/* ════════════════════════════════════════════════
+   SELECTORS
+   ════════════════════════════════════════════════ */
+const entryOf = (p, iso) => state.data[p]?.[iso] || {};
+const doneCount = (p, iso) => TASKS.reduce((n,t) => n + (entryOf(p,iso)[t.id] ? 1 : 0), 0);
+const isComplete = (p, iso) => doneCount(p, iso) === TASKS.length;
+const hasPhoto = (p, iso) => state.photoDays[p]?.includes(iso);
+
+function streak(p){
+  const ti = Math.min(todayIndex(), TOTAL_DAYS);
+  let n = 0;
+  for(let d = ti; d >= 1; d--){
+    if(isComplete(p, isoForDay(d))) n++;
+    else if(d === ti) continue;   // today still in play — doesn't break it yet
+    else break;
+  }
+  return n;
+}
+function bestStreak(p){
+  const ti = Math.min(todayIndex(), TOTAL_DAYS);
+  let best = 0, run = 0;
+  for(let d = 1; d <= ti; d++){
+    if(isComplete(p, isoForDay(d))){ run++; best = Math.max(best, run); }
+    else run = 0;
+  }
+  return best;
+}
+function totalComplete(p){
+  const ti = Math.min(todayIndex(), TOTAL_DAYS);
+  let n = 0;
+  for(let d = 1; d <= ti; d++) if(isComplete(p, isoForDay(d))) n++;
+  return n;
+}
+function taskRate(p, taskId){
+  const ti = Math.min(todayIndex(), TOTAL_DAYS);
+  if(ti < 1) return 0;
+  let n = 0;
+  for(let d = 1; d <= ti; d++) if(entryOf(p, isoForDay(d))[taskId]) n++;
+  return Math.round(n / ti * 100);
+}
+function kudosFor(to, date){
+  const list = state.reactions.filter(r => r.to === to && r.date === date);
+  const counts = {};
+  for(const r of list) counts[r.emoji] = (counts[r.emoji] || 0) + 1;
+  return counts;
+}
+function iReacted(to, date, emoji){
+  return state.reactions.some(r => r.to === to && r.date === date && r.emoji === emoji && r.from === me());
+}
+function unseenKudos(){
+  // kudos given to me that I haven't opened the feed since
+  const seen = Number(localStorage.getItem('kudosSeen') || 0);
+  return state.reactions.filter(r => r.to === me()).length > seen;
+}
+
+/* ════════════════════════════════════════════════
+   FX — haptics, sound, confetti, toast
+   ════════════════════════════════════════════════ */
+function haptic(ms = 12){
+  if(navigator.vibrate) try{ navigator.vibrate(ms); }catch(_){}
+}
+
+let audioCtx;
+function chime(complete){
+  if(localStorage.getItem('sound') === 'off') return;
   try{
-    const meta = await storage.get('75hard:meta');
-    if(meta && meta.value){
-      state.startDate = JSON.parse(meta.value).startDate;
-    } else {
-      state.startDate = todayISO();
-      await storage.set('75hard:meta', JSON.stringify({ startDate: state.startDate }));
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const notes = complete ? [523.25, 659.25, 783.99, 1046.5] : [880];
+    notes.forEach((f, i) => {
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.type = 'sine';
+      o.frequency.value = f;
+      const t0 = audioCtx.currentTime + i * 0.09;
+      g.gain.setValueAtTime(0, t0);
+      g.gain.linearRampToValueAtTime(complete ? 0.16 : 0.05, t0 + 0.015);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + (complete ? 0.42 : 0.13));
+      o.connect(g); g.connect(audioCtx.destination);
+      o.start(t0); o.stop(t0 + 0.5);
+    });
+  }catch(_){}
+}
+
+let fxRAF = null;
+function confetti({ x = innerWidth/2, y = innerHeight/2, count = 90, spread = Math.PI, power = 15, colors }){
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const cvs = document.getElementById('fx');
+  const ctx = cvs.getContext('2d');
+  const dpr = Math.min(devicePixelRatio || 1, 2);
+  cvs.width = innerWidth * dpr;
+  cvs.height = innerHeight * dpr;
+  cvs.style.display = 'block';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  const parts = [];
+  for(let i = 0; i < count; i++){
+    const a = -Math.PI/2 + (Math.random() - 0.5) * spread;
+    const v = power * (0.45 + Math.random() * 0.75);
+    parts.push({
+      x, y,
+      vx: Math.cos(a) * v,
+      vy: Math.sin(a) * v,
+      w: 5 + Math.random() * 6,
+      h: 3 + Math.random() * 5,
+      rot: Math.random() * Math.PI,
+      vr: (Math.random() - 0.5) * 0.35,
+      c: colors[(Math.random() * colors.length) | 0],
+      life: 1
+    });
+  }
+
+  if(fxRAF) cancelAnimationFrame(fxRAF);
+  let last = performance.now();
+
+  (function frame(now){
+    const dt = Math.min((now - last) / 16.67, 2.5);
+    last = now;
+    ctx.clearRect(0, 0, innerWidth, innerHeight);
+    let alive = 0;
+
+    for(const p of parts){
+      p.vy += 0.42 * dt;
+      p.vx *= 0.995;
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.rot += p.vr * dt;
+      if(p.y > innerHeight + 40) p.life = 0;
+      else p.life -= 0.006 * dt;
+      if(p.life <= 0) continue;
+      alive++;
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      ctx.globalAlpha = Math.max(0, Math.min(1, p.life));
+      ctx.fillStyle = p.c;
+      ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+      ctx.restore();
     }
-  }catch(e){
-    state.startDate = todayISO();
-    try{ await storage.set('75hard:meta', JSON.stringify({ startDate: state.startDate })); }catch(e2){}
-  }
 
-  for(const p of PROFILES){
-    try{
-      const res = await storage.get('75hard:' + p.id);
-      state.data[p.id] = res && res.value ? JSON.parse(res.value) : {};
-    }catch(e){
-      state.data[p.id] = {};
-    }
-  }
+    if(alive > 0) fxRAF = requestAnimationFrame(frame);
+    else { ctx.clearRect(0,0,innerWidth,innerHeight); cvs.style.display = 'none'; fxRAF = null; }
+  })(last);
 }
 
-async function saveProfileData(profileId){
-  try{
-    await storage.set('75hard:' + profileId, JSON.stringify(state.data[profileId]));
-  }catch(e){
-    showToast('Save failed — storage may be full');
-  }
+let toastT;
+function toast(msg){
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('on');
+  clearTimeout(toastT);
+  toastT = setTimeout(() => el.classList.remove('on'), 2000);
 }
 
-function showToast(msg){
-  const t = document.getElementById('toast');
-  if(!t) return;
-  t.textContent = msg;
-  t.classList.add('show');
-  clearTimeout(showToast._t);
-  showToast._t = setTimeout(()=> t.classList.remove('show'), 1800);
+/* ════════════════════════════════════════════════
+   IMAGE HELPERS
+   ════════════════════════════════════════════════ */
+async function compressImage(file){
+  const bitmap = await createImageBitmap(file);
+  const maxDim = 1200;
+  const scale = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height));
+  const w = Math.round(bitmap.width * scale);
+  const h = Math.round(bitmap.height * scale);
+  const canvas = document.createElement('canvas');
+  canvas.width = w; canvas.height = h;
+  canvas.getContext('2d').drawImage(bitmap, 0, 0, w, h);
+  const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.82));
+  bitmap.close();
+  return blob;
+}
+function blobToBase64(blob){
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result.split(',')[1]);
+    r.onerror = rej;
+    r.readAsDataURL(blob);
+  });
 }
 
-function currentStreak(profileId){
-  const today = todayISO();
-  const todayIdx = dayIndexFor(today);
-  let streak = 0;
-  for(let d = Math.min(todayIdx, TOTAL_DAYS); d >= 1; d--){
-    const iso = addDays(state.startDate, d-1);
-    const entry = state.data[profileId][iso];
-    if(d === todayIdx){
-      // today only counts once fully complete
-      if(isAllDone(entry)) streak++;
-      else continue;
-    } else {
-      if(isAllDone(entry)) streak++;
-      else break;
-    }
-  }
-  return streak;
-}
+/* ════════════════════════════════════════════════
+   ICONS
+   ════════════════════════════════════════════════ */
+const ICON = {
+  today:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+  wall:'<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="7" rx="1.5"/><rect x="3" y="13" width="18" height="7" rx="1.5"/><path d="M9 4v7M15 13v7"/></svg>',
+  feed:'<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="2"/><path d="M3 17l4.5-4.5 4 4 3-2.5L21 18"/></svg>',
+  rivals:'<svg viewBox="0 0 24 24"><path d="M7 21V11M12 21V4M17 21v-6"/></svg>',
+  gear:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 9 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.6 9a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></svg>',
+  tick:'<svg viewBox="0 0 24 24"><path d="M4 12.5l5.5 5.5L20 7"/></svg>'
+};
 
-function completionCount(profileId){
-  const todayIdx = Math.min(dayIndexFor(todayISO()), TOTAL_DAYS);
-  let count = 0;
-  for(let d=1; d<=todayIdx; d++){
-    const iso = addDays(state.startDate, d-1);
-    if(isAllDone(state.data[profileId][iso])) count++;
-  }
-  return count;
-}
-
-function buildWallHTML(profileId){
-  const todayIdx = dayIndexFor(todayISO());
-  const perRow = 15;
-  let rows = [];
-  for(let r=0; r < Math.ceil(TOTAL_DAYS/perRow); r++){
-    let bricks = '';
-    for(let c=0; c<perRow; c++){
-      const day = r*perRow + c + 1;
-      if(day > TOTAL_DAYS) break;
-      const iso = addDays(state.startDate, day-1);
-      const entry = state.data[profileId][iso];
-      let cls = 'brick ';
-      if(day > todayIdx) cls += 'future';
-      else if(day === todayIdx) cls += 'today' + (isAllDone(entry) ? ' done' : '');
-      else cls += isAllDone(entry) ? 'done' : 'missed';
-      bricks += `<div class="${cls}" data-profile="${profileId}" data-day="${day}" title="Day ${day} — ${iso}"></div>`;
-    }
-    rows.push(`<div class="brick-row ${r % 2 === 1 ? 'offset' : ''}">${bricks}</div>`);
-  }
-  return rows.join('');
-}
+/* ════════════════════════════════════════════════
+   RENDER — router
+   ════════════════════════════════════════════════ */
+const screen = () => document.getElementById('screen');
 
 function render(){
-  const todayIdx = dayIndexFor(todayISO());
-  const app = document.getElementById('app');
+  if(!state.me){ renderPicker(); return; }
+  document.getElementById('tabbar').hidden = false;
+  renderTabbar();
 
-  if(todayIdx > TOTAL_DAYS){
-    app.innerHTML = `
-      <header>
-        <div class="site-tape">75 HARD</div>
-        <h1>THE <span>WALL</span></h1>
-        <div class="subtitle">75 / 75 — Challenge Window Closed</div>
-      </header>
-      <div class="complete-banner">
-        <h2>Wall's up.</h2>
-        <p>Sachin: ${completionCount('sachin')}/75 days · Aarya: ${completionCount('aarya')}/75 days</p>
+  const el = screen();
+  el.classList.toggle('flush', state.tab === 'feed');
+  el.scrollTop = 0;
+
+  if(state.tab === 'today')  el.innerHTML = viewToday();
+  if(state.tab === 'wall')   el.innerHTML = viewWall();
+  if(state.tab === 'feed')   el.innerHTML = viewFeed();
+  if(state.tab === 'rivals') el.innerHTML = viewRivals();
+
+  wire();
+}
+
+function renderTabbar(){
+  const tabs = [
+    ['today','Today',ICON.today],
+    ['wall','Wall',ICON.wall],
+    ['feed','Feed',ICON.feed],
+    ['rivals','Rivals',ICON.rivals]
+  ];
+  const badge = unseenKudos();
+  document.getElementById('tabbar').innerHTML = tabs.map(([id,label,svg]) => `
+    <button class="tab ${state.tab===id?'on':''}" data-tab="${id}">
+      ${svg}<span>${label}</span>
+      ${id==='feed' && badge ? '<i class="dot"></i>' : ''}
+    </button>
+  `).join('');
+}
+
+/* ── identity picker ─────────────────────────── */
+function renderPicker(){
+  document.getElementById('tabbar').hidden = true;
+  screen().innerHTML = `
+    <div class="pick">
+      <div style="font-size:52px">🧱</div>
+      <h2>Who's checking in?</h2>
+      <p>Pick yourself. The app shows your progress next to your partner's.</p>
+      ${PROFILES.map(p => `
+        <button class="pick-btn" data-pick="${p.id}" data-p="${p.id}">
+          <span class="avatar lg">${p.initial}</span>
+          <span class="nm">${p.label}</span>
+        </button>
+      `).join('')}
+    </div>`;
+  screen().querySelectorAll('[data-pick]').forEach(b => {
+    b.onclick = () => {
+      state.me = b.dataset.pick;
+      localStorage.setItem('me', state.me);
+      haptic(18);
+      render();
+    };
+  });
+}
+
+/* ── TODAY ───────────────────────────────────── */
+function viewToday(){
+  const ti = todayIndex();
+
+  if(ti > TOTAL_DAYS) return viewFinished();
+  if(ti < 1) return `
+    <div class="topbar"><div><div class="title">75 Hard</div></div></div>
+    <div class="card" style="text-align:center;padding:36px 20px">
+      <div style="font-size:44px">⏳</div>
+      <h3 style="margin-top:12px;font-size:18px">Starts ${fmtDate(state.startDate)}</h3>
+      <p style="color:var(--txt-3);font-size:13px;margin-top:8px">${dayIndex(state.startDate) - ti} day(s) to go.</p>
+    </div>`;
+
+  const iso  = todayISO();
+  const you  = me(), rival = them();
+  const n    = doneCount(you, iso);
+  const done = n === TASKS.length;
+  const rn   = doneCount(rival, iso);
+  const st   = streak(you);
+  const hrsLeft = msToMidnight() / 3600000;
+  const atRisk = !done && hrsLeft < 5;
+
+  const lead =
+    done && rn === TASKS.length ? `Both of you are done. <b>Perfect day.</b>` :
+    done                       ? `You're done. ${nameOf(rival)} is at <b>${rn}/5</b>.` :
+    rn === TASKS.length        ? `<b>${nameOf(rival)} already finished.</b> You're at ${n}/5.` :
+    rn > n                     ? `<b>${nameOf(rival)} is ahead</b> — ${rn}/5 to your ${n}/5.` :
+    n > rn                     ? `You're ahead — ${n}/5 to ${nameOf(rival)}'s ${rn}/5.` :
+                                 `Dead even at <b>${n}/5</b>.`;
+
+  return `
+  <div data-p="${you}">
+    <div class="topbar">
+      <div>
+        <div class="title">Day ${ti}</div>
+        <div class="sub">${fmtDate(iso)} · ${TOTAL_DAYS - ti} to go</div>
       </div>
-      <footer><button class="reset-link" id="resetBtn">Start a new wall</button></footer>
-      <div class="toast" id="toast"></div>
-    `;
-    document.getElementById('resetBtn').onclick = handleReset;
-    return;
-  }
-
-  const active = state.activeProfile;
-  const day = state.selectedDay || Math.min(todayIdx, TOTAL_DAYS);
-  const selIso = addDays(state.startDate, day-1);
-  const isToday = day === todayIdx;
-  const entry = state.data[active][selIso] || {};
-
-  app.innerHTML = `
-    <header>
-      <div class="site-tape">75 HARD</div>
-      <h1>THE <span>WALL</span></h1>
-      <div class="subtitle">Day ${Math.min(todayIdx,TOTAL_DAYS)} of ${TOTAL_DAYS}</div>
-      <div class="stat-row">
-        <div class="stat-chip streak"><div class="num">${currentStreak('sachin')}</div><div class="lbl">Sachin Streak</div></div>
-        <div class="stat-chip streak"><div class="num">${currentStreak('aarya')}</div><div class="lbl">Aarya Streak</div></div>
-      </div>
-    </header>
-
-    <div class="profile-toggle">
-      ${PROFILES.map(p => `<button class="tag-btn ${p.id===active?'active':''}" data-profile="${p.id}">${p.label}</button>`).join('')}
+      <button class="icon-btn" id="settingsBtn">${ICON.gear}</button>
     </div>
 
-    ${PROFILES.map(p => `
-      <div class="wall-section">
-        <div class="wall-header">
-          <h2>${p.label}'s Wall</h2>
-          <span class="pct">${completionCount(p.id)}/${Math.min(todayIdx,TOTAL_DAYS)} days laid</span>
+    <div class="hero ${done?'complete':''}">
+      <div class="ring-wrap" id="ringWrap">
+        ${ringSVG(you, iso)}
+        <div class="ring-center">
+          <div class="ring-count ${done?'done':''}" id="ringCount">${n}</div>
+          <div class="ring-of">OF ${TASKS.length} DONE</div>
+          <div class="ring-day">${done ? 'DAY LOCKED IN' : 'KEEP GOING'}</div>
         </div>
-        <div class="wall">${buildWallHTML(p.id)}</div>
-        <div class="wall-legend">
-          <span class="item"><span class="swatch done"></span>Complete</span>
-          <span class="item"><span class="swatch missed"></span>Missed</span>
-          <span class="item"><span class="swatch today"></span>Today</span>
-          <span class="item"><span class="swatch future"></span>Ahead</span>
+      </div>
+    </div>
+
+    <div class="pill-row">
+      <div class="pill streak">
+        <span class="flame">🔥</span>
+        <span class="v num">${st}</span>
+        <span class="k">Day Streak</span>
+      </div>
+      <div class="pill ${atRisk?'danger':''}" id="cdPill">
+        <span class="v num" id="cdVal">—</span>
+        <span class="k">${done ? 'Til Day '+(ti+1) : 'Left Today'}</span>
+      </div>
+    </div>
+
+    <div class="h2h">
+      <div class="h2h-head">
+        <span class="eyebrow">Head to head</span>
+        <span class="lead">${lead}</span>
+      </div>
+      <div class="vs-card">
+        ${[you, rival].map(p => {
+          const c = doneCount(p, iso);
+          return `
+          <div class="vs-row ${c===TASKS.length?'win':''}" data-p="${p}">
+            <span class="avatar">${initialOf(p)}</span>
+            <span class="who">${p===you?'You':nameOf(p)}</span>
+            <span class="vs-bar"><i style="width:${c/TASKS.length*100}%"></i></span>
+            <span class="score num">${c===TASKS.length?'✓':c+'/5'}</span>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+
+    <div class="tasks" id="tasks">
+      ${TASKS.map(t => `
+        <button class="task ${entryOf(you,iso)[t.id]?'on':''}" data-task="${t.id}">
+          <span class="emo">${t.emo}</span>
+          <span class="meta">
+            <span class="label">${t.label}</span>
+            <span class="desc">${t.desc}</span>
+          </span>
+          <span class="check">${ICON.tick}</span>
+        </button>
+      `).join('')}
+    </div>
+
+    <button class="photo-cta ${hasPhoto(you,iso)?'filled':''}" id="photoCta">
+      ${hasPhoto(you,iso)
+        ? `<img class="thumb" src="${api.photoUrl(you,iso)}" alt="">`
+        : `<span class="emo">📸</span>`}
+      <span class="meta">
+        <span class="label">${hasPhoto(you,iso)?"Today's photo is up":'Add your progress photo'}</span>
+        <span class="desc">${hasPhoto(you,iso)?'Tap to replace or remove':'Required — and it feeds the timeline'}</span>
+      </span>
+    </button>
+  </div>`;
+}
+
+function ringSVG(p, iso){
+  const R = 92, CX = 116, C = 2 * Math.PI * R;
+  const gap = 7, span = 360 / TASKS.length;
+  const len = C * (span - gap) / 360;
+  const segs = TASKS.map((t, i) => {
+    const rot = -90 + i * span + gap/2;
+    const on = !!entryOf(p, iso)[t.id];
+    return `
+      <circle class="seg-bg" cx="${CX}" cy="${CX}" r="${R}" fill="none" stroke-width="15"
+        stroke-linecap="round" stroke-dasharray="${len} ${C-len}"
+        transform="rotate(${rot} ${CX} ${CX})"/>
+      <circle class="seg-fg ${on?'lit':''}" data-seg="${t.id}" cx="${CX}" cy="${CX}" r="${R}" fill="none" stroke-width="15"
+        stroke-linecap="round" style="stroke-dasharray:${on?len:0} ${C}"
+        transform="rotate(${rot} ${CX} ${CX})"/>`;
+  }).join('');
+  return `
+    <svg class="ring" viewBox="0 0 232 232">
+      <defs>
+        <linearGradient id="ringgrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="var(--p)"/>
+          <stop offset="100%" stop-color="var(--p2)"/>
+        </linearGradient>
+        <linearGradient id="ringdone" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="var(--lime)"/>
+          <stop offset="100%" stop-color="var(--green)"/>
+        </linearGradient>
+      </defs>
+      ${segs}
+    </svg>`;
+}
+
+function viewFinished(){
+  return `
+  <div data-p="${me()}">
+    <div class="topbar"><div><div class="title">75 / 75</div><div class="sub">Challenge window closed</div></div>
+      <button class="icon-btn" id="settingsBtn">${ICON.gear}</button></div>
+    <div class="card" style="text-align:center;padding:34px 20px">
+      <div style="font-size:60px">👑</div>
+      <h2 style="font-size:30px;margin-top:12px;letter-spacing:-1px">It's done.</h2>
+      <div class="podium" style="margin-top:22px">
+        ${PROFILES.map(p => `
+          <div class="pod" data-p="${p.id}">
+            <div class="big num">${totalComplete(p.id)}</div>
+            <div class="lbl">${p.label} · of 75</div>
+          </div>`).join('')}
+      </div>
+    </div>
+    <div style="margin-top:16px"><button class="btn" id="newWallBtn">Start a new 75</button></div>
+  </div>`;
+}
+
+/* ── WALL ────────────────────────────────────── */
+function viewWall(){
+  const ti = todayIndex();
+  const show = state.wallView === 'both' ? [me(), them()] : [state.wallView];
+  return `
+  <div>
+    <div class="topbar">
+      <div><div class="title">The Wall</div>
+        <div class="sub">${Math.min(Math.max(ti,0),TOTAL_DAYS)} of ${TOTAL_DAYS} days elapsed</div></div>
+      <button class="icon-btn" id="settingsBtn">${ICON.gear}</button>
+    </div>
+
+    <div class="seg-toggle" id="wallToggle">
+      <button class="${state.wallView==='both'?'on':''}" data-wv="both">Both</button>
+      <button class="${state.wallView===me()?'on':''}" data-wv="${me()}">You</button>
+      <button class="${state.wallView===them()?'on':''}" data-wv="${them()}">${nameOf(them())}</button>
+    </div>
+
+    ${show.map(p => `
+      <div class="card wall-card" data-p="${p}">
+        <div class="wall-top">
+          <span class="avatar">${initialOf(p)}</span>
+          <span class="name">${p===me()?'You':nameOf(p)}</span>
+          <span class="tally num">${totalComplete(p)} / ${Math.min(Math.max(ti,0),TOTAL_DAYS)}</span>
+        </div>
+        <div class="grid">${cellsFor(p, ti)}</div>
+        <div class="legend">
+          <span><i style="background:linear-gradient(150deg,var(--p),var(--p2))"></i>Done</span>
+          <span><i style="background:rgba(255,255,255,.045);box-shadow:inset 0 0 0 1px rgba(255,59,92,.4)"></i>Missed</span>
+          <span><i style="box-shadow:inset 0 0 0 2px var(--p)"></i>Today</span>
+          <span><i style="background:rgba(255,255,255,.03)"></i>Ahead</span>
         </div>
       </div>
     `).join('')}
 
-    <div class="drawer">
-      <div class="drawer-head">
-        <h3>${PROFILES.find(p=>p.id===active).label} — Day ${day}${isToday ? ' (Today)' : ''}</h3>
-        <span class="date">${selIso}</span>
+    <div class="sect" data-p="${me()}">
+      <span class="eyebrow">Your milestones · ${BADGES.filter(b=>totalComplete(me())>=b.d).length}/${BADGES.length}</span>
+      <div class="badges">
+        ${BADGES.map(b => `
+          <div class="badge ${totalComplete(me())>=b.d?'got':''}">
+            <div class="ic">${b.ic}</div>
+            <div class="nm">${b.nm}</div>
+            <div class="dy">${b.d} day${b.d>1?'s':''}</div>
+          </div>`).join('')}
       </div>
-      ${isToday || day <= todayIdx ? TASKS.map(t => `
-        <div class="task ${entry[t.id] ? 'checked' : ''}" data-task="${t.id}">
-          <div class="box">${entry[t.id] ? '✓' : ''}</div>
-          <div class="info">
-            <div class="label">${t.label}</div>
-            ${t.desc ? `<div class="desc">${t.desc}</div>` : ''}
-          </div>
-        </div>
-      `).join('') : `<div class="drawer-note">This day hasn't happened yet.</div>`}
-      <div class="drawer-note">${isToday ? 'Tap a brick above to review another day.' : "Tap today's brick to jump back."}</div>
     </div>
+  </div>`;
+}
 
-    <footer>
-      <button class="reset-link" id="resetBtn">Reset &amp; start a new wall</button>
-    </footer>
-    <div class="toast" id="toast"></div>
-  `;
+function cellsFor(p, ti){
+  let out = '';
+  for(let d = 1; d <= TOTAL_DAYS; d++){
+    const iso = isoForDay(d);
+    let cls = 'cell';
+    if(d > ti) cls += ' future';
+    else if(d === ti) cls += ' today' + (isComplete(p, iso) ? ' done' : '');
+    else cls += isComplete(p, iso) ? ' done' : ' miss';
+    if(hasPhoto(p, iso)) cls += ' pic';
+    if(MILESTONES.has(d)) cls += ' mile';
+    out += `<button class="${cls}" data-day="${d}" data-prof="${p}" aria-label="Day ${d}"></button>`;
+  }
+  return out;
+}
 
-  // wire events
-  app.querySelectorAll('.brick').forEach(b => {
-    b.addEventListener('click', () => {
-      const d = parseInt(b.dataset.day, 10);
-      const prof = b.dataset.profile;
-      if(d > todayIdx) return;
-      state.activeProfile = prof;
-      state.selectedDay = d;
-      render();
-    });
-  });
+/* ── FEED ────────────────────────────────────── */
+function viewFeed(){
+  localStorage.setItem('kudosSeen', String(state.reactions.length));
 
-  app.querySelectorAll('.tag-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      state.activeProfile = btn.dataset.profile;
-      state.selectedDay = null;
-      render();
-    });
-  });
+  const posts = [];
+  for(const p of PROFILES){
+    for(const iso of state.photoDays[p.id] || []) posts.push({ p: p.id, iso });
+  }
+  posts.sort((a,b) => a.iso === b.iso ? (a.p === me() ? -1 : 1) : (a.iso < b.iso ? 1 : -1));
 
-  if(isToday || day <= todayIdx){
-    app.querySelectorAll('.task').forEach(el => {
-      el.addEventListener('click', async () => {
-        const taskId = el.dataset.task;
-        if(!state.data[active][selIso]) state.data[active][selIso] = {};
-        state.data[active][selIso][taskId] = !state.data[active][selIso][taskId];
-        render();
-        await saveProfileData(active);
-        showToast(isAllDone(state.data[active][selIso]) ? 'Brick laid ✓' : 'Saved');
-      });
-    });
+  if(!posts.length){
+    return `
+    <div class="feed-empty">
+      <div class="ic">📸</div>
+      <h3>Nothing here yet</h3>
+      <p>Progress photos from both of you land here as a scrollable timeline. Post today's from the Today tab.</p>
+      <button class="btn primary" style="max-width:220px" data-goto="today" data-p="${me()}">Take today's photo</button>
+    </div>`;
   }
 
-  const resetBtn = document.getElementById('resetBtn');
-  if(resetBtn) resetBtn.onclick = handleReset;
+  return `<div class="feed" id="feed">${posts.map(post => {
+    const d = dayIndex(post.iso);
+    const full = isComplete(post.p, post.iso);
+    const counts = kudosFor(post.p, post.iso);
+    return `
+    <div class="post" data-p="${post.p}" data-post-p="${post.p}" data-post-iso="${post.iso}">
+      <img src="${api.photoUrl(post.p, post.iso)}" alt="Day ${d}" loading="lazy" draggable="false">
+      <div class="shade"></div>
+      <div class="post-top">
+        <span class="avatar ring-on">${initialOf(post.p)}</span>
+        <span>
+          <div class="nm">${post.p===me()?'You':nameOf(post.p)}</div>
+          <div class="dy">Day ${d} · ${fmtDate(post.iso)}</div>
+        </span>
+      </div>
+      <div class="post-bot">
+        <div class="post-chips">
+          ${full
+            ? `<span class="chip full">✓ ALL 5 DONE</span>`
+            : TASKS.filter(t => entryOf(post.p, post.iso)[t.id]).map(t => `<span class="chip">${t.emo} ${t.label}</span>`).join('')
+              || `<span class="chip">No tasks logged</span>`}
+        </div>
+        <div class="kudos-row">
+          ${KUDOS.map(e => {
+            const c = counts[e] || 0;
+            const mine = iReacted(post.p, post.iso, e);
+            if(!c && !['🔥','💪'].includes(e)) return '';
+            return `<button class="kudo ${mine?'mine':''}" data-kudo="${e}">${e}${c?`<span class="n num">${c}</span>`:''}</button>`;
+          }).join('')}
+        </div>
+      </div>
+    </div>`;
+  }).join('')}</div>`;
 }
 
-async function handleReset(){
-  if(!confirm("Start a brand new 75-day wall? This clears both Sachin's and Aarya's progress.")) return;
-  state.startDate = todayISO();
-  state.data = { sachin:{}, aarya:{} };
-  state.selectedDay = null;
-  try{
-    await storage.set('75hard:meta', JSON.stringify({ startDate: state.startDate }));
-    await saveProfileData('sachin');
-    await saveProfileData('aarya');
-  }catch(e){}
-  render();
-  showToast('New wall started');
+/* ── RIVALS ──────────────────────────────────── */
+function viewRivals(){
+  const a = 'sachin', b = 'aarya';
+  const ta = totalComplete(a), tb = totalComplete(b);
+  const ti = Math.max(0, Math.min(todayIndex(), TOTAL_DAYS));
+
+  // `scale` is what a full bar means. Percentages scale to 100; raw counts scale
+  // to whichever of the two is larger, so the leader's bar always reads as full.
+  const row = (label, va, vb, suffix = '%', scale = 100) => {
+    const span = Math.max(scale, 1);
+    return `
+    <div class="srow">
+      <span class="nm">${label}</span>
+      <span class="dual">
+        <span class="bar a"><i style="width:${Math.min(100, va/span*100)}%"></i></span>
+        <span class="bar b"><i style="width:${Math.min(100, vb/span*100)}%"></i></span>
+      </span>
+      <span class="pc num">${va}${suffix}<br>${vb}${suffix}</span>
+    </div>`;
+  };
+  const pair = (x, y) => Math.max(x, y);
+
+  const gap = Math.abs(ta - tb);
+  const verdict = gap === 0
+    ? `Neck and neck at ${ta} days each.`
+    : `<b>${nameOf(ta > tb ? a : b)}</b> leads by ${gap} day${gap>1?'s':''}.`;
+
+  return `
+  <div>
+    <div class="topbar">
+      <div><div class="title">Rivals</div><div class="sub">${verdict.replace(/<[^>]+>/g,'')}</div></div>
+      <button class="icon-btn" id="settingsBtn">${ICON.gear}</button>
+    </div>
+
+    <div class="podium">
+      ${[a,b].map(p => {
+        const t = totalComplete(p);
+        const lead = t === Math.max(ta,tb) && ta !== tb;
+        return `
+        <div class="pod ${lead?'lead':''}" data-p="${p}">
+          ${lead?'<div class="crown">👑</div>':''}
+          <span class="avatar" style="margin:0 auto">${initialOf(p)}</span>
+          <div class="big num">${t}</div>
+          <div class="lbl">${p===me()?'You':nameOf(p)} · perfect days</div>
+        </div>`;
+      }).join('')}
+    </div>
+
+    <div class="sect">
+      <span class="eyebrow">Streaks</span>
+      <div class="card stat-list">
+        ${row('Current', streak(a), streak(b), 'd', pair(streak(a), streak(b)))}
+        ${row('Longest ever', bestStreak(a), bestStreak(b), 'd', pair(bestStreak(a), bestStreak(b)))}
+        ${row('Consistency', ti?Math.round(ta/ti*100):0, ti?Math.round(tb/ti*100):0)}
+      </div>
+    </div>
+
+    <div class="sect">
+      <span class="eyebrow">Task breakdown</span>
+      <div class="card stat-list">
+        ${TASKS.map(t => row(`${t.emo} ${t.label}`, taskRate(a, t.id), taskRate(b, t.id))).join('')}
+      </div>
+      <div style="display:flex;gap:14px;margin-top:11px;justify-content:center">
+        ${[a,b].map(p => `
+          <span style="display:flex;align-items:center;gap:6px;font-size:10.5px;font-weight:700;color:var(--txt-3)" data-p="${p}">
+            <i style="width:16px;height:5px;border-radius:99px;background:linear-gradient(90deg,var(--p),var(--p2));display:block"></i>
+            ${nameOf(p)}
+          </span>`).join('')}
+      </div>
+    </div>
+
+    <div class="sect">
+      <span class="eyebrow">Photos posted</span>
+      <div class="card stat-list">
+        ${(() => {
+          const pa = (state.photoDays[a]||[]).length, pb = (state.photoDays[b]||[]).length;
+          const ka = state.reactions.filter(r=>r.to===a).length, kb = state.reactions.filter(r=>r.to===b).length;
+          return row('Progress pics', pa, pb, '', pair(pa,pb)) + row('Kudos received', ka, kb, '', pair(ka,kb));
+        })()}
+      </div>
+    </div>
+  </div>`;
 }
+
+/* ════════════════════════════════════════════════
+   EVENT WIRING
+   ════════════════════════════════════════════════ */
+function wire(){
+  const el = screen();
+
+  document.getElementById('tabbar').querySelectorAll('.tab').forEach(b => {
+    b.onclick = () => {
+      if(state.tab === b.dataset.tab) return;
+      state.tab = b.dataset.tab;
+      haptic(8);
+      render();
+    };
+  });
+
+  const gear = el.querySelector('#settingsBtn');
+  if(gear) gear.onclick = openSettings;
+
+  el.querySelectorAll('[data-goto]').forEach(b => {
+    b.onclick = () => { state.tab = b.dataset.goto; render(); };
+  });
+
+  el.querySelectorAll('[data-task]').forEach(b => {
+    b.onclick = () => toggleTask(b.dataset.task, b);
+  });
+
+  const cta = el.querySelector('#photoCta');
+  if(cta) cta.onclick = () => openDay(me(), todayISO());
+
+  el.querySelectorAll('#wallToggle button').forEach(b => {
+    b.onclick = () => { state.wallView = b.dataset.wv; haptic(8); render(); };
+  });
+
+  el.querySelectorAll('.cell').forEach(b => {
+    b.onclick = () => {
+      const d = Number(b.dataset.day);
+      if(d > todayIndex()) { toast("That day hasn't happened yet"); return; }
+      openDay(b.dataset.prof, isoForDay(d));
+    };
+  });
+
+  const newWall = el.querySelector('#newWallBtn');
+  if(newWall) newWall.onclick = confirmReset;
+
+  wireFeed(el);
+  startCountdown();
+}
+
+function wireFeed(el){
+  el.querySelectorAll('.post').forEach(post => {
+    const p = post.dataset.postP, iso = post.dataset.postIso;
+
+    post.querySelectorAll('[data-kudo]').forEach(k => {
+      k.onclick = e => { e.stopPropagation(); sendKudos(p, iso, k.dataset.kudo, post); };
+    });
+
+    // double-tap anywhere on the photo = 🔥
+    let lastTap = 0;
+    post.addEventListener('click', e => {
+      if(e.target.closest('[data-kudo]')) return;
+      const now = Date.now();
+      if(now - lastTap < 320){ lastTap = 0; sendKudos(p, iso, '🔥', post, true); }
+      else lastTap = now;
+    });
+  });
+}
+
+/* ════════════════════════════════════════════════
+   ACTIONS
+   ════════════════════════════════════════════════ */
+async function toggleTask(taskId, btn){
+  const you = me(), iso = todayISO();
+  if(!state.data[you][iso]) state.data[you][iso] = {};
+
+  const wasComplete = isComplete(you, iso);
+  const now = !state.data[you][iso][taskId];
+  state.data[you][iso][taskId] = now;
+
+  // targeted DOM update — a full re-render would kill the animation
+  btn.classList.toggle('on', now);
+  if(now){ btn.classList.add('just'); setTimeout(() => btn.classList.remove('just'), 460); }
+  refreshTodayChrome();
+  haptic(now ? 14 : 8);
+
+  const nowComplete = isComplete(you, iso);
+  if(now && !wasComplete && nowComplete){
+    chime(true);
+    celebrate();
+  } else if(now){
+    chime(false);
+    const r = document.getElementById('ringWrap');
+    if(r){
+      r.classList.add('pop');
+      setTimeout(() => r.classList.remove('pop'), 440);
+      const b = r.getBoundingClientRect();
+      confetti({
+        x: b.left + b.width/2, y: b.top + b.height/2,
+        count: 22, power: 9, spread: Math.PI*2,
+        colors: ['#FF6B35','#F7386B','#FFB03B']
+      });
+    }
+  }
+
+  try{
+    await api.saveDay(you, iso, state.data[you][iso]);
+    state.online = true;
+  }catch(_){
+    toast('Offline — change not saved');
+  }
+}
+
+function refreshTodayChrome(){
+  const you = me(), iso = todayISO();
+  const n = doneCount(you, iso);
+  const done = n === TASKS.length;
+
+  const count = document.getElementById('ringCount');
+  if(count){ count.textContent = n; count.classList.toggle('done', done); }
+
+  const hero = document.querySelector('.hero');
+  if(hero) hero.classList.toggle('complete', done);
+
+  const dayLbl = document.querySelector('.ring-day');
+  if(dayLbl) dayLbl.textContent = done ? 'DAY LOCKED IN' : 'KEEP GOING';
+
+  // ring segments
+  const R = 92, C = 2*Math.PI*R, gap = 7, span = 360/TASKS.length;
+  const len = C * (span - gap)/360;
+  TASKS.forEach(t => {
+    const seg = document.querySelector(`[data-seg="${t.id}"]`);
+    if(!seg) return;
+    const on = !!entryOf(you, iso)[t.id];
+    seg.style.strokeDasharray = `${on?len:0} ${C}`;
+    seg.classList.toggle('lit', on);
+  });
+
+  // head-to-head + streak
+  const rows = document.querySelectorAll('.vs-row');
+  if(rows.length){
+    const bar = rows[0].querySelector('.vs-bar i');
+    const score = rows[0].querySelector('.score');
+    if(bar) bar.style.width = `${n/TASKS.length*100}%`;
+    if(score) score.textContent = done ? '✓' : `${n}/5`;
+    rows[0].classList.toggle('win', done);
+  }
+  const streakEl = document.querySelector('.pill.streak .v');
+  if(streakEl) streakEl.textContent = streak(you);
+
+  const cd = document.getElementById('cdPill');
+  if(cd) cd.classList.toggle('danger', !done && msToMidnight()/3600000 < 5);
+}
+
+function celebrate(){
+  const ti = todayIndex();
+  const you = me();
+  const st = streak(you);
+  const total = totalComplete(you);
+  const badge = BADGES.find(b => b.d === total);
+
+  const el = document.getElementById('celebrate');
+  el.innerHTML = `
+    <div class="inner">
+      <div class="ic">${badge ? badge.ic : '🔥'}</div>
+      <div class="big">DAY ${ti}<br>COMPLETE</div>
+      <div class="sub">
+        ${badge ? `<b>${badge.nm}</b> unlocked · ` : ''}${st} day streak<br>
+        ${total} of ${TOTAL_DAYS} bricks laid
+      </div>
+      <div class="hint">TAP TO CLOSE</div>
+    </div>`;
+  el.classList.add('on');
+  el.onclick = () => el.classList.remove('on');
+
+  haptic([18,60,18,60,34]);
+  confetti({
+    x: innerWidth/2, y: innerHeight * 0.62,
+    count: 130, power: 19, spread: Math.PI * 1.5,
+    colors: ['#B8FF3B','#22C55E','#FF6B35','#F7386B','#A855F7','#FFFFFF']
+  });
+  setTimeout(() => el.classList.remove('on'), 4200);
+}
+
+async function sendKudos(to, iso, emoji, postEl, showBurst){
+  if(to === me()){ toast("Can't give yourself kudos"); return; }
+  haptic(16);
+
+  if(showBurst && postEl){
+    const b = document.createElement('div');
+    b.className = 'burst';
+    b.textContent = emoji;
+    postEl.appendChild(b);
+    setTimeout(() => b.remove(), 860);
+  }
+
+  const had = iReacted(to, iso, emoji);
+
+  // Double-tap only ever adds, like Instagram — an accidental second tap should
+  // never silently retract kudos. Tapping the chip is the way to undo.
+  if(showBurst && had) return;
+
+  // optimistic
+  if(had) state.reactions = state.reactions.filter(r => !(r.to===to && r.date===iso && r.emoji===emoji && r.from===me()));
+  else state.reactions.push({ from:me(), to, date:iso, emoji });
+  repaintKudos(postEl, to, iso);
+
+  try{
+    await api.react(me(), to, iso, emoji);
+    if(!had) toast(`${emoji} sent to ${nameOf(to)}`);
+  }catch(_){
+    // roll back
+    if(had) state.reactions.push({ from:me(), to, date:iso, emoji });
+    else state.reactions = state.reactions.filter(r => !(r.to===to && r.date===iso && r.emoji===emoji && r.from===me()));
+    repaintKudos(postEl, to, iso);
+    toast('Could not send kudos');
+  }
+}
+
+function repaintKudos(postEl, to, iso){
+  if(!postEl) return;
+  const row = postEl.querySelector('.kudos-row');
+  if(!row) return;
+  const counts = kudosFor(to, iso);
+  row.innerHTML = KUDOS.map(e => {
+    const c = counts[e] || 0;
+    const mine = iReacted(to, iso, e);
+    if(!c && !['🔥','💪'].includes(e)) return '';
+    return `<button class="kudo ${mine?'mine':''}" data-kudo="${e}">${e}${c?`<span class="n num">${c}</span>`:''}</button>`;
+  }).join('');
+  row.querySelectorAll('[data-kudo]').forEach(k => {
+    k.onclick = ev => { ev.stopPropagation(); sendKudos(to, iso, k.dataset.kudo, postEl); };
+  });
+}
+
+let cdTimer;
+function startCountdown(){
+  clearInterval(cdTimer);
+  const tick = () => {
+    const v = document.getElementById('cdVal');
+    if(!v){ clearInterval(cdTimer); return; }
+    v.textContent = fmtCountdown(msToMidnight());
+  };
+  tick();
+  cdTimer = setInterval(tick, 1000);
+}
+
+/* ════════════════════════════════════════════════
+   SHEETS
+   ════════════════════════════════════════════════ */
+function openSheet(html, onMount){
+  const root = document.getElementById('sheet-root');
+  root.innerHTML = `<div class="scrim"></div><div class="sheet"><div class="grabber"></div>${html}</div>`;
+  requestAnimationFrame(() => root.classList.add('open'));
+  root.querySelector('.scrim').onclick = closeSheet;
+  if(onMount) onMount(root.querySelector('.sheet'));
+}
+function closeSheet(){
+  const root = document.getElementById('sheet-root');
+  root.classList.remove('open');
+  setTimeout(() => { if(!root.classList.contains('open')) root.innerHTML = ''; }, 340);
+}
+
+function openDay(prof, iso){
+  const d = dayIndex(iso);
+  const mine = prof === me();
+  const pic = hasPhoto(prof, iso);
+  const n = doneCount(prof, iso);
+
+  openSheet(`
+    <div data-p="${prof}">
+      <div class="sheet-head">
+        <span class="avatar lg">${initialOf(prof)}</span>
+        <div style="flex:1">
+          <div class="t">Day ${d}${iso===todayISO()?' · Today':''}</div>
+          <div class="s">${fmtDate(iso)} · ${mine?'You':nameOf(prof)} · ${n}/${TASKS.length} done</div>
+        </div>
+      </div>
+
+      <div class="photo-box">
+        ${pic ? `<img src="${api.photoUrl(prof,iso)}" alt="Day ${d}">`
+              : `<div class="none">No photo for this day</div>`}
+      </div>
+
+      ${mine ? `
+        <label class="btn primary" style="cursor:pointer">
+          ${pic ? 'Replace photo' : 'Add photo'}
+          <input type="file" accept="image/*" capture="environment" id="picIn" hidden>
+        </label>
+        ${pic ? `<button class="btn danger" id="picDel">Remove photo</button>` : ''}
+      ` : ''}
+
+      <div class="tasks" style="margin-top:16px">
+        ${TASKS.map(t => `
+          <button class="task ${entryOf(prof,iso)[t.id]?'on':''}" data-sheet-task="${t.id}" ${mine?'':'disabled'}>
+            <span class="emo">${t.emo}</span>
+            <span class="meta"><span class="label">${t.label}</span><span class="desc">${t.desc}</span></span>
+            <span class="check">${ICON.tick}</span>
+          </button>`).join('')}
+      </div>
+
+      ${mine ? '' : `<div style="text-align:center;font-size:11.5px;color:var(--txt-3);margin-top:14px;font-weight:600">
+        Read-only — only ${nameOf(prof)} can check these off.</div>`}
+
+      <button class="btn ghost" style="margin-top:14px" id="sheetClose">Close</button>
+    </div>
+  `, sheet => {
+    sheet.querySelector('#sheetClose').onclick = closeSheet;
+
+    if(mine){
+      sheet.querySelectorAll('[data-sheet-task]').forEach(b => {
+        b.onclick = async () => {
+          const id = b.dataset.sheetTask;
+          if(!state.data[prof][iso]) state.data[prof][iso] = {};
+          const val = !state.data[prof][iso][id];
+          state.data[prof][iso][id] = val;
+          b.classList.toggle('on', val);
+          if(val){ b.classList.add('just'); setTimeout(()=>b.classList.remove('just'),460); }
+          haptic(12);
+          const head = sheet.querySelector('.sheet-head .s');
+          if(head) head.textContent = `${fmtDate(iso)} · You · ${doneCount(prof,iso)}/${TASKS.length} done`;
+          try{ await api.saveDay(prof, iso, state.data[prof][iso]); }
+          catch(_){ toast('Offline — change not saved'); }
+        };
+      });
+
+      const input = sheet.querySelector('#picIn');
+      if(input) input.onchange = async () => {
+        const file = input.files && input.files[0];
+        if(!file) return;
+        try{
+          toast('Uploading…');
+          const blob = await compressImage(file);
+          const b64 = await blobToBase64(blob);
+          await api.uploadPhoto(prof, iso, 'image/jpeg', b64);
+          if(!state.photoDays[prof].includes(iso)) state.photoDays[prof].push(iso);
+          state.photoV[`${prof}|${iso}`] = Date.now();
+          haptic(20);
+          toast('Photo posted 📸');
+          closeSheet();
+          render();
+        }catch(_){ toast('Upload failed'); }
+        input.value = '';
+      };
+
+      const del = sheet.querySelector('#picDel');
+      if(del) del.onclick = async () => {
+        if(!confirm('Remove this progress photo?')) return;
+        try{
+          await api.deletePhoto(prof, iso);
+          state.photoDays[prof] = state.photoDays[prof].filter(x => x !== iso);
+          toast('Photo removed');
+          closeSheet();
+          render();
+        }catch(_){ toast('Delete failed'); }
+      };
+    }
+  });
+}
+
+function openSettings(){
+  const soundOn = localStorage.getItem('sound') !== 'off';
+  openSheet(`
+    <div data-p="${me()}">
+      <div class="sheet-head">
+        <span class="avatar lg">${initialOf(me())}</span>
+        <div style="flex:1">
+          <div class="t">${nameOf(me())}</div>
+          <div class="s">Started ${fmtDate(state.startDate)}${state.online?'':' · offline'}</div>
+        </div>
+      </div>
+      <button class="btn" id="soundBtn">Completion sound: ${soundOn?'On':'Off'}</button>
+      <button class="btn" id="switchBtn">Switch to ${nameOf(them())}</button>
+      <button class="btn danger" id="resetBtn">Reset &amp; start a new 75</button>
+      <button class="btn ghost" id="closeBtn">Close</button>
+    </div>
+  `, sheet => {
+    sheet.querySelector('#closeBtn').onclick = closeSheet;
+    sheet.querySelector('#soundBtn').onclick = e => {
+      const on = localStorage.getItem('sound') !== 'off';
+      localStorage.setItem('sound', on ? 'off' : 'on');
+      e.currentTarget.textContent = `Completion sound: ${on?'Off':'On'}`;
+      if(on === false) chime(false);
+    };
+    sheet.querySelector('#switchBtn').onclick = () => {
+      state.me = them();
+      localStorage.setItem('me', state.me);
+      closeSheet();
+      render();
+      toast(`Now tracking as ${nameOf(state.me)}`);
+    };
+    sheet.querySelector('#resetBtn').onclick = confirmReset;
+  });
+}
+
+async function confirmReset(){
+  if(!confirm('Start a brand new 75-day challenge?\n\nThis erases all tasks, photos and kudos for BOTH of you. It cannot be undone.')) return;
+  try{
+    const startDate = todayISO();
+    await api.reset(startDate);
+    state.startDate = startDate;
+    state.data = { sachin:{}, aarya:{} };
+    state.photoDays = { sachin:[], aarya:[] };
+    state.reactions = [];
+    state.tab = 'today';
+    closeSheet();
+    render();
+    toast('New wall started — day 1');
+  }catch(_){ toast('Reset failed'); }
+}
+
+/* ════════════════════════════════════════════════
+   BOOT
+   ════════════════════════════════════════════════ */
+async function loadState(){
+  try{
+    const r = await api.getState();
+    state.startDate = r.startDate;
+    state.data = r.data || { sachin:{}, aarya:{} };
+    state.photoDays = r.photoDays || { sachin:[], aarya:[] };
+    state.online = true;
+  }catch(_){
+    state.online = false;
+    state.startDate = todayISO();
+    toast('Could not reach the server');
+  }
+  try{
+    const r = await api.getReactions();
+    state.reactions = r.reactions || [];
+  }catch(_){ state.reactions = []; }
+}
+
+let lastDay = null;
+document.addEventListener('visibilitychange', async () => {
+  if(document.hidden) return;
+  // rolled past midnight, or partner made moves while we were away
+  await loadState();
+  if(lastDay !== todayISO()){ lastDay = todayISO(); state.tab = 'today'; }
+  render();
+});
 
 (async function init(){
   await loadState();
+  lastDay = todayISO();
   render();
   if('serviceWorker' in navigator){
     navigator.serviceWorker.register('/sw.js').catch(() => {});
