@@ -4,3 +4,7 @@
 node_modules/
 .vercel/
 .netlify/
+
+# Full Font Awesome Pro library (~132MB, 35k files). Only the handful of icons
+# actually used are inlined into index.html, so the source set stays local.
+svgs/

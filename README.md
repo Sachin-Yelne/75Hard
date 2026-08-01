@@ -6,12 +6,18 @@ A two-person PWA for the 75 Hard challenge — daily tasks, streaks, head-to-hea
 
 Four tabs, phone-first:
 
-- **Today** — a five-segment progress ring (one arc per task), streak counter, a live countdown to midnight, and a head-to-head strip showing where you stand against your partner right now. Completing all five fires a full-screen celebration with confetti.
-- **Wall** — the 75-day grid for both people, with missed days, photo markers, milestone days, and unlockable badges.
-- **Feed** — full-screen, snap-scrolling progress photos from both of you, newest first. Double-tap to send 🔥, or tap a reaction chip.
-- **Rivals** — side-by-side stats: current and longest streaks, consistency, per-task completion rates, photos posted, kudos received.
+- **Today** — the day number set large, a five-segment rule (one per task), streak, a live countdown to local midnight, and your partner's progress underneath. Completing all five holds a full-screen typographic moment for a second and a half, then returns you to the day.
+- **Wall** — the 75-day grid for both people, with missed days, photo markers, and a milestone list.
+- **Feed** — full-screen, snap-scrolling progress photos from both of you, newest first. Double-tap to give kudos, or use the button.
+- **Rivals** — a side-by-side table: perfect days, current and longest streaks, consistency, per-task completion rates, frames posted, kudos received.
 
-Pick who you are on first launch (stored locally); you can switch from the settings sheet.
+Pick who you are on first launch (stored locally); you can switch from the settings sheet. Your own progress is always clay, your partner's sage.
+
+## Design
+
+Editorial and deliberately restrained — near-black, hairline rules, Anton for figures and Barlow Condensed for labels. Two muted accents (clay `#C8613A` for you, sage `#6E7F6A` for your partner) carry all state; there are no gradients, glows, emoji, or confetti anywhere.
+
+Icons come from Font Awesome Pro (`sharp-light`). The full library lives in `svgs/` locally and is **gitignored** — it's ~132MB across 35k files. Only the eight icons actually used are inlined as paths in `index.html`, totalling about 3KB. To swap one in, copy the `d` attribute out of the relevant `svgs/sharp-light/*.svg` and add it to the `ICON` map.
 
 ## Run locally
 
@@ -76,5 +82,5 @@ sw.js             Offline shell cache
 - Photos are resized on-device before upload (max ~1200px, JPEG). Max 4MB after compression.
 - All day boundaries use the device's **local** date, so the day rolls over at local midnight rather than UTC.
 - `index.html` is served network-first by the service worker, so a redeploy reaches both phones instead of being pinned to a cached shell.
-- The `reactions` table is created lazily by `api/reactions.js`; if it's unavailable the rest of the app still works, just without kudos.
+- The `reactions` table is created lazily by `api/reactions.js`; if it is unavailable the rest of the app still works, just without kudos. New rows are written with the token `kudos`; emoji tokens from the previous build still validate and still count.
 - Free Neon + Vercel tiers are enough for two people over 75 days.

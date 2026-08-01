@@ -1,7 +1,9 @@
 const { getSql } = require('./lib/db');
 
 const PROFILES = ['sachin', 'aarya'];
-const EMOJIS = ['🔥', '💪', '👏', '🫡', '❤️'];
+// 'kudos' is what the current UI sends; the emoji are kept so rows written by
+// the previous build still validate and still count.
+const TOKENS = ['kudos', '🔥', '💪', '👏', '🫡', '❤️'];
 
 let tableReady = false;
 
@@ -53,8 +55,8 @@ module.exports = async function handler(req, res) {
   if (req.method === 'POST') {
     try {
       const { from, to, date, emoji } = req.body || {};
-      if (!PROFILES.includes(from) || !PROFILES.includes(to) || !date || !EMOJIS.includes(emoji)) {
-        return res.status(400).json({ error: 'from, to, date, and a supported emoji are required' });
+      if (!PROFILES.includes(from) || !PROFILES.includes(to) || !date || !TOKENS.includes(emoji)) {
+        return res.status(400).json({ error: 'from, to, date, and a supported reaction are required' });
       }
 
       const existing = await sql`
