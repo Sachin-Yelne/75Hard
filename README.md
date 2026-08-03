@@ -6,10 +6,10 @@ A two-person PWA for the 75 Hard challenge — daily tasks, streaks, head-to-hea
 
 Four tabs, phone-first:
 
-- **Today** — the day number set large, a five-segment rule (one per task), streak, a live countdown to local midnight, and your partner's progress underneath. Completing all five holds a full-screen typographic moment for a second and a half, then returns you to the day.
+- **Today** — the day number set large, a five-segment rule (one per task), streak, a live countdown to local midnight, and your partner's progress underneath. Workout One, Workout Two, Water and Read each carry an optional camera; tap it to attach a photo, or ignore it. Completing all five holds a full-screen typographic moment for a second and a half, then returns you to the day.
 - **Wall** — the 75-day grid for both people, with missed days, photo markers, and a milestone list.
-- **Feed** — full-screen, snap-scrolling progress photos from both of you, newest first. Double-tap to give kudos, or use the button.
-- **Rivals** — a side-by-side table: perfect days, current and longest streaks, consistency, per-task completion rates, frames posted, kudos received.
+- **Feed** — full-screen, snap-scrolling photos from both of you, newest first. Scroll vertically through days; if a day carries more than one photo, swipe sideways through them, with a caption naming the task and a segmented bar tracking position. Double-tap to give kudos, or use the button.
+- **Rivals** — a side-by-side table: perfect days, current and longest streaks, consistency, per-task completion rates, photos posted, kudos received.
 
 Pick who you are on first launch (stored locally); you can switch from the settings sheet. Your own progress is always clay, your partner's sage.
 
@@ -61,7 +61,10 @@ Neon project **75Hard** stores:
 
 - `challenge_meta` — challenge start date
 - `day_tasks` — task checkboxes per profile per day
-- `photos` — compressed progress pics (JPEG bytes)
+- `photos` — compressed pics (JPEG bytes), keyed `(profile_id, day_date, slot)`.
+  `slot` is `day` for the daily progress frame, or a task id for an optional
+  per-task photo. The column and the widened primary key are added
+  automatically on first request; no manual migration is needed.
 - `reactions` — kudos between profiles, created automatically on first use
 
 ## Project structure
@@ -70,7 +73,7 @@ Neon project **75Hard** stores:
 index.html        Frontend PWA (single file, no build step)
 api/              Vercel serverless routes
   state.js        Load/save tasks
-  photos.js       Upload/view/delete pics
+  photos.js       Upload/view/delete pics (per slot)
   reactions.js    Kudos between profiles
   reset.js        Start a new challenge
 manifest.json     PWA install config
