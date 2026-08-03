@@ -62,7 +62,30 @@ Neon project **75Hard** stores:
 - `challenge_meta` — challenge start date
 - `day_tasks` — task checkboxes per profile per day
 - `photos` — compressed progress pics (JPEG bytes)
-- `reactions` — kudos between profiles, created automatically on first use
+- `reactions` — kudos between profiles
+
+All four are created on the first request (`CREATE TABLE IF NOT EXISTS`, in
+`api/lib/db.js`), so pointing `DATABASE_URL` at an empty Neon database is
+enough — there is no migration step to run by hand.
+
+## Troubleshooting
+
+**"Server unreachable" / "offline" in the app.** The phone is fine; the app is
+telling you `GET /api/state` failed. Open `/api/health` on the deployed URL for
+the specific cause:
+
+```json
+{ "ok": true, "checks": { "api": "ok", "databaseUrl": "set", "database": "ok", "schema": "ok" } }
+```
+
+- `databaseUrl: "missing"` — `DATABASE_URL` is not set for the environment you
+  deployed to. Add it under **Project → Settings → Environment Variables** for
+  **Production**, then redeploy. Adding a variable does not update the running
+  deployment on its own.
+- `database: "failed"` — the string is set but Neon did not answer. Confirm the
+  project still exists and that you copied the **pooled** connection string.
+- A 404 on `/api/health` — the serverless functions did not deploy at all, so
+  none of `/api/*` exists. Check the Vercel build log for the `api/` directory.
 
 ## Project structure
 

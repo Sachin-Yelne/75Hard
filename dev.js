@@ -162,6 +162,12 @@ async function demoApi(pathname, req, res, url) {
     res.setHeader('Content-Type', 'image/png');
     return res.status(200).send(buf);
   }
+  if (pathname === '/api/health') {
+    return res.status(200).json({
+      ok: true,
+      checks: { api: 'ok', databaseUrl: 'demo', database: 'demo', schema: 'demo' }
+    });
+  }
   if (pathname === '/api/reset') {
     demo.data = { sachin: {}, aarya: {} };
     demo.photoDays = { sachin: [], aarya: [] };

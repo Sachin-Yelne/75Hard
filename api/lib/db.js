@@ -1,13 +1,103 @@
 const { neon } = require('@neondatabase/serverless');
 
 let sql;
+let schemaReady = null;
 
 function getSql() {
   if (!process.env.DATABASE_URL) {
-    throw new Error('DATABASE_URL is not configured');
+    const err = new Error('DATABASE_URL is not configured');
+    err.code = 'NO_DATABASE_URL';
+    throw err;
   }
   if (!sql) sql = neon(process.env.DATABASE_URL);
   return sql;
 }
 
-module.exports = { getSql };
+// challenge_meta, day_tasks and photos used to be expected to already exist —
+// only `reactions` created itself. A database that had never been set up by
+// hand therefore failed every request, which the UI reported as the generic
+// "Server unreachable". Create all four on demand instead; IF NOT EXISTS
+// leaves an already-populated database untouched.
+async function createSchema(s) {
+  await s`
+    CREATE TABLE IF NOT EXISTS challenge_meta (
+      id         integer PRIMARY KEY,
+      start_date date NOT NULL
+    )
+  `;
+  await s`
+    CREATE TABLE IF NOT EXISTS day_tasks (
+      profile_id text NOT NULL,
+      day_date   date NOT NULL,
+      tasks      jsonb NOT NULL,
+      PRIMARY KEY (profile_id, day_date)
+    )
+  `;
+  await s`
+    CREATE TABLE IF NOT EXISTS photos (
+      profile_id   text NOT NULL,
+      day_date     date NOT NULL,
+      content_type text NOT NULL DEFAULT 'image/jpeg',
+      data         bytea NOT NULL,
+      updated_at   timestamptz NOT NULL DEFAULT now(),
+      PRIMARY KEY (profile_id, day_date)
+    )
+  `;
+  await s`
+    CREATE TABLE IF NOT EXISTS reactions (
+      from_profile text NOT NULL,
+      to_profile   text NOT NULL,
+      day_date     date NOT NULL,
+      emoji        text NOT NULL,
+      created_at   timestamptz NOT NULL DEFAULT now(),
+      PRIMARY KEY (from_profile, to_profile, day_date, emoji)
+    )
+  `;
+}
+
+// Memoised per warm instance, but a failure clears the memo so the next
+// request retries rather than caching a broken database forever.
+function ensureSchema(s) {
+  if (!schemaReady) {
+    schemaReady = createSchema(s).catch((err) => {
+      schemaReady = null;
+      throw err;
+    });
+  }
+  return schemaReady;
+}
+
+/**
+ * Resolve a ready-to-use `sql` tag, or answer the request with a specific
+ * error and return null. Handlers used to call getSql() at the top level,
+ * outside their try/catch, so a missing DATABASE_URL crashed the function and
+ * Vercel returned an opaque 500.
+ */
+async function connect(res) {
+  let s;
+  try {
+    s = getSql();
+  } catch (err) {
+    console.error(err);
+    res.status(503).json({
+      error: 'Database not configured — set DATABASE_URL in Vercel',
+      code: 'NO_DATABASE_URL'
+    });
+    return null;
+  }
+
+  try {
+    await ensureSchema(s);
+  } catch (err) {
+    console.error(err);
+    res.status(503).json({
+      error: 'Database unreachable — check DATABASE_URL and that Neon is awake',
+      code: 'DB_UNAVAILABLE'
+    });
+    return null;
+  }
+
+  return s;
+}
+
+module.exports = { getSql, ensureSchema, connect };

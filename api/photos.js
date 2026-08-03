@@ -1,9 +1,11 @@
-const { getSql } = require('./lib/db');
+const { connect } = require('./lib/db');
 
 const PROFILES = ['sachin', 'aarya'];
 
 module.exports = async function handler(req, res) {
-  const sql = getSql();
+  const sql = await connect(res);
+  if (!sql) return;
+
   const profileId = req.query.profile || req.body?.profileId;
   const date = req.query.date || req.body?.date;
 
