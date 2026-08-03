@@ -6,10 +6,10 @@ A two-person PWA for the 75 Hard challenge — daily tasks, streaks, head-to-hea
 
 Four tabs, phone-first:
 
-- **Today** — the day number set large, a five-segment rule (one per task), streak, a live countdown to local midnight, and your partner's progress underneath. Workout One, Workout Two and Read each carry an optional camera; tap it to attach a photo, or ignore it. Diet starts ticked — you only touch it to record a day you didn't keep it. Completing all five holds a full-screen typographic moment for a second and a half, then returns you to the day.
+- **Today** — the day number set large, a five-segment rule (one per task), streak, a live countdown to local midnight, and your partner's progress underneath. Workout One, Workout Two and Read each carry an optional camera; Diet carries one you can use over and over, so snacks and dinner all land on the same day. Diet starts ticked — you only touch it to record a day you didn't keep it. Completing all five holds a full-screen typographic moment for a second and a half, then returns you to the day.
 - **Water** is logged incrementally rather than ticked. Tap the row to open the tracker, then tap a vessel — a 16 oz bottle, a 32 oz tumbler, whatever you keep — to pour it toward the gallon. The row's own bottom hairline fills as you go, and the task checks itself at 128 oz. Undo removes the last pour; the checkbox is still there as a shortcut for filling or clearing the day outright.
 - **Wall** — the 75-day grid for both people, with missed days, photo markers, and a milestone list.
-- **Feed** — full-screen, snap-scrolling photos from both of you, newest first. Scroll vertically through days; if a day carries more than one photo, swipe sideways through them, with a caption naming the task and a segmented bar tracking position. Double-tap to give kudos, or use the button.
+- **Feed** — one day per screen, newest first, each rendered as a collage of everything logged that day. A lone frame fills the screen; more than one tiles into a grid, and past six the last tile carries a `+N`. Tap any tile to open the full-screen viewer, where you swipe between the day's frames and double-tap to give kudos. The kudos button sits on the collage itself.
 - **Rivals** — a side-by-side table: perfect days, current and longest streaks, consistency, per-task completion rates, photos posted, kudos received.
 
 Pick who you are on first launch (stored locally); you can switch from the settings sheet. Your own progress is always clay, your partner's sage.
@@ -64,7 +64,9 @@ Neon project **75Hard** stores:
 - `day_tasks` — task checkboxes per profile per day
 - `photos` — compressed pics (JPEG bytes), keyed `(profile_id, day_date, slot)`.
   `slot` is `day` for the daily progress frame, or a task id for an optional
-  per-task photo.
+  per-task photo. A task marked `multi` stores each shot under `id#<epoch ms>`
+  so a day can hold several — the key makes one row per slot, so reusing the
+  bare id would overwrite. `slot` is a text column, so this needed no migration.
 - `reactions` — kudos between profiles
 
 All four are created on the first request (`CREATE TABLE IF NOT EXISTS`, in
@@ -114,6 +116,7 @@ sw.js             Offline shell cache
 - `index.html` is served network-first by the service worker, so a redeploy reaches both phones instead of being pinned to a cached shell.
 - Reaction rows are written with the token `kudos`; emoji tokens from the previous build still validate and still count.
 - Diet carries `auto:true`: opening the app on a day writes the tick into that day's record, so you only untick it to log a failure. It is seeded on check-in rather than defaulted at read time — a read-time default would credit Diet on days nobody opened the app and would rewrite past days' streaks and rates. A day you never open stays at 0/5.
+- Diet takes several photos a day (`multi:true`), capped at 12; every other camera holds one. `slotBase()`/`slotLabel()` read through the `#` suffix, and `isKnownSlot()` accepts a stamped slot only for a multi task, so a stray `read#123` is rejected on both client and server.
 - Water had a camera and no longer does. `knownPhotos()` filters the photos map on load to slots in `SLOT_ORDER`, so rows left behind by a retired slot are ignored by the feed, the Wall markers and the Rivals tally alike — without it they would be invisible yet still counted. `api/photos.js` still accepts the `water` slot so any stray rows can be deleted later.
 - Water totals live in the existing `day_tasks.tasks` JSONB as `waterOz` and `waterLog`, so no schema change was needed. The `water` boolean stays derived from `waterOz >= 128`, which keeps streaks, the wall and completion logic untouched. Days ticked before the meter existed read as a full gallon.
 - Your vessels are personal kit rather than shared progress, so they live in `localStorage` per profile. They don't follow you to a second device — move them to a table if that becomes annoying.
