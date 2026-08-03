@@ -84,6 +84,7 @@ sw.js             Offline shell cache
 ## Notes
 
 - Photos are resized on-device before upload (max ~1200px, JPEG). Max 4MB after compression.
+- The photo inputs deliberately omit the `capture` attribute. With it, iOS jumps straight to the rear camera and the photo library is unreachable, so a shot taken earlier can never be used. Without it, iOS offers Photo Library / Take Photo / Choose File — live capture is one extra tap, and the library and front camera stay available.
 - All day boundaries use the device's **local** date, so the day rolls over at local midnight rather than UTC.
 - `index.html` is served network-first by the service worker, so a redeploy reaches both phones instead of being pinned to a cached shell.
 - The `reactions` table is created lazily by `api/reactions.js`; if it is unavailable the rest of the app still works, just without kudos. New rows are written with the token `kudos`; emoji tokens from the previous build still validate and still count.
