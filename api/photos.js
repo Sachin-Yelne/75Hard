@@ -2,7 +2,19 @@ const { connect } = require('./lib/db');
 
 const PROFILES = ['sachin', 'aarya'];
 // 'day' is the daily progress frame; the rest attach to an individual task.
+// 'water' has no camera any more but stays accepted so frames posted when it
+// did can still be deleted.
 const SLOTS = ['day', 'workout1', 'workout2', 'water', 'read', 'diet'];
+
+// A task that takes several shots a day stores each under `id#<epoch ms>`,
+// since the table is keyed (profile_id, day_date, slot). Accept that shape as
+// well as the bare id.
+const MULTI = ['diet'];
+const validSlot = (slot) => {
+  if (SLOTS.includes(slot)) return true;
+  const [base, stamp, ...rest] = String(slot).split('#');
+  return !rest.length && MULTI.includes(base) && /^\d{1,15}$/.test(stamp || '');
+};
 
 module.exports = async function handler(req, res) {
   const sql = await connect(res);
@@ -12,7 +24,7 @@ module.exports = async function handler(req, res) {
   const date = req.query.date || req.body?.date;
   const slot = req.query.slot || req.body?.slot || 'day';
 
-  if (!PROFILES.includes(profileId) || !date || !SLOTS.includes(slot)) {
+  if (!PROFILES.includes(profileId) || !date || !validSlot(slot)) {
     return res.status(400).json({ error: 'profile, date and a valid slot are required' });
   }
 

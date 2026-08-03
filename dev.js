@@ -54,7 +54,11 @@ let demoStart;
     if (i % 2 === 0) {
       demo.photos.sachin[day] = ['day'];
       if (i % 4 === 0) demo.photos.sachin[day].push('workout1', 'read');
-      if (i % 6 === 0) demo.photos.sachin[day].push('water');
+      // several diet shots on some days, as snacks and dinner would land
+      if (i % 6 === 0) demo.photos.sachin[day].push(
+        `diet#${1750000000000 + i * 86400000 + 3600000}`,
+        `diet#${1750000000000 + i * 86400000 + 7200000}`,
+        `diet#${1750000000000 + i * 86400000 + 9000000}`);
     }
     if (i % 3 === 0) {
       demo.photos.aarya[day] = i % 6 === 0 ? ['day', 'workout2'] : ['workout1'];
