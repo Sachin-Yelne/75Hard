@@ -198,6 +198,7 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
   display:flex;align-items:center;gap:13px;width:100%;
   margin-top:26px;padding:16px 16px;
   border:1px solid var(--rule-2);
+  cursor:pointer;                 /* empty state is a <label>, not a button */
 }
 .frame .ic{width:17px;height:17px;color:var(--bone-2);flex-shrink:0;}
 .frame .meta{flex:1;min-width:0;}
@@ -876,6 +877,30 @@ function viewToday(){
       ${TASKS.map(t => taskRow(you, iso, t, true)).join('')}
     </div>
 
+    ${(() => {
+      const shots = photoCount(you, iso);
+      const dayPic = hasPhoto(you, iso, DAY_SLOT);
+      const label = `
+        <span class="meta">
+          <span class="nm">${dayPic ? 'Frame logged' : "Today's frame"}</span>
+          <span class="sub">${dayPic
+            ? (shots > 1 ? `${shots} photos today — tap to manage` : 'Tap to replace or remove')
+            : (shots ? `Optional — ${shots} photo${shots>1?'s':''} today` : 'Optional')}</span>
+        </span>`;
+      // Same rule as the per-task cameras: empty goes straight to the picker,
+      // filled opens the day sheet to view, replace or remove.
+      return dayPic
+        ? `<button class="frame filled" id="frameBtn">
+             <img src="${api.photoUrl(you, iso, DAY_SLOT)}" alt="">
+             ${label}
+           </button>`
+        : `<label class="frame" id="frameBtn">
+             <span class="ic">${ICON.camera}</span>
+             ${label}
+             <input type="file" accept="image/*" data-shot="${DAY_SLOT}" hidden>
+           </label>`;
+    })()}
+
     <div class="rival" data-who="them">
       <div class="rival-head">
         <span class="who">${nameOf(rival)}</span>
@@ -883,23 +908,6 @@ function viewToday(){
       </div>
       <div class="seg">${TASKS.map(t => `<i class="${entryOf(rival,iso)[t.id]?'on':''}"></i>`).join('')}</div>
     </div>
-
-    ${(() => {
-      const shots = photoCount(you, iso);
-      const dayPic = hasPhoto(you, iso, DAY_SLOT);
-      return `
-      <button class="frame ${dayPic?'filled':''}" id="frameBtn">
-        ${dayPic
-          ? `<img src="${api.photoUrl(you, iso, DAY_SLOT)}" alt="">`
-          : `<span class="ic">${ICON.camera}</span>`}
-        <span class="meta">
-          <span class="nm">${dayPic ? 'Frame logged' : "Today's frame"}</span>
-          <span class="sub">${dayPic
-            ? (shots > 1 ? `${shots} photos today — tap to manage` : 'Tap to replace or remove')
-            : (shots ? `Optional — ${shots} photo${shots>1?'s':''} today` : 'Optional')}</span>
-        </span>
-      </button>`;
-    })()}
   </div>`;
 }
 
@@ -1165,7 +1173,9 @@ function wire(){
     b.onclick = () => openDay(me(), todayISO());
   });
 
-  const frame = el.querySelector('#frameBtn');
+  // Only the filled card opens the sheet; an empty one is a <label> whose
+  // hidden input is already wired by the [data-shot] pass above.
+  const frame = el.querySelector('button#frameBtn');
   if(frame) frame.onclick = () => openDay(me(), todayISO());
 
   el.querySelectorAll('#switch button').forEach(b => {
