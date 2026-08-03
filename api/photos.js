@@ -1,6 +1,8 @@
 const { connect } = require('./lib/db');
+const { notify } = require('./lib/push');
 
 const PROFILES = ['sachin', 'aarya'];
+const NAMES = { sachin: 'Sachin', aarya: 'Aarya' };
 // 'day' is the daily progress frame; the rest attach to an individual task.
 // 'water' has no camera any more but stays accepted so frames posted when it
 // did can still be deleted.
@@ -69,6 +71,16 @@ module.exports = async function handler(req, res) {
         ON CONFLICT (profile_id, day_date, slot)
         DO UPDATE SET content_type = EXCLUDED.content_type, data = EXCLUDED.data, updated_at = now()
       `;
+
+      // Diet alone can be a dozen shots a day, so this is deliberately once
+      // per person per day — the notification says "look", not "count".
+      const other = PROFILES.find((p) => p !== profileId);
+      await notify(sql, {
+        to: other, date, kind: `photo:${profileId}`,
+        title: `${NAMES[profileId] || profileId} posted`,
+        body: 'New frames on the feed.',
+        url: '/'
+      });
 
       return res.status(200).json({ ok: true });
     } catch (err) {

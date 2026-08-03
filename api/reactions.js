@@ -1,6 +1,8 @@
 const { connect } = require('./lib/db');
+const { notify } = require('./lib/push');
 
 const PROFILES = ['sachin', 'aarya'];
+const NAMES = { sachin: 'Sachin', aarya: 'Aarya' };
 // 'kudos' is what the current UI sends; the emoji are kept so rows written by
 // the previous build still validate and still count.
 const TOKENS = ['kudos', '🔥', '💪', '👏', '🫡', '❤️'];
@@ -53,6 +55,14 @@ module.exports = async function handler(req, res) {
         VALUES (${from}, ${to}, ${date}::date, ${emoji})
         ON CONFLICT DO NOTHING
       `;
+
+      // kudos are otherwise invisible until they next open the app
+      await notify(sql, {
+        to, date, kind: `kudos:${from}`,
+        title: 'Kudos',
+        body: `${NAMES[from] || from} gave you kudos.`
+      });
+
       return res.status(200).json({ ok: true, active: true });
     } catch (err) {
       console.error(err);

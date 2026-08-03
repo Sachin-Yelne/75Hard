@@ -75,6 +75,25 @@ async function createSchema(s) {
       PRIMARY KEY (from_profile, to_profile, day_date, emoji)
     )
   `;
+  await s`
+    CREATE TABLE IF NOT EXISTS push_subscriptions (
+      endpoint   text PRIMARY KEY,
+      profile_id text NOT NULL,
+      p256dh     text NOT NULL,
+      auth       text NOT NULL,
+      created_at timestamptz NOT NULL DEFAULT now()
+    )
+  `;
+  // one row per notification actually sent, so nothing rings twice
+  await s`
+    CREATE TABLE IF NOT EXISTS notifications_sent (
+      profile_id text NOT NULL,
+      day_date   date NOT NULL,
+      kind       text NOT NULL,
+      sent_at    timestamptz NOT NULL DEFAULT now(),
+      PRIMARY KEY (profile_id, day_date, kind)
+    )
+  `;
   await ensurePhotoSlot(s);
 }
 

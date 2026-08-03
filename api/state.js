@@ -1,6 +1,9 @@
 const { connect } = require('./lib/db');
+const { notify } = require('./lib/push');
 
 const PROFILES = ['sachin', 'aarya'];
+const NAMES = { sachin: 'Sachin', aarya: 'Aarya' };
+const TASK_IDS = ['diet', 'workout1', 'workout2', 'water', 'read'];
 
 module.exports = async function handler(req, res) {
   const sql = await connect(res);
@@ -54,6 +57,16 @@ module.exports = async function handler(req, res) {
         ON CONFLICT (profile_id, day_date)
         DO UPDATE SET tasks = EXCLUDED.tasks
       `;
+
+      // tell the other one when a day goes green
+      if (TASK_IDS.every((id) => tasks[id])) {
+        const other = PROFILES.find((p) => p !== profileId);
+        await notify(sql, {
+          to: other, date, kind: `complete:${profileId}`,
+          title: `${NAMES[profileId] || profileId} finished the day`,
+          body: `All ${TASK_IDS.length} done. Your turn.`
+        });
+      }
 
       return res.status(200).json({ ok: true });
     } catch (err) {
