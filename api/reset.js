@@ -1,4 +1,4 @@
-const { getSql } = require('./lib/db');
+const { connect } = require('./lib/db');
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -6,16 +6,15 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const sql = getSql();
+  const sql = await connect(res);
+  if (!sql) return;
+
   const startDate = (req.body && req.body.startDate) || new Date().toISOString().slice(0, 10);
 
   try {
     await sql`DELETE FROM day_tasks`;
     await sql`DELETE FROM photos`;
-    // Reactions are created lazily by /api/reactions, so this table may not exist yet.
-    try {
-      await sql`DELETE FROM reactions`;
-    } catch (_) {}
+    await sql`DELETE FROM reactions`;
     await sql`
       INSERT INTO challenge_meta (id, start_date)
       VALUES (1, ${startDate}::date)

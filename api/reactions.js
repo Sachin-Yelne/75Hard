@@ -1,36 +1,14 @@
-const { getSql } = require('./lib/db');
+const { connect } = require('./lib/db');
 
 const PROFILES = ['sachin', 'aarya'];
 // 'kudos' is what the current UI sends; the emoji are kept so rows written by
 // the previous build still validate and still count.
 const TOKENS = ['kudos', '🔥', '💪', '👏', '🫡', '❤️'];
 
-let tableReady = false;
-
-async function ensureTable(sql) {
-  if (tableReady) return;
-  await sql`
-    CREATE TABLE IF NOT EXISTS reactions (
-      from_profile text NOT NULL,
-      to_profile   text NOT NULL,
-      day_date     date NOT NULL,
-      emoji        text NOT NULL,
-      created_at   timestamptz NOT NULL DEFAULT now(),
-      PRIMARY KEY (from_profile, to_profile, day_date, emoji)
-    )
-  `;
-  tableReady = true;
-}
-
 module.exports = async function handler(req, res) {
-  const sql = getSql();
-
-  try {
-    await ensureTable(sql);
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: 'Reactions unavailable' });
-  }
+  // The reactions table is part of the shared schema connect() ensures.
+  const sql = await connect(res);
+  if (!sql) return;
 
   if (req.method === 'GET') {
     try {

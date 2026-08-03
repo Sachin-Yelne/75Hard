@@ -64,9 +64,32 @@ Neon project **75Hard** stores:
 - `day_tasks` — task checkboxes per profile per day
 - `photos` — compressed pics (JPEG bytes), keyed `(profile_id, day_date, slot)`.
   `slot` is `day` for the daily progress frame, or a task id for an optional
-  per-task photo. The column and the widened primary key are added
-  automatically on first request; no manual migration is needed.
-- `reactions` — kudos between profiles, created automatically on first use
+  per-task photo.
+- `reactions` — kudos between profiles
+
+All four are created on the first request (`CREATE TABLE IF NOT EXISTS`, in
+`api/lib/db.js`), and a `photos` table predating the `slot` column is widened
+in place at the same time. Pointing `DATABASE_URL` at an empty Neon database is
+enough — there is no migration step to run by hand.
+
+## Troubleshooting
+
+**"Server unreachable" / "offline" in the app.** The phone is fine; the app is
+telling you `GET /api/state` failed. Open `/api/health` on the deployed URL for
+the specific cause:
+
+```json
+{ "ok": true, "checks": { "api": "ok", "databaseUrl": "set", "database": "ok", "schema": "ok" } }
+```
+
+- `databaseUrl: "missing"` — `DATABASE_URL` is not set for the environment you
+  deployed to. Add it under **Project → Settings → Environment Variables** for
+  **Production**, then redeploy. Adding a variable does not update the running
+  deployment on its own.
+- `database: "failed"` — the string is set but Neon did not answer. Confirm the
+  project still exists and that you copied the **pooled** connection string.
+- A 404 on `/api/health` — the serverless functions did not deploy at all, so
+  none of `/api/*` exists. Check the Vercel build log for the `api/` directory.
 
 ## Project structure
 
@@ -77,6 +100,8 @@ api/              Vercel serverless routes
   photos.js       Upload/view/delete pics (per slot)
   reactions.js    Kudos between profiles
   reset.js        Start a new challenge
+  health.js       Config/database diagnostics
+  lib/db.js       Connection, schema bootstrap
 manifest.json     PWA install config
 sw.js             Offline shell cache
 ```
@@ -87,7 +112,7 @@ sw.js             Offline shell cache
 - The photo inputs deliberately omit the `capture` attribute. With it, iOS jumps straight to the rear camera and the photo library is unreachable, so a shot taken earlier can never be used. Without it, iOS offers Photo Library / Take Photo / Choose File — live capture is one extra tap, and the library and front camera stay available.
 - All day boundaries use the device's **local** date, so the day rolls over at local midnight rather than UTC.
 - `index.html` is served network-first by the service worker, so a redeploy reaches both phones instead of being pinned to a cached shell.
-- The `reactions` table is created lazily by `api/reactions.js`; if it is unavailable the rest of the app still works, just without kudos. New rows are written with the token `kudos`; emoji tokens from the previous build still validate and still count.
+- Reaction rows are written with the token `kudos`; emoji tokens from the previous build still validate and still count.
 - Water totals live in the existing `day_tasks.tasks` JSONB as `waterOz` and `waterLog`, so no schema change was needed. The `water` boolean stays derived from `waterOz >= 128`, which keeps streaks, the wall and completion logic untouched. Days ticked before the meter existed read as a full gallon.
 - Your vessels are personal kit rather than shared progress, so they live in `localStorage` per profile. They don't follow you to a second device — move them to a table if that becomes annoying.
 - Free Neon + Vercel tiers are enough for two people over 75 days.

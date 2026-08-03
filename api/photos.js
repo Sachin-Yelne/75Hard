@@ -1,24 +1,19 @@
-const { getSql, ensurePhotoSlot } = require('./lib/db');
+const { connect } = require('./lib/db');
 
 const PROFILES = ['sachin', 'aarya'];
 // 'day' is the daily progress frame; the rest attach to an individual task.
 const SLOTS = ['day', 'workout1', 'workout2', 'water', 'read', 'diet'];
 
 module.exports = async function handler(req, res) {
-  const sql = getSql();
+  const sql = await connect(res);
+  if (!sql) return;
+
   const profileId = req.query.profile || req.body?.profileId;
   const date = req.query.date || req.body?.date;
   const slot = req.query.slot || req.body?.slot || 'day';
 
   if (!PROFILES.includes(profileId) || !date || !SLOTS.includes(slot)) {
     return res.status(400).json({ error: 'profile, date and a valid slot are required' });
-  }
-
-  try {
-    await ensurePhotoSlot(sql);
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: 'Photo storage unavailable' });
   }
 
   if (req.method === 'GET') {

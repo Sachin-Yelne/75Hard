@@ -1,9 +1,10 @@
-const { getSql, ensurePhotoSlot } = require('./lib/db');
+const { connect } = require('./lib/db');
 
 const PROFILES = ['sachin', 'aarya'];
 
 module.exports = async function handler(req, res) {
-  const sql = getSql();
+  const sql = await connect(res);
+  if (!sql) return;
 
   if (req.method === 'GET') {
     try {
@@ -16,7 +17,6 @@ module.exports = async function handler(req, res) {
         WHERE profile_id = ANY(${PROFILES})
       `;
 
-      await ensurePhotoSlot(sql);
       const photoRows = await sql`
         SELECT profile_id, day_date::text AS day_date, slot
         FROM photos
