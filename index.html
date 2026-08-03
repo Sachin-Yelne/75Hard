@@ -910,7 +910,7 @@ function taskRow(prof, iso, t, editable){
     } else if(editable){
       shot = `<label class="shot-btn" aria-label="Add ${t.nm} photo">
                 <span class="ic">${ICON.camera}</span>
-                <input type="file" accept="image/*" capture="environment" data-shot="${t.id}" hidden>
+                <input type="file" accept="image/*" data-shot="${t.id}" hidden>
               </label>`;
     } else {
       shot = `<span class="shot-btn empty"></span>`;
@@ -1406,7 +1406,7 @@ function openDay(prof, iso){
       ${mine ? `
         <label class="btn primary" id="frameLabel" style="cursor:pointer;margin-top:0">
           <span class="txt">${hasPhoto(prof, iso, DAY_SLOT) ? 'Replace progress frame' : 'Add progress frame'}</span>
-          <input type="file" accept="image/*" capture="environment" data-sheet-shot="${DAY_SLOT}" hidden>
+          <input type="file" accept="image/*" data-sheet-shot="${DAY_SLOT}" hidden>
         </label>` : ''}
 
       <div class="tasks" style="margin-top:22px;border-top:none">
