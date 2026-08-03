@@ -485,16 +485,20 @@ const TOTAL_DAYS = 75;
 
 // `photo:true` gives the task an optional camera slot. Photos never gate
 // completion — a task is done when it's checked, with or without one.
+// `auto:true` starts the task ticked on any day you check in — it's the one
+// you're assumed to be keeping unless you say otherwise, so you only touch it
+// to record a failure. See seedDay(): days you never open stay blank, so a
+// skipped day is never credited as a success you didn't report.
 const TASKS = [
-  { id:'diet',     nm:'Diet',        sub:'No cheat meals, no alcohol' },
+  { id:'diet',     nm:'Diet',        sub:'No cheat meals, no alcohol',        auto:true },
   { id:'workout1', nm:'Workout One', sub:'45 minutes',            photo:true },
   { id:'workout2', nm:'Workout Two', sub:'45 minutes, outdoors',  photo:true },
-  { id:'water',    nm:'Water',       sub:'1 gallon',              photo:true, meter:true },
+  { id:'water',    nm:'Water',       sub:'1 gallon',              meter:true },
   { id:'read',     nm:'Read',        sub:'10 pages, non-fiction', photo:true }
 ];
 
 // Photo slots in the order they appear in a feed carousel. 'day' is the daily
-// progress frame; the rest mirror TASKS ids.
+// progress frame; the rest mirror the TASKS ids that carry a camera.
 const DAY_SLOT = 'day';
 const SLOT_ORDER = [DAY_SLOT, ...TASKS.filter(t => t.photo).map(t => t.id)];
 const SLOT_LABEL = {
@@ -660,6 +664,28 @@ function fmtLeft(ms){
 
 /* ═══════════ selectors ═══════════ */
 const entryOf = (p, iso) => state.data[p]?.[iso] || {};
+
+const AUTO_TASKS = TASKS.filter(t => t.auto).map(t => t.id);
+
+/*
+ * Create a day's record pre-ticked for the auto tasks, if it doesn't exist yet.
+ * Returns true when it actually created one, so callers know to persist it.
+ *
+ * Deliberately not a read-time default: deriving "blank means done" would
+ * retroactively credit every untouched day in the challenge, including days
+ * nobody opened the app. Seeding on check-in keeps a skipped day honestly at
+ * 0/5 and leaves history alone.
+ */
+function seedDay(p, iso){
+  const days = (state.data[p] ||= {});
+  const entry = (days[iso] ||= {});
+  let changed = false;
+  for(const id of AUTO_TASKS){
+    // only an absent key seeds — an explicit false is you recording a failure
+    if(entry[id] === undefined){ entry[id] = true; changed = true; }
+  }
+  return changed;
+}
 const doneCount = (p, iso) => TASKS.reduce((n,t) => n + (entryOf(p,iso)[t.id] ? 1 : 0), 0);
 const isComplete = (p, iso) => doneCount(p, iso) === TASKS.length;
 /* ── water ── */
@@ -690,6 +716,23 @@ const slotsFor = (p, iso) => {
   const have = state.photos[p]?.[iso] || [];
   return SLOT_ORDER.filter(s => have.includes(s));
 };
+/*
+ * Keep only slots the app still knows about. Retiring a slot (water carried a
+ * camera once) leaves its rows in the database; unfiltered they would be
+ * invisible in the feed while photoCount and the Rivals tally kept counting
+ * them — a photo marker on the Wall pointing at something you can't open.
+ */
+function knownPhotos(byProfile){
+  const out = { sachin:{}, aarya:{} };
+  for(const p of Object.keys(out)){
+    for(const [iso, slots] of Object.entries(byProfile?.[p] || {})){
+      const keep = (slots || []).filter(s => SLOT_ORDER.includes(s));
+      if(keep.length) out[p][iso] = keep;
+    }
+  }
+  return out;
+}
+
 const hasPhoto = (p, iso, slot) => (state.photos[p]?.[iso] || []).includes(slot);
 const photoCount = (p, iso) => (state.photos[p]?.[iso] || []).length;
 const totalPhotos = p => Object.values(state.photos[p] || {}).reduce((n, a) => n + a.length, 0);
@@ -825,7 +868,7 @@ function renderPicker(){
       state.me = b.dataset.pick;
       localStorage.setItem('me', state.me);
       haptic(14);
-      render();
+      checkIn().finally(render);
     };
   });
 }
@@ -1240,7 +1283,7 @@ function wireReel(post, p, iso){
 /* ═══════════ actions ═══════════ */
 async function toggleTask(taskId, row){
   const you = me(), iso = todayISO();
-  if(!state.data[you][iso]) state.data[you][iso] = {};
+  seedDay(you, iso);
 
   // ticking the water box is a shortcut for "filled it" / "actually didn't"
   if(TASKS.find(t => t.id === taskId)?.meter){
@@ -1490,7 +1533,7 @@ function openDay(prof, iso){
       b.onclick = async () => {
         const id = b.dataset.task;
         const row = b.closest('.task');
-        if(!state.data[prof][iso]) state.data[prof][iso] = {};
+        seedDay(prof, iso);
         if(TASKS.find(t => t.id === id)?.meter){
           const done = !!state.data[prof][iso][id];
           await setWater(prof, iso, done ? 0 : WATER_GOAL_OZ, done ? [] : [WATER_GOAL_OZ]);
@@ -1675,7 +1718,8 @@ function openWater(prof, iso){
 }
 
 async function setWater(prof, iso, oz, log){
-  const entry = (state.data[prof][iso] ||= {});
+  seedDay(prof, iso);
+  const entry = state.data[prof][iso];
   const was = isComplete(prof, iso);
   entry.waterOz = Math.max(0, Math.round(oz));
   entry.waterLog = log;
@@ -1762,7 +1806,7 @@ async function loadState(){
     const r = await api.getState();
     state.startDate = r.startDate;
     state.data = r.data || { sachin:{}, aarya:{} };
-    state.photos = r.photos || { sachin:{}, aarya:{} };
+    state.photos = knownPhotos(r.photos);
     state.online = true;
   }catch(err){
     state.online = false;
@@ -1775,16 +1819,35 @@ async function loadState(){
   }catch(_){ state.reactions = []; }
 }
 
+/*
+ * Opening the app on a given day is the check-in that starts the auto tasks
+ * ticked. Persist it so your partner's phone sees the same day you do —
+ * without a write, they'd read 0/5 while you read 1/5.
+ *
+ * Skipped while offline: seeding locally against a state we couldn't load
+ * would invent a day record that never reaches the server.
+ */
+async function checkIn(){
+  const you = me();
+  if(!you || !state.online) return;
+  const iso = todayISO();
+  if(!seedDay(you, iso)) return;
+  try{ await api.saveDay(you, iso, state.data[you][iso]); }
+  catch(_){ state.online = false; }
+}
+
 let lastDay = null;
 document.addEventListener('visibilitychange', async () => {
   if(document.hidden) return;
   await loadState();
+  await checkIn();
   if(lastDay !== todayISO()){ lastDay = todayISO(); state.tab = 'today'; }
   render();
 });
 
 (async function init(){
   await loadState();
+  await checkIn();
   lastDay = todayISO();
   render();
   if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
