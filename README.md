@@ -6,7 +6,7 @@ A two-person PWA for the 75 Hard challenge — daily tasks, streaks, head-to-hea
 
 Four tabs, phone-first:
 
-- **Today** — the day number set large, a five-segment rule (one per task), streak, a live countdown to local midnight, and your partner's progress underneath. Workout One, Workout Two, Water and Read each carry an optional camera; tap it to attach a photo, or ignore it. Completing all five holds a full-screen typographic moment for a second and a half, then returns you to the day.
+- **Today** — the day number set large, a five-segment rule (one per task), streak, a live countdown to local midnight, and your partner's progress underneath. Workout One, Workout Two and Read each carry an optional camera; tap it to attach a photo, or ignore it. Diet starts ticked — you only touch it to record a day you didn't keep it. Completing all five holds a full-screen typographic moment for a second and a half, then returns you to the day.
 - **Water** is logged incrementally rather than ticked. Tap the row to open the tracker, then tap a vessel — a 16 oz bottle, a 32 oz tumbler, whatever you keep — to pour it toward the gallon. The row's own bottom hairline fills as you go, and the task checks itself at 128 oz. Undo removes the last pour; the checkbox is still there as a shortcut for filling or clearing the day outright.
 - **Wall** — the 75-day grid for both people, with missed days, photo markers, and a milestone list.
 - **Feed** — full-screen, snap-scrolling photos from both of you, newest first. Scroll vertically through days; if a day carries more than one photo, swipe sideways through them, with a caption naming the task and a segmented bar tracking position. Double-tap to give kudos, or use the button.
@@ -113,6 +113,8 @@ sw.js             Offline shell cache
 - All day boundaries use the device's **local** date, so the day rolls over at local midnight rather than UTC.
 - `index.html` is served network-first by the service worker, so a redeploy reaches both phones instead of being pinned to a cached shell.
 - Reaction rows are written with the token `kudos`; emoji tokens from the previous build still validate and still count.
+- Diet carries `auto:true`: opening the app on a day writes the tick into that day's record, so you only untick it to log a failure. It is seeded on check-in rather than defaulted at read time — a read-time default would credit Diet on days nobody opened the app and would rewrite past days' streaks and rates. A day you never open stays at 0/5.
+- Water had a camera and no longer does. It keeps `hadPhoto:true` so frames already posted stay visible and removable; only `photo:true` offers the camera. `api/photos.js` still accepts the `water` slot so those frames can be deleted.
 - Water totals live in the existing `day_tasks.tasks` JSONB as `waterOz` and `waterLog`, so no schema change was needed. The `water` boolean stays derived from `waterOz >= 128`, which keeps streaks, the wall and completion logic untouched. Days ticked before the meter existed read as a full gallon.
 - Your vessels are personal kit rather than shared progress, so they live in `localStorage` per profile. They don't follow you to a second device — move them to a table if that becomes annoying.
 - Free Neon + Vercel tiers are enough for two people over 75 days.

@@ -493,14 +493,19 @@ const TASKS = [
   { id:'diet',     nm:'Diet',        sub:'No cheat meals, no alcohol',        auto:true },
   { id:'workout1', nm:'Workout One', sub:'45 minutes',            photo:true },
   { id:'workout2', nm:'Workout Two', sub:'45 minutes, outdoors',  photo:true },
-  { id:'water',    nm:'Water',       sub:'1 gallon',              photo:true, meter:true },
+  // Water carried a camera once. `hadPhoto` keeps frames already posted
+  // viewable and removable without offering the camera again — dropping the
+  // slot outright would hide them while they still counted toward photo
+  // markers and the Rivals tally.
+  { id:'water',    nm:'Water',       sub:'1 gallon',              hadPhoto:true, meter:true },
   { id:'read',     nm:'Read',        sub:'10 pages, non-fiction', photo:true }
 ];
 
 // Photo slots in the order they appear in a feed carousel. 'day' is the daily
-// progress frame; the rest mirror TASKS ids.
+// progress frame; the rest mirror TASKS ids. Retired slots stay listed so
+// existing frames keep rendering — only `photo:true` offers a camera.
 const DAY_SLOT = 'day';
-const SLOT_ORDER = [DAY_SLOT, ...TASKS.filter(t => t.photo).map(t => t.id)];
+const SLOT_ORDER = [DAY_SLOT, ...TASKS.filter(t => t.photo || t.hadPhoto).map(t => t.id)];
 const SLOT_LABEL = {
   day:'Progress frame',
   ...Object.fromEntries(TASKS.map(t => [t.id, t.nm]))
@@ -957,7 +962,9 @@ function taskRow(prof, iso, t, editable){
     ? (oz ? `${oz} of ${WATER_GOAL_OZ} oz` : `${WATER_GOAL_OZ} oz — tap to log`)
     : t.sub;
   let shot = '';
-  if(t.photo){
+  // A retired slot still shows a frame it already has, so you can open the day
+  // and remove it — it just never offers the empty camera again.
+  if(t.photo || (t.hadPhoto && pic)){
     if(pic){
       shot = `<button class="shot-btn filled" data-open-slot="${t.id}" aria-label="${t.nm} photo">
                 <img src="${api.photoUrl(prof, iso, t.id)}" alt="">
