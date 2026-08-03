@@ -94,6 +94,11 @@ variables → Actions**:
 Run it by hand from the Actions tab to test. `notifications_sent` makes every
 alert once-per-person-per-day, so an extra run is harmless.
 
+Until those secrets exist the daily run skips quietly rather than failing —
+notifications are opt-in, and an unconfigured feature shouldn't mail you a
+red X every morning. A manual run does fail, since that one is you asking
+whether it works.
+
 ## Install on iPhone
 
 1. Open your deployed HTTPS URL in **Safari**.

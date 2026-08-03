@@ -22,7 +22,12 @@ jobs:
         run: |
           if [ -z "$APP_URL" ] || [ -z "$CRON_SECRET" ]; then
             echo "APP_URL or CRON_SECRET is not set — add them under Settings → Secrets → Actions."
-            exit 1
+            # Notifications are opt-in. Until they are configured a scheduled run
+            # skips quietly rather than mailing a red X every morning; a manual
+            # run is someone asking whether it works, so that one fails loudly.
+            if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then exit 1; fi
+            echo "Scheduled run — skipping until notifications are set up."
+            exit 0
           fi
           code=$(curl -sS -o /tmp/out.json -w '%{http_code}' \
             -H "Authorization: Bearer $CRON_SECRET" \
