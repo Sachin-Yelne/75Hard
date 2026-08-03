@@ -3,697 +3,517 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#08090C">
+<meta name="theme-color" content="#0A0A0B">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="75 Hard">
+<meta name="apple-mobile-web-app-title" content="75 HARD">
 <link rel="manifest" href="/manifest.json">
 <link rel="icon" href="/icons/icon-192.png" type="image/png">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<title>75 Hard</title>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<title>75 HARD</title>
 <style>
 :root{
-  --bg:#08090C;
-  --bg-soft:#0D0F15;
-  --surface:#13161E;
-  --surface-2:#1A1E28;
-  --surface-3:#232833;
-  --line:rgba(255,255,255,.07);
-  --line-2:rgba(255,255,255,.14);
+  --ink:#0A0A0B;
+  --ink-2:#0F0F11;
+  --ink-3:#141416;
+  --bone:#F2F1ED;
+  --bone-2:#8C8A85;
+  --bone-3:#55534F;
+  --rule:#1E1E20;
+  --rule-2:#2C2C2F;
 
-  --txt:#F4F6F9;
-  --txt-2:#98A0AE;
-  --txt-3:#5D6472;
+  --you:#C8613A;
+  --them:#6E7F6A;
+  --miss:#6A3A2B;
 
-  --fire:#FF6B35;
-  --fire-2:#F7386B;
-  --violet:#A855F7;
-  --violet-2:#5B6CFF;
-  --lime:#B8FF3B;
-  --green:#22C55E;
-  --danger:#FF3B5C;
-
-  --sachin:#FF6B35;
-  --sachin-2:#F7386B;
-  --aarya:#A855F7;
-  --aarya-2:#5B6CFF;
-
-  --r:16px;
-  --r-lg:24px;
-  --display:'Archivo',system-ui,sans-serif;
-  --body:'Inter',system-ui,-apple-system,sans-serif;
+  --display:'Anton',Impact,sans-serif;
+  --cond:'Barlow Condensed',sans-serif;
+  --body:'Inter',system-ui,sans-serif;
 
   --safe-top:env(safe-area-inset-top,0px);
   --safe-bot:env(safe-area-inset-bottom,0px);
-  --tabbar:calc(62px + var(--safe-bot));
-  --col:560px;
+  --nav:calc(56px + var(--safe-bot));
+  --col:520px;
+  --pad:20px;
 }
+
+[data-who="you"]{--p:var(--you);}
+[data-who="them"]{--p:var(--them);}
 
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 html,body{margin:0;padding:0;height:100%;overflow:hidden;}
 body{
-  background:var(--bg);
-  color:var(--txt);
+  background:var(--ink);color:var(--bone);
   font-family:var(--body);
   -webkit-font-smoothing:antialiased;
   overscroll-behavior:none;
 }
-button{font-family:inherit;color:inherit;background:none;border:none;padding:0;cursor:pointer;}
-h1,h2,h3,h4{margin:0;font-family:var(--display);}
-.num{font-variant-numeric:tabular-nums;}
+button{font-family:inherit;color:inherit;background:none;border:none;padding:0;cursor:pointer;text-align:left;}
+svg{width:100%;height:100%;fill:currentColor;display:block;}
 
-/* profile accent — set on any container */
-[data-p="sachin"]{--p:var(--sachin);--p2:var(--sachin-2);}
-[data-p="aarya"]{--p:var(--aarya);--p2:var(--aarya-2);}
+/* type primitives */
+.eyebrow{
+  font-family:var(--cond);font-weight:600;font-size:11px;line-height:1;
+  letter-spacing:.22em;text-transform:uppercase;color:var(--bone-3);
+}
+.lbl{
+  font-family:var(--cond);font-weight:600;font-size:13px;
+  letter-spacing:.14em;text-transform:uppercase;
+}
+.num{font-family:var(--display);font-weight:400;letter-spacing:-.01em;font-feature-settings:"tnum";}
+.rule{height:1px;background:var(--rule);width:100%;}
 
-/* ══════════════ shell ══════════════ */
+/* ── shell ─────────────────────────────── */
 #screen{
-  position:fixed;inset:0;bottom:0;
-  overflow-y:auto;overflow-x:hidden;
+  position:fixed;inset:0;overflow-y:auto;overflow-x:hidden;
   -webkit-overflow-scrolling:touch;
-  padding:calc(var(--safe-top) + 8px) 18px calc(var(--tabbar) + 28px);
+  padding:calc(var(--safe-top) + 10px) var(--pad) calc(var(--nav) + 40px);
 }
 #screen.flush{padding:0;overflow:hidden;}
-
-/* Phone-first, but it still has to look deliberate in a desktop browser:
-   hold everything to a single centred column instead of stretching. */
 #screen:not(.flush) > *{max-width:var(--col);margin-left:auto;margin-right:auto;}
-.feed{max-width:var(--col);margin:0 auto;}
-.sheet{max-width:var(--col);margin:0 auto;}
-#tabbar{
+.feed,.sheet{max-width:var(--col);margin:0 auto;}
+
+/* ── nav ───────────────────────────────── */
+#nav{
+  position:fixed;left:0;right:0;bottom:0;z-index:40;
+  height:var(--nav);padding-bottom:var(--safe-bot);
+  display:grid;grid-template-columns:repeat(4,1fr);
+  background:rgba(10,10,11,.94);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border-top:1px solid var(--rule);
   padding-left:max(0px,calc((100% - var(--col))/2));
   padding-right:max(0px,calc((100% - var(--col))/2));
 }
-
-/* ══════════════ tab bar ══════════════ */
-#tabbar{
-  position:fixed;left:0;right:0;bottom:0;z-index:40;
-  height:var(--tabbar);
-  padding-bottom:var(--safe-bot);
-  display:grid;grid-template-columns:repeat(4,1fr);
-  background:rgba(10,11,15,.82);
-  backdrop-filter:blur(20px) saturate(160%);
-  -webkit-backdrop-filter:blur(20px) saturate(160%);
-  border-top:1px solid var(--line);
-}
-#tabbar[hidden]{display:none;}
+#nav[hidden]{display:none;}
 .tab{
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
-  color:var(--txt-3);font-size:9.5px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;
-  transition:color .18s ease;position:relative;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+  color:var(--bone-3);transition:color .18s;position:relative;
 }
-.tab svg{width:23px;height:23px;stroke-width:1.9;fill:none;stroke:currentColor;
-  stroke-linecap:round;stroke-linejoin:round;transition:transform .22s cubic-bezier(.34,1.56,.64,1);}
-.tab.on{color:var(--txt);}
-.tab.on svg{transform:translateY(-1px) scale(1.1);}
-.tab.on::after{
-  content:'';position:absolute;top:6px;width:26px;height:26px;border-radius:50%;
-  background:radial-gradient(circle,rgba(255,107,53,.28),transparent 70%);
+.tab .ic{width:15px;height:15px;}
+.tab span{
+  font-family:var(--cond);font-weight:600;font-size:10px;
+  letter-spacing:.16em;text-transform:uppercase;line-height:1;
 }
-.tab .dot{
-  position:absolute;top:9px;right:calc(50% - 16px);
-  width:7px;height:7px;border-radius:50%;background:var(--danger);
-  border:2px solid #0A0B0F;
+.tab.on{color:var(--bone);}
+.tab.on::before{
+  content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:22px;height:1px;background:var(--bone);
 }
+.tab .dot{position:absolute;top:9px;right:calc(50% - 15px);width:4px;height:4px;background:var(--you);}
 
-/* ══════════════ generic bits ══════════════ */
-.eyebrow{
-  font-size:10px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:var(--txt-3);
-}
-.card{
-  background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;
-}
-.topbar{
-  display:flex;align-items:center;justify-content:space-between;gap:12px;
-  padding:6px 0 18px;
-}
-.topbar .title{font-size:19px;font-weight:800;letter-spacing:-.4px;}
-.topbar .sub{font-size:11.5px;color:var(--txt-3);font-weight:600;margin-top:1px;}
-.icon-btn{
-  width:38px;height:38px;border-radius:12px;display:grid;place-items:center;
-  background:var(--surface);border:1px solid var(--line);color:var(--txt-2);
-}
-.icon-btn svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.9;
-  stroke-linecap:round;stroke-linejoin:round;}
+/* ── topbar ────────────────────────────── */
+.top{display:flex;align-items:center;justify-content:space-between;padding:4px 0 14px;}
+.top .mark{font-family:var(--cond);font-weight:700;font-size:14px;letter-spacing:.28em;text-transform:uppercase;}
+.icon-btn{width:30px;height:30px;padding:7px;color:var(--bone-2);}
+.icon-btn:active{color:var(--bone);}
 
-.avatar{
-  width:30px;height:30px;border-radius:50%;display:grid;place-items:center;flex-shrink:0;
-  font-family:var(--display);font-size:12.5px;font-weight:800;color:#0A0B0F;
-  background:linear-gradient(135deg,var(--p),var(--p2));
+/* ── hero ──────────────────────────────── */
+.hero{padding:22px 0 0;}
+.hero .day{
+  font-family:var(--display);font-size:clamp(96px,30vw,132px);line-height:.78;
+  letter-spacing:-.03em;margin:8px 0 16px;
 }
-.avatar.lg{width:42px;height:42px;font-size:17px;}
-.avatar.ring-on{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--p);}
+.hero-foot{display:flex;justify-content:space-between;align-items:baseline;padding:12px 0 16px;}
+.hero-foot .state{font-family:var(--cond);font-weight:700;font-size:17px;letter-spacing:.1em;text-transform:uppercase;}
+.hero-foot .state.done{color:var(--p);}
 
-/* ══════════════ TODAY ══════════════ */
-.hero{
-  position:relative;display:flex;flex-direction:column;align-items:center;
-  padding:6px 0 4px;
-}
-.hero::before{
-  content:'';position:absolute;top:-40px;left:50%;transform:translateX(-50%);
-  width:340px;height:340px;border-radius:50%;pointer-events:none;
-  background:radial-gradient(circle,color-mix(in srgb,var(--p) 22%,transparent),transparent 65%);
-  filter:blur(20px);opacity:.85;transition:opacity .4s ease;
-}
-.hero.complete::before{
-  background:radial-gradient(circle,rgba(184,255,59,.3),transparent 65%);
-}
-.ring-wrap{position:relative;width:232px;height:232px;}
-.ring{width:100%;height:100%;transform:rotate(0deg);}
-.ring .seg-bg{stroke:rgba(255,255,255,.07);}
-/* dasharray is set as an inline style, never here — a CSS rule would outrank
-   the per-segment value and collapse every arc into a dot. */
-.ring .seg-fg{
-  stroke:url(#ringgrad);
-  /* butt cap while empty: a round cap paints a visible dot at zero length */
-  stroke-linecap:butt;
-  transition:stroke-dasharray .55s cubic-bezier(.34,1.3,.5,1);
-}
-.ring .seg-fg.lit{stroke-linecap:round;}
-.hero.complete .ring .seg-fg{stroke:url(#ringdone);}
-.ring .seg-fg.lit{filter:drop-shadow(0 0 6px color-mix(in srgb,var(--p) 60%,transparent));}
-.ring-center{
-  position:absolute;inset:0;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;pointer-events:none;
-}
-.ring-count{
-  font-family:var(--display);font-weight:900;font-size:64px;line-height:.9;letter-spacing:-2px;
-  background:linear-gradient(160deg,var(--p),var(--p2));
-  -webkit-background-clip:text;background-clip:text;color:transparent;
-}
-/* background-image, not the `background` shorthand — the shorthand would reset
-   background-clip:text and paint a solid block over the digit. */
-.ring-count.done{background-image:linear-gradient(160deg,var(--lime),var(--green));}
-.ring-of{font-size:12px;font-weight:700;color:var(--txt-3);letter-spacing:1.4px;margin-top:7px;}
-.ring-day{
-  font-family:var(--display);font-size:11px;font-weight:800;letter-spacing:2.4px;
-  color:var(--txt-2);margin-top:10px;text-transform:uppercase;
-}
-@keyframes ringPop{0%{transform:scale(1)}40%{transform:scale(1.055)}100%{transform:scale(1)}}
-.ring-wrap.pop{animation:ringPop .42s cubic-bezier(.34,1.56,.64,1);}
+/* segmented progress */
+.seg{display:flex;gap:4px;}
+.seg i{flex:1;height:3px;background:var(--rule-2);transition:background .25s;}
+.seg i.on{background:var(--p);}
 
-/* streak + countdown pills */
-.pill-row{display:flex;gap:10px;justify-content:center;margin-top:14px;flex-wrap:wrap;}
-.pill{
-  display:flex;align-items:center;gap:7px;
-  background:var(--surface);border:1px solid var(--line);
-  border-radius:999px;padding:8px 15px;
-}
-.pill .v{font-family:var(--display);font-size:16px;font-weight:800;letter-spacing:-.3px;}
-.pill .k{font-size:10px;font-weight:700;letter-spacing:1.1px;color:var(--txt-3);text-transform:uppercase;}
-.pill.streak{border-color:rgba(255,107,53,.35);background:linear-gradient(135deg,rgba(255,107,53,.14),rgba(247,56,107,.07));}
-.pill.streak .v{color:var(--fire);}
-.pill.danger{border-color:rgba(255,59,92,.45);background:rgba(255,59,92,.1);animation:breathe 2.2s ease-in-out infinite;}
-.pill.danger .v,.pill.danger .k{color:var(--danger);}
-@keyframes breathe{0%,100%{box-shadow:0 0 0 0 rgba(255,59,92,0)}50%{box-shadow:0 0 0 6px rgba(255,59,92,.09)}}
-@keyframes flicker{0%,100%{transform:scale(1) rotate(0)}25%{transform:scale(1.14) rotate(-5deg)}60%{transform:scale(.96) rotate(4deg)}}
-.flame{display:inline-block;font-size:15px;animation:flicker 2.6s ease-in-out infinite;}
+/* stat pair */
+.stats{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--rule);margin-top:22px;}
+.stat{padding:14px 0 16px;}
+.stat + .stat{border-left:1px solid var(--rule);padding-left:18px;}
+.stat .v{font-family:var(--display);font-size:34px;line-height:1;margin-top:7px;}
+.stat.risk .v{color:var(--you);}
 
-/* head-to-head */
-.h2h{margin-top:22px;}
-.h2h-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px;}
-.h2h-head .lead{font-size:11px;font-weight:700;color:var(--txt-2);}
-.h2h-head .lead b{color:var(--txt);}
-.vs-card{
-  background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
-  padding:14px 15px;display:flex;flex-direction:column;gap:13px;
-}
-.vs-row{display:flex;align-items:center;gap:11px;}
-.vs-row .who{font-size:13px;font-weight:700;width:62px;flex-shrink:0;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.vs-bar{
-  flex:1;height:9px;border-radius:999px;background:rgba(255,255,255,.06);overflow:hidden;
-}
-.vs-bar i{
-  display:block;height:100%;border-radius:999px;
-  background:linear-gradient(90deg,var(--p),var(--p2));
-  transition:width .6s cubic-bezier(.34,1.2,.5,1);
-}
-.vs-row .score{font-family:var(--display);font-size:13px;font-weight:800;width:34px;text-align:right;color:var(--txt-2);}
-.vs-row.win .score{color:var(--lime);}
-
-/* task list */
-.tasks{margin-top:24px;display:flex;flex-direction:column;gap:9px;}
+/* ── tasks ─────────────────────────────── */
+.tasks{border-top:1px solid var(--rule);}
 .task{
-  position:relative;display:flex;align-items:center;gap:13px;
-  background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
-  padding:14px 15px;overflow:hidden;
-  transition:border-color .2s ease,transform .12s ease;
+  display:flex;align-items:center;gap:14px;width:100%;
+  padding:16px 0;border-bottom:1px solid var(--rule);
+  transition:opacity .2s;
 }
-.task::before{
-  content:'';position:absolute;inset:0;opacity:0;
-  background:linear-gradient(100deg,color-mix(in srgb,var(--p) 20%,transparent),transparent 72%);
-  transition:opacity .3s ease;
+.task .meta{flex:1;min-width:0;}
+.task .nm{
+  display:block;
+  font-family:var(--cond);font-weight:600;font-size:19px;
+  letter-spacing:.09em;text-transform:uppercase;line-height:1.05;
+  transition:color .2s;
 }
-.task:active{transform:scale(.985);}
-.task.on{border-color:color-mix(in srgb,var(--p) 45%,transparent);}
-.task.on::before{opacity:1;}
-.task .emo{
-  width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-size:19px;
-  background:var(--surface-2);flex-shrink:0;position:relative;z-index:1;
-  transition:background .2s ease;
+.task .sub{display:block;font-size:11.5px;color:var(--bone-3);margin-top:5px;letter-spacing:.01em;}
+.box{
+  width:22px;height:22px;flex-shrink:0;
+  border:1px solid var(--rule-2);
+  display:grid;place-items:center;color:transparent;
+  transition:background .18s,border-color .18s,color .18s;
 }
-.task.on .emo{background:color-mix(in srgb,var(--p) 22%,var(--surface-2));}
-.task.just .emo{animation:pop .45s cubic-bezier(.34,1.56,.64,1);}
-@keyframes pop{0%{transform:scale(1)}45%{transform:scale(1.32) rotate(-8deg)}100%{transform:scale(1)}}
-.task .meta{flex:1;min-width:0;position:relative;z-index:1;text-align:left;}
-.task .label{display:block;font-size:14.5px;font-weight:700;letter-spacing:-.2px;}
-.task .desc{display:block;font-size:11.5px;color:var(--txt-3);margin-top:2px;font-weight:500;}
-.task.on .label{color:var(--txt-2);}
-.check{
-  width:26px;height:26px;border-radius:50%;flex-shrink:0;position:relative;z-index:1;
-  border:2px solid var(--line-2);display:grid;place-items:center;
-  transition:background .22s ease,border-color .22s ease,transform .22s cubic-bezier(.34,1.56,.64,1);
-}
-.check svg{width:14px;height:14px;stroke:#0A0B0F;stroke-width:3.4;fill:none;
-  stroke-linecap:round;stroke-linejoin:round;
-  stroke-dasharray:22;stroke-dashoffset:22;transition:stroke-dashoffset .28s ease .06s;}
-.task.on .check{background:linear-gradient(135deg,var(--p),var(--p2));border-color:transparent;transform:scale(1.06);}
-.task.on .check svg{stroke-dashoffset:0;}
+.box .ic{width:11px;height:11px;}
+.task.on .box{background:var(--p);border-color:var(--p);color:var(--ink);}
+.task.on .nm{color:var(--p);}
+.task:disabled{cursor:default;}
+@keyframes tick{0%{transform:scale(1)}40%{transform:scale(.86)}100%{transform:scale(1)}}
+.task.just .box{animation:tick .3s ease;}
 
-/* photo CTA */
-.photo-cta{
-  margin-top:16px;display:flex;align-items:center;gap:13px;
-  background:var(--surface);border:1px dashed var(--line-2);border-radius:var(--r);
-  padding:14px 15px;width:100%;text-align:left;
-}
-.photo-cta .emo{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;
-  font-size:19px;background:var(--surface-2);flex-shrink:0;}
-.photo-cta .meta{flex:1;min-width:0;text-align:left;}
-.photo-cta .label{display:block;font-size:14.5px;font-weight:700;}
-.photo-cta .desc{display:block;font-size:11.5px;color:var(--txt-3);margin-top:2px;font-weight:500;}
-.photo-cta.filled{border-style:solid;border-color:color-mix(in srgb,var(--p) 40%,transparent);}
-.photo-cta .thumb{width:40px;height:40px;border-radius:12px;object-fit:cover;flex-shrink:0;}
+/* ── rival strip ───────────────────────── */
+.rival{padding:20px 0 0;}
+.rival-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:11px;}
+.rival-head .who{font-family:var(--cond);font-weight:600;font-size:15px;letter-spacing:.14em;text-transform:uppercase;}
+.rival-head .sc{font-family:var(--display);font-size:15px;color:var(--bone-2);}
+.rival-head .sc.done{color:var(--p);}
 
-/* ══════════════ WALL ══════════════ */
-.seg-toggle{
-  display:flex;gap:4px;background:var(--surface);border:1px solid var(--line);
-  border-radius:12px;padding:4px;margin-bottom:18px;
+/* ── frame button ──────────────────────── */
+.frame{
+  display:flex;align-items:center;gap:13px;width:100%;
+  margin-top:26px;padding:16px 16px;
+  border:1px solid var(--rule-2);
 }
-.seg-toggle button{
-  flex:1;padding:9px 0;border-radius:9px;font-size:12.5px;font-weight:700;color:var(--txt-3);
-  transition:all .2s ease;
-}
-.seg-toggle button.on{background:var(--surface-3);color:var(--txt);}
+.frame .ic{width:17px;height:17px;color:var(--bone-2);flex-shrink:0;}
+.frame .meta{flex:1;min-width:0;}
+.frame .nm{display:block;font-family:var(--cond);font-weight:600;font-size:15px;letter-spacing:.13em;text-transform:uppercase;}
+.frame .sub{display:block;font-size:11px;color:var(--bone-3);margin-top:3px;}
+.frame.filled{border-color:var(--p);}
+.frame.filled .ic{color:var(--p);}
+.frame img{width:34px;height:34px;object-fit:cover;flex-shrink:0;}
 
-.wall-card{margin-bottom:16px;}
-.wall-top{display:flex;align-items:center;gap:11px;margin-bottom:15px;}
-.wall-top .name{font-size:14px;font-weight:700;flex:1;}
-.wall-top .tally{font-family:var(--display);font-size:13px;font-weight:800;color:var(--p);}
-.grid{display:grid;grid-template-columns:repeat(10,1fr);gap:5px;}
-.cell{
-  aspect-ratio:1;border-radius:5px;position:relative;
-  background:rgba(255,255,255,.045);
-  transition:transform .12s ease;
+/* ── wall ──────────────────────────────── */
+.switch{display:flex;border:1px solid var(--rule);margin-bottom:26px;}
+.switch button{
+  flex:1;padding:11px 0;text-align:center;
+  font-family:var(--cond);font-weight:600;font-size:12px;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--bone-3);
+  transition:background .18s,color .18s;
 }
-.cell:active{transform:scale(.86);}
-.cell.done{background:linear-gradient(150deg,var(--p),var(--p2));}
-.cell.miss{background:rgba(255,255,255,.045);box-shadow:inset 0 0 0 1px rgba(255,59,92,.28);}
-/* Needs its own keyframes: `breathe` animates box-shadow outright, which would
-   drop the inset ring and leave today's cell invisible. */
-.cell.today{background:transparent;box-shadow:inset 0 0 0 2px var(--p);animation:cellToday 2.2s ease-in-out infinite;}
-@keyframes cellToday{
-  0%,100%{box-shadow:inset 0 0 0 2px var(--p),0 0 0 0 color-mix(in srgb,var(--p) 30%,transparent);}
-  50%{box-shadow:inset 0 0 0 2px var(--p),0 0 0 4px color-mix(in srgb,var(--p) 0%,transparent);}
-}
-.cell.today.done{background:linear-gradient(150deg,var(--p),var(--p2));}
-.cell.future{background:rgba(255,255,255,.03);}
-.cell.pic::after{
-  content:'';position:absolute;top:2px;right:2px;width:4px;height:4px;border-radius:50%;
-  background:#fff;opacity:.85;
-}
-.cell.mile{box-shadow:inset 0 0 0 1px rgba(255,255,255,.28);}
-.cell.mile.done{box-shadow:inset 0 0 0 1px rgba(255,255,255,.5);}
-.legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:14px;}
-.legend span{display:flex;align-items:center;gap:5px;font-size:10px;font-weight:600;color:var(--txt-3);}
-.legend i{width:9px;height:9px;border-radius:3px;display:block;}
+.switch button + button{border-left:1px solid var(--rule);}
+.switch button.on{background:var(--bone);color:var(--ink);}
 
-/* badges */
-.badges{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:9px;margin-top:12px;}
-.badge{
-  background:var(--surface);border:1px solid var(--line);border-radius:14px;
-  padding:13px 8px;text-align:center;opacity:.32;filter:grayscale(1);
-  transition:all .25s ease;
-}
-.badge.got{opacity:1;filter:none;border-color:color-mix(in srgb,var(--p) 38%,transparent);
-  background:linear-gradient(160deg,color-mix(in srgb,var(--p) 13%,var(--surface)),var(--surface));}
-.badge .ic{font-size:24px;line-height:1;}
-.badge .nm{font-size:9.5px;font-weight:700;margin-top:7px;letter-spacing:.2px;line-height:1.25;}
-.badge .dy{font-size:9px;color:var(--txt-3);margin-top:2px;font-weight:600;}
+.wall{margin-bottom:34px;}
+.wall-head{display:flex;justify-content:space-between;align-items:baseline;
+  padding-bottom:12px;border-bottom:1px solid var(--rule);margin-bottom:14px;}
+.wall-head .who{font-family:var(--cond);font-weight:600;font-size:16px;letter-spacing:.14em;text-transform:uppercase;}
+.wall-head .tally{font-family:var(--display);font-size:16px;color:var(--p);}
+.grid{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;}
+.cell{aspect-ratio:1;background:var(--ink-3);position:relative;transition:opacity .15s;}
+.cell:active{opacity:.5;}
+.cell.done{background:var(--p);}
+.cell.miss{background:var(--ink-3);box-shadow:inset 0 0 0 1px var(--miss);}
+.cell.today{background:transparent;box-shadow:inset 0 0 0 1px var(--bone);}
+.cell.today.done{background:var(--p);box-shadow:inset 0 0 0 1px var(--bone);}
+.cell.future{background:var(--ink-2);}
+.cell.pic::after{content:'';position:absolute;bottom:2px;right:2px;width:3px;height:3px;background:var(--bone);opacity:.5;}
+.legend{display:flex;gap:18px;flex-wrap:wrap;margin-top:14px;}
+.legend span{display:flex;align-items:center;gap:6px;
+  font-family:var(--cond);font-weight:500;font-size:10.5px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--bone-3);}
+.legend i{width:8px;height:8px;display:block;}
 
-/* ══════════════ FEED ══════════════ */
-.feed{
-  height:100%;overflow-y:auto;scroll-snap-type:y mandatory;
-  -webkit-overflow-scrolling:touch;overscroll-behavior:contain;
-}
-.post{
-  height:100%;scroll-snap-align:start;scroll-snap-stop:always;
-  position:relative;display:flex;align-items:center;justify-content:center;
-  background:#000;overflow:hidden;
-}
+/* milestones */
+.miles{border-top:1px solid var(--rule);}
+.mile{display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid var(--rule);}
+.mile .d{font-family:var(--display);font-size:14px;color:var(--bone-3);width:26px;flex-shrink:0;}
+.mile .nm{flex:1;font-family:var(--cond);font-weight:600;font-size:14px;
+  letter-spacing:.13em;text-transform:uppercase;color:var(--bone-3);}
+.mile .ic{width:12px;height:12px;color:var(--rule-2);}
+.mile.got .d,.mile.got .nm{color:var(--bone);}
+.mile.got .ic{color:var(--p);}
+
+/* ── feed ──────────────────────────────── */
+.feed{height:100%;overflow-y:auto;scroll-snap-type:y mandatory;
+  -webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
+.post{height:100%;scroll-snap-align:start;scroll-snap-stop:always;
+  position:relative;background:#000;overflow:hidden;}
 .post img{width:100%;height:100%;object-fit:cover;}
-.post .shade{
-  position:absolute;inset:0;pointer-events:none;
-  background:linear-gradient(180deg,rgba(0,0,0,.6) 0%,transparent 22%,transparent 48%,rgba(0,0,0,.82) 100%);
+.post .shade{position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(180deg,rgba(0,0,0,.55) 0%,transparent 26%,transparent 42%,rgba(0,0,0,.88) 100%);}
+.post-top{position:absolute;top:calc(var(--safe-top) + 16px);left:var(--pad);right:var(--pad);
+  display:flex;justify-content:space-between;align-items:baseline;}
+.post-top .who{font-family:var(--cond);font-weight:700;font-size:14px;letter-spacing:.2em;text-transform:uppercase;}
+.post-top .dt{font-family:var(--cond);font-weight:500;font-size:12px;letter-spacing:.14em;
+  text-transform:uppercase;color:rgba(255,255,255,.6);}
+.post-bot{position:absolute;left:var(--pad);right:var(--pad);bottom:calc(var(--nav) + 22px);}
+.post-bot .day{font-family:var(--display);font-size:74px;line-height:.8;letter-spacing:-.03em;}
+.post-bot .rule{background:rgba(255,255,255,.28);margin:14px 0 12px;}
+.post-bot .state{font-family:var(--cond);font-weight:600;font-size:13px;
+  letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.72);}
+.post-bot .state b{color:var(--p);font-weight:600;}
+.kudos{
+  display:inline-flex;align-items:center;gap:11px;margin-top:16px;
+  padding:10px 16px;border:1px solid rgba(255,255,255,.32);
+  font-family:var(--cond);font-weight:600;font-size:12px;letter-spacing:.18em;text-transform:uppercase;
+  transition:background .18s,border-color .18s,color .18s;
 }
-.post-top{
-  position:absolute;top:calc(var(--safe-top) + 14px);left:16px;right:16px;
-  display:flex;align-items:center;gap:10px;
+.kudos .n{font-family:var(--display);font-size:13px;letter-spacing:0;}
+.kudos.mine{background:var(--you);border-color:var(--you);color:var(--ink);}
+.kudos:disabled{opacity:.55;}
+@keyframes stamp{
+  0%{transform:translate(-50%,-50%) scale(.7);opacity:0}
+  22%{transform:translate(-50%,-50%) scale(1);opacity:1}
+  70%{transform:translate(-50%,-50%) scale(1);opacity:1}
+  100%{transform:translate(-50%,-50%) scale(1.08);opacity:0}
 }
-.post-top .nm{font-size:13.5px;font-weight:700;}
-.post-top .dy{font-size:11px;color:rgba(255,255,255,.62);font-weight:600;margin-top:1px;}
-.post-bot{position:absolute;left:16px;right:16px;bottom:calc(var(--tabbar) + 16px);}
-.post-chips{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:11px;}
-.chip{
-  font-size:10px;font-weight:700;padding:5px 9px;border-radius:999px;
-  background:rgba(255,255,255,.14);backdrop-filter:blur(8px);
-  border:1px solid rgba(255,255,255,.16);
+.stamp{
+  position:absolute;top:50%;left:50%;z-index:5;pointer-events:none;
+  font-family:var(--display);font-size:44px;letter-spacing:.04em;
+  padding:14px 26px;border:2px solid var(--bone);
+  animation:stamp .9s cubic-bezier(.2,.8,.3,1) forwards;
 }
-.chip.full{background:linear-gradient(135deg,var(--lime),var(--green));color:#0A0B0F;border-color:transparent;}
-.kudos-row{display:flex;align-items:center;gap:8px;}
-.kudo{
-  display:flex;align-items:center;gap:6px;padding:8px 13px;border-radius:999px;
-  background:rgba(255,255,255,.12);backdrop-filter:blur(10px);
-  border:1px solid rgba(255,255,255,.16);font-size:13px;font-weight:700;
-  transition:transform .16s cubic-bezier(.34,1.56,.64,1),background .2s ease;
-}
-.kudo:active{transform:scale(.9);}
-.kudo.mine{background:linear-gradient(135deg,var(--fire),var(--fire-2));border-color:transparent;}
-.kudo .n{font-family:var(--display);font-size:12px;}
-@keyframes burst{
-  0%{transform:translate(-50%,-50%) scale(.2);opacity:0}
-  25%{transform:translate(-50%,-50%) scale(1.25);opacity:1}
-  55%{transform:translate(-50%,-50%) scale(.95);opacity:1}
-  100%{transform:translate(-50%,-50%) scale(1.5);opacity:0}
-}
-.burst{
-  position:absolute;top:50%;left:50%;font-size:96px;pointer-events:none;
-  animation:burst .85s cubic-bezier(.2,.7,.4,1) forwards;z-index:5;
-}
-.feed-empty{
-  height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:14px;padding:0 40px;text-align:center;
-}
-.feed-empty .ic{font-size:52px;}
-.feed-empty h3{font-size:19px;font-weight:800;}
-.feed-empty p{font-size:13px;color:var(--txt-3);line-height:1.5;margin:0;}
+.feed-empty{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:16px;padding:0 44px;text-align:center;}
+.feed-empty .ic{width:26px;height:26px;color:var(--bone-3);}
+.feed-empty h3{font-family:var(--display);font-size:26px;letter-spacing:-.01em;margin:0;}
+.feed-empty p{font-size:12.5px;color:var(--bone-3);line-height:1.6;margin:0;}
 
-/* ══════════════ RIVALS ══════════════ */
-.podium{display:flex;gap:11px;margin-bottom:20px;}
-.pod{
-  flex:1;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
-  padding:18px 12px;text-align:center;position:relative;overflow:hidden;
-}
-.pod.lead{border-color:color-mix(in srgb,var(--p) 50%,transparent);
-  background:linear-gradient(170deg,color-mix(in srgb,var(--p) 15%,var(--surface)),var(--surface));}
-.pod .crown{position:absolute;top:9px;right:11px;font-size:15px;}
-.pod .big{font-family:var(--display);font-size:38px;font-weight:900;letter-spacing:-1.5px;line-height:1;
-  background:linear-gradient(160deg,var(--p),var(--p2));
-  -webkit-background-clip:text;background-clip:text;color:transparent;margin-top:9px;}
-.pod .lbl{font-size:10px;font-weight:700;letter-spacing:1.2px;color:var(--txt-3);
-  text-transform:uppercase;margin-top:7px;}
+/* ── rivals ────────────────────────────── */
+.rv-head{display:grid;grid-template-columns:1fr auto auto;gap:20px;
+  padding-bottom:11px;border-bottom:1px solid var(--rule);}
+.rv-head .c{font-family:var(--cond);font-weight:600;font-size:11px;letter-spacing:.18em;
+  text-transform:uppercase;width:68px;text-align:right;}
+.rv-row{display:grid;grid-template-columns:1fr auto auto;gap:20px;align-items:center;
+  padding:15px 0;border-bottom:1px solid var(--rule);}
+.rv-row .k{font-family:var(--cond);font-weight:600;font-size:14px;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--bone-2);}
+.rv-row .v{font-family:var(--display);font-size:26px;width:68px;text-align:right;line-height:1;}
+.rv-row .v.a{color:var(--you);}
+.rv-row .v.b{color:var(--them);}
+.rv-row.small .v{font-size:18px;}
+.sect{margin-top:36px;}
+.sect > .eyebrow{display:block;margin-bottom:14px;}
 
-.stat-list{display:flex;flex-direction:column;gap:11px;}
-.srow{display:flex;align-items:center;gap:12px;}
-.srow .nm{font-size:12.5px;font-weight:600;width:96px;flex-shrink:0;}
-.dual{flex:1;display:flex;flex-direction:column;gap:4px;}
-.dual .bar{height:7px;border-radius:999px;background:rgba(255,255,255,.06);overflow:hidden;}
-.dual .bar i{display:block;height:100%;border-radius:999px;transition:width .6s cubic-bezier(.34,1.2,.5,1);}
-.dual .bar.a i{background:linear-gradient(90deg,var(--sachin),var(--sachin-2));}
-.dual .bar.b i{background:linear-gradient(90deg,var(--aarya),var(--aarya-2));}
-.srow .pc{font-family:var(--display);font-size:11px;font-weight:800;color:var(--txt-3);
-  width:62px;text-align:right;line-height:1.5;}
-.sect{margin-top:26px;}
-.sect > .eyebrow{margin-bottom:11px;display:block;}
-
-/* ══════════════ sheets / modals ══════════════ */
-#sheet-root{position:fixed;inset:0;z-index:60;pointer-events:none;}
-.scrim{
-  position:absolute;inset:0;background:rgba(0,0,0,.62);
-  backdrop-filter:blur(3px);opacity:0;transition:opacity .28s ease;
-}
+/* ── sheets ────────────────────────────── */
+#sheets{position:fixed;inset:0;z-index:60;pointer-events:none;}
+.scrim{position:absolute;inset:0;background:rgba(0,0,0,.7);opacity:0;transition:opacity .26s;}
 .sheet{
   position:absolute;left:0;right:0;bottom:0;
-  background:var(--bg-soft);border-top:1px solid var(--line-2);
-  border-radius:24px 24px 0 0;
-  padding:10px 18px calc(24px + var(--safe-bot));
+  background:var(--ink-2);border-top:1px solid var(--rule-2);
+  padding:20px var(--pad) calc(26px + var(--safe-bot));
   max-height:88%;overflow-y:auto;
-  transform:translateY(100%);transition:transform .34s cubic-bezier(.3,1,.4,1);
+  transform:translateY(100%);transition:transform .3s cubic-bezier(.3,1,.4,1);
 }
-#sheet-root.open{pointer-events:auto;}
-#sheet-root.open .scrim{opacity:1;}
-#sheet-root.open .sheet{transform:translateY(0);}
-.grabber{width:38px;height:4px;border-radius:99px;background:var(--line-2);margin:0 auto 16px;}
-.sheet-head{display:flex;align-items:center;gap:11px;margin-bottom:16px;}
-.sheet-head .t{font-size:17px;font-weight:800;letter-spacing:-.3px;}
-.sheet-head .s{font-size:11.5px;color:var(--txt-3);font-weight:600;margin-top:2px;}
-
+#sheets.open{pointer-events:auto;}
+#sheets.open .scrim{opacity:1;}
+#sheets.open .sheet{transform:translateY(0);}
+.sheet-head{display:flex;justify-content:space-between;align-items:flex-start;
+  padding-bottom:16px;border-bottom:1px solid var(--rule);margin-bottom:4px;}
+.sheet-head .t{font-family:var(--display);font-size:30px;line-height:1;}
+.sheet-head .s{font-family:var(--cond);font-weight:500;font-size:12px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--bone-3);margin-top:8px;}
 .btn{
-  display:block;width:100%;padding:14px;border-radius:13px;text-align:center;
-  font-size:14px;font-weight:700;background:var(--surface-2);border:1px solid var(--line);
-  transition:transform .12s ease;
+  display:block;width:100%;padding:15px;text-align:center;
+  font-family:var(--cond);font-weight:600;font-size:14px;letter-spacing:.16em;text-transform:uppercase;
+  border:1px solid var(--rule-2);margin-top:10px;transition:background .18s,color .18s;
 }
-.btn:active{transform:scale(.98);}
-.btn.primary{background:linear-gradient(135deg,var(--p,var(--fire)),var(--p2,var(--fire-2)));
-  border-color:transparent;color:#0A0B0F;}
-.btn.ghost{background:transparent;color:var(--txt-2);}
-.btn.danger{background:transparent;border-color:rgba(255,59,92,.35);color:var(--danger);}
-.btn + .btn{margin-top:9px;}
+.btn.primary{background:var(--bone);color:var(--ink);border-color:var(--bone);}
+.btn.danger{color:var(--you);border-color:var(--miss);}
+.btn.ghost{border-color:transparent;color:var(--bone-3);}
+.shot{width:100%;max-height:320px;object-fit:cover;display:block;margin-bottom:14px;}
+.shot-none{border:1px solid var(--rule);padding:44px 0;text-align:center;margin-bottom:14px;
+  font-family:var(--cond);font-weight:500;font-size:12px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--bone-3);}
+.note{font-family:var(--cond);font-weight:500;font-size:11.5px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--bone-3);text-align:center;margin-top:16px;}
 
-.photo-box{
-  border-radius:14px;overflow:hidden;background:var(--surface);border:1px solid var(--line);
-  min-height:150px;display:grid;place-items:center;margin-bottom:11px;
-}
-.photo-box img{width:100%;max-height:340px;object-fit:cover;display:block;}
-.photo-box .none{font-size:12px;color:var(--txt-3);padding:44px 0;font-weight:600;}
+/* ── identity ──────────────────────────── */
+.pick{position:fixed;inset:0;z-index:80;background:var(--ink);
+  display:flex;flex-direction:column;justify-content:center;padding:0 var(--pad);}
+.pick .mark{font-family:var(--cond);font-weight:700;font-size:14px;letter-spacing:.28em;
+  text-transform:uppercase;color:var(--bone-3);}
+.pick h2{font-family:var(--display);font-size:clamp(46px,14vw,64px);line-height:.86;
+  letter-spacing:-.02em;margin:16px 0 34px;}
+.pick-btn{display:flex;align-items:baseline;justify-content:space-between;width:100%;
+  padding:20px 0;border-top:1px solid var(--rule);}
+.pick-btn:last-of-type{border-bottom:1px solid var(--rule);}
+.pick-btn .nm{font-family:var(--cond);font-weight:600;font-size:26px;
+  letter-spacing:.1em;text-transform:uppercase;}
+.pick-btn .ix{font-family:var(--display);font-size:13px;color:var(--bone-3);}
 
-/* identity picker */
-.pick{
-  position:fixed;inset:0;z-index:80;background:var(--bg);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:32px;
+/* ── completion ────────────────────────── */
+#done{
+  position:fixed;inset:0;z-index:70;background:var(--ink);
+  display:none;flex-direction:column;justify-content:center;padding:0 var(--pad);
+  opacity:0;transition:opacity .28s;
 }
-.pick h2{font-size:26px;font-weight:900;letter-spacing:-.8px;}
-.pick p{font-size:13.5px;color:var(--txt-3);margin:0 0 18px;text-align:center;}
-.pick-btn{
-  width:100%;max-width:300px;display:flex;align-items:center;gap:14px;
-  background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:15px 16px;
-  transition:transform .12s ease,border-color .2s ease;
-}
-.pick-btn:active{transform:scale(.98);}
-.pick-btn .nm{font-size:16px;font-weight:700;}
-
-/* celebration */
-#celebrate{
-  position:fixed;inset:0;z-index:70;display:none;
-  flex-direction:column;align-items:center;justify-content:center;gap:8px;
-  background:rgba(8,9,12,.93);backdrop-filter:blur(8px);text-align:center;padding:32px;
-}
-#celebrate.on{display:flex;}
-@keyframes celebIn{
-  0%{transform:scale(.55) translateY(24px);opacity:0}
-  55%{transform:scale(1.06) translateY(0);opacity:1}
-  100%{transform:scale(1);opacity:1}
-}
-#celebrate .inner{animation:celebIn .62s cubic-bezier(.2,1.2,.4,1);}
-#celebrate .ic{font-size:70px;}
-#celebrate .big{
-  font-family:var(--display);font-size:44px;font-weight:900;letter-spacing:-1.6px;line-height:1;margin-top:12px;
-  background:linear-gradient(150deg,var(--lime),var(--green));
-  -webkit-background-clip:text;background-clip:text;color:transparent;
-}
-#celebrate .sub{font-size:14px;color:var(--txt-2);margin-top:12px;font-weight:600;line-height:1.5;}
-#celebrate .hint{font-size:11px;color:var(--txt-3);margin-top:26px;font-weight:600;letter-spacing:.6px;}
-
-#fx{position:fixed;inset:0;z-index:75;pointer-events:none;display:none;}
+#done.on{display:flex;opacity:1;}
+@keyframes riseIn{from{transform:translateY(14px);opacity:0}to{transform:translateY(0);opacity:1}}
+#done .inner > *{animation:riseIn .5s cubic-bezier(.2,.9,.3,1) both;}
+#done .inner > *:nth-child(2){animation-delay:.05s;}
+#done .inner > *:nth-child(3){animation-delay:.1s;}
+#done .inner > *:nth-child(4){animation-delay:.14s;}
+#done .inner > *:nth-child(5){animation-delay:.18s;}
+#done .big{font-family:var(--display);font-size:clamp(104px,32vw,150px);line-height:.76;
+  letter-spacing:-.03em;margin:10px 0 20px;}
+#done .rule{background:var(--bone);margin-bottom:20px;}
+#done .word{font-family:var(--display);font-size:clamp(38px,11vw,52px);line-height:.9;
+  letter-spacing:-.01em;color:var(--p);}
+#done .meta{font-family:var(--cond);font-weight:600;font-size:14px;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--bone-3);margin-top:22px;}
 
 #toast{
-  position:fixed;left:50%;bottom:calc(var(--tabbar) + 16px);z-index:90;
-  transform:translate(-50%,14px);opacity:0;pointer-events:none;
-  background:var(--surface-3);border:1px solid var(--line-2);
-  border-radius:999px;padding:10px 18px;font-size:12.5px;font-weight:600;
-  transition:opacity .24s ease,transform .24s ease;white-space:nowrap;
-  max-width:calc(100vw - 40px);overflow:hidden;text-overflow:ellipsis;
+  position:fixed;left:50%;bottom:calc(var(--nav) + 18px);z-index:90;
+  transform:translate(-50%,10px);opacity:0;pointer-events:none;
+  background:var(--bone);color:var(--ink);
+  padding:10px 18px;font-family:var(--cond);font-weight:600;font-size:12px;
+  letter-spacing:.14em;text-transform:uppercase;white-space:nowrap;
+  transition:opacity .22s,transform .22s;
 }
 #toast.on{opacity:1;transform:translate(-50%,0);}
 
-.boot{height:100%;display:grid;place-items:center;color:var(--txt-3);
-  font-size:12px;font-weight:700;letter-spacing:2px;}
+.boot{height:100%;display:grid;place-items:center;}
+.boot span{font-family:var(--cond);font-weight:600;font-size:12px;letter-spacing:.3em;
+  text-transform:uppercase;color:var(--bone-3);}
 
-@media (prefers-reduced-motion:reduce){
-  *{animation:none!important;transition-duration:.01ms!important;}
-}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition-duration:.01ms!important;}}
 </style>
 </head>
 <body>
 
-<div id="screen"><div class="boot">LOADING…</div></div>
-
-<nav id="tabbar" hidden></nav>
-<canvas id="fx"></canvas>
-<div id="sheet-root"></div>
-<div id="celebrate"></div>
+<div id="screen"><div class="boot"><span>75 Hard</span></div></div>
+<nav id="nav" hidden></nav>
+<div id="sheets"></div>
+<div id="done"></div>
 <div id="toast"></div>
 
 <script>
-/* ════════════════════════════════════════════════
-   CONFIG
-   ════════════════════════════════════════════════ */
+/* ═══════════ config ═══════════ */
 const TOTAL_DAYS = 75;
 
 const TASKS = [
-  { id:'diet',     emo:'🥗', label:'Diet',        desc:'No cheat meals, no alcohol' },
-  { id:'workout1', emo:'💪', label:'Workout 1',   desc:'45 minutes' },
-  { id:'workout2', emo:'🌤️', label:'Workout 2',   desc:'45 minutes, outdoors' },
-  { id:'water',    emo:'💧', label:'Water',       desc:'1 gallon' },
-  { id:'read',     emo:'📖', label:'Read',        desc:'10 pages, non-fiction' }
+  { id:'diet',     nm:'Diet',        sub:'No cheat meals, no alcohol' },
+  { id:'workout1', nm:'Workout One', sub:'45 minutes' },
+  { id:'workout2', nm:'Workout Two', sub:'45 minutes, outdoors' },
+  { id:'water',    nm:'Water',       sub:'1 gallon' },
+  { id:'read',     nm:'Read',        sub:'10 pages, non-fiction' }
 ];
 
 const PROFILES = [
-  { id:'sachin', label:'Sachin', initial:'S' },
-  { id:'aarya',  label:'Aarya',  initial:'A' }
+  { id:'sachin', label:'Sachin' },
+  { id:'aarya',  label:'Aarya' }
 ];
 
-const BADGES = [
-  { d:1,  ic:'🧱', nm:'First Brick' },
-  { d:3,  ic:'⚡', nm:'Momentum' },
-  { d:7,  ic:'🥉', nm:'One Week' },
-  { d:14, ic:'🥈', nm:'Fortnight' },
-  { d:21, ic:'🧠', nm:'Habit Locked' },
-  { d:30, ic:'🥇', nm:'One Month' },
-  { d:45, ic:'⛰️', nm:'Past Halfway' },
-  { d:60, ic:'🚀', nm:'Home Stretch' },
-  { d:75, ic:'👑', nm:'75 Hard' }
+const MILES = [
+  { d:1,  nm:'First Day' },
+  { d:3,  nm:'Momentum' },
+  { d:7,  nm:'One Week' },
+  { d:14, nm:'Fortnight' },
+  { d:21, nm:'Habit Locked' },
+  { d:30, nm:'One Month' },
+  { d:45, nm:'Past Halfway' },
+  { d:60, nm:'Home Stretch' },
+  { d:75, nm:'Seventy Five' }
 ];
 
-const KUDOS = ['🔥','💪','👏','🫡','❤️'];
-const MILESTONES = new Set(BADGES.map(b => b.d));
+const KUDOS_TOKEN = 'kudos';
+const WORDS = ['Zero','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten',
+  'Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen','Twenty'];
+const word = n => (WORDS[n] || String(n)).toUpperCase();
 
-/* ════════════════════════════════════════════════
-   API
-   ════════════════════════════════════════════════ */
+/* Font Awesome Pro (sharp-light), inlined — only the eight actually used. */
+const ICON = {
+  today:'<svg viewBox="0 0 448 512" aria-hidden="true"><path d="M303.5 184.4L338.9 49.8 352 0 310.8 30.9 32 240l0 48 88.3 5.9 32.5 2.2-8.3 31.5L109.1 462.2 96 512l41.2-30.9L416 272l0-48-88.3-5.9-32.5-2.2 8.3-31.5zM154.6 415.1l19.7-74.7 15.4-58.4-60.2-4L74.7 274l204.7-153.5-4.1 15.4-19.7 74.7-15.4 58.4 60.2 4 54.9 3.7L150.5 430.6l4.1-15.4z"/></svg>',
+  wall:'<svg viewBox="0 0 512 512" aria-hidden="true"><path d="M64 64l0 128 128 0 0-128L64 64zM32 32l32 0 128 0 32 0 0 32 0 128 0 32-32 0L64 224l-32 0 0-32L32 64l0-32zM64 320l0 128 128 0 0-128L64 320zM32 288l32 0 128 0 32 0 0 32 0 128 0 32-32 0L64 480l-32 0 0-32 0-128 0-32zM448 64L320 64l0 128 128 0 0-128zM320 32l128 0 32 0 0 32 0 128 0 32-32 0-128 0-32 0 0-32 0-128 0-32 32 0zm0 288l0 128 128 0 0-128-128 0zm-32-32l32 0 128 0 32 0 0 32 0 128 0 32-32 0-128 0-32 0 0-32 0-128 0-32z"/></svg>',
+  feed:'<svg viewBox="0 0 512 512" aria-hidden="true"><path d="M32 64l0 265.4 84.7-84.7L128 233.4l11.3 11.3L224 329.4 372.7 180.7 384 169.4l11.3 11.3L480 265.4 480 64 32 64zm0 310.6L32 448l73.4 0 96-96L128 278.6l-96 96zm352-160L150.6 448 480 448l0-137.4-96-96zM0 32l32 0 448 0 32 0 0 32 0 384 0 32-32 0L32 480 0 480l0-32L0 64 0 32zM160 144a16 16 0 1 0 -32 0 16 16 0 1 0 32 0zm-64 0a48 48 0 1 1 96 0 48 48 0 1 1 -96 0z"/></svg>',
+  rivals:'<svg viewBox="0 0 448 512" aria-hidden="true"><path d="M256 64l0 384-64 0 0-384 64 0zM192 32l-32 0 0 32 0 384 0 32 32 0 64 0 32 0 0-32 0-384 0-32-32 0-64 0zM96 256l0 192-64 0 0-192 64 0zM32 224L0 224l0 32L0 448l0 32 32 0 64 0 32 0 0-32 0-192 0-32-32 0-64 0zm320-96l64 0 0 320-64 0 0-320zM320 96l0 32 0 320 0 32 32 0 64 0 32 0 0-32 0-320 0-32-32 0-64 0-32 0z"/></svg>',
+  gear:'<svg viewBox="0 0 512 512" aria-hidden="true"><path d="M195 108c-13.2 5.4-25.5 12.6-36.7 21.2l-13.3 10.2-16-5.1-52-16.6L46.9 170.2l40.3 36.7 12.4 11.3-2.2 16.6c-.9 6.9-1.4 14-1.4 21.2s.5 14.3 1.4 21.2l2.2 16.6L87.2 305.1 46.9 341.8l30.2 52.4 52-16.6 16-5.1 13.3 10.2c11.2 8.6 23.5 15.8 36.7 21.2l15.5 6.4 3.6 16.4L225.8 480l60.5 0 11.7-53.3 3.6-16.4L317 404c13.2-5.4 25.5-12.6 36.7-21.2l13.3-10.2 16 5.1 52 16.6 30.2-52.4-40.3-36.7-12.4-11.3 2.2-16.6c.9-6.9 1.4-14 1.4-21.2s-.5-14.3-1.4-21.2l-2.2-16.6 12.4-11.3 40.3-36.7-30.2-52.4-52 16.6-16 5.1-13.3-10.2c-11.2-8.6-23.5-15.8-36.7-21.2l-15.5-6.4-3.6-16.4L286.2 32l-60.5 0L214.1 85.3l-3.6 16.4L195 108zM200 0L312 0l17.2 78.4c15.8 6.5 30.6 15.1 44 25.4l76.5-24.4 56 97-59.4 54.1c1.1 8.3 1.7 16.8 1.7 25.4s-.6 17.1-1.7 25.4l59.4 54.1-56 97-76.5-24.4c-13.4 10.3-28.2 18.9-44 25.4L312 512l-112 0-17.2-78.4c-15.8-6.5-30.6-15.1-44-25.4L62.3 432.5l-56-97 59.4-54.1C64.6 273.1 64 264.6 64 256s.6-17.1 1.7-25.4L6.3 176.5l56-97 76.5 24.4c13.4-10.3 28.2-18.9 44-25.4L200 0zM312 256a56 56 0 1 0 -112 0 56 56 0 1 0 112 0zm-144 0a88 88 0 1 1 176 0 88 88 0 1 1 -176 0z"/></svg>',
+  check:'<svg viewBox="0 0 448 512" aria-hidden="true"><path d="M448.1 118.2L437 129.7 173.6 404l-11.5 12-11.5-12L11.1 258.8 0 247.2l23.1-22.2 11.1 11.5L162.1 369.8 414 107.5 425 96l23.1 22.2z"/></svg>',
+  camera:'<svg viewBox="0 0 512 512" aria-hidden="true"><path d="M160 32l192 0 21.3 64L480 96l32 0 0 32 0 320 0 32-32 0L32 480 0 480l0-32L0 128 0 96l32 0 106.7 0L160 32zm213.3 96l-23.1 0L343 106.1 328.9 64 183.1 64l-14 42.1L161.7 128l-23.1 0L32 128l0 320 448 0 0-320-106.7 0zM256 176a112 112 0 1 1 0 224 112 112 0 1 1 0-224zm80 112a80 80 0 1 0 -160 0 80 80 0 1 0 160 0z"/></svg>',
+  close:'<svg viewBox="0 0 384 512" aria-hidden="true"><path d="M192 233.4L59.5 100.9 36.9 123.5 169.4 256 36.9 388.5l22.6 22.6L192 278.6 324.5 411.1l22.6-22.6L214.6 256 347.1 123.5l-22.6-22.6L192 233.4z"/></svg>'
+};
+
+/* ═══════════ api ═══════════ */
 const api = {
   async getState(){
     const r = await fetch('/api/state');
-    if(!r.ok) throw new Error('load failed');
+    if(!r.ok) throw new Error('load');
     return r.json();
   },
   async saveDay(profileId, date, tasks){
-    const r = await fetch('/api/state', {
-      method:'PUT',
-      headers:{ 'Content-Type':'application/json' },
-      body: JSON.stringify({ profileId, date, tasks })
-    });
-    if(!r.ok) throw new Error('save failed');
+    const r = await fetch('/api/state', { method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ profileId, date, tasks }) });
+    if(!r.ok) throw new Error('save');
   },
   async getReactions(){
     const r = await fetch('/api/reactions');
-    if(!r.ok) throw new Error('reactions failed');
+    if(!r.ok) throw new Error('reactions');
     return r.json();
   },
   async react(from, to, date, emoji){
-    const r = await fetch('/api/reactions', {
-      method:'POST',
-      headers:{ 'Content-Type':'application/json' },
-      body: JSON.stringify({ from, to, date, emoji })
-    });
-    if(!r.ok) throw new Error('react failed');
+    const r = await fetch('/api/reactions', { method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ from, to, date, emoji }) });
+    if(!r.ok) throw new Error('react');
     return r.json();
   },
   async uploadPhoto(profileId, date, contentType, dataBase64){
-    const r = await fetch(`/api/photos?profile=${encodeURIComponent(profileId)}&date=${encodeURIComponent(date)}`, {
-      method:'POST',
-      headers:{ 'Content-Type':'application/json' },
-      body: JSON.stringify({ profileId, date, contentType, dataBase64 })
-    });
-    if(!r.ok) throw new Error('upload failed');
+    const r = await fetch(`/api/photos?profile=${encodeURIComponent(profileId)}&date=${encodeURIComponent(date)}`,
+      { method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ profileId, date, contentType, dataBase64 }) });
+    if(!r.ok) throw new Error('upload');
   },
   async deletePhoto(profileId, date){
-    const r = await fetch(`/api/photos?profile=${encodeURIComponent(profileId)}&date=${encodeURIComponent(date)}`, {
-      method:'DELETE'
-    });
-    if(!r.ok) throw new Error('delete failed');
+    const r = await fetch(`/api/photos?profile=${encodeURIComponent(profileId)}&date=${encodeURIComponent(date)}`,
+      { method:'DELETE' });
+    if(!r.ok) throw new Error('delete');
   },
   photoUrl(profileId, date){
     const v = state.photoV[`${profileId}|${date}`] || 0;
     return `/api/photos?profile=${encodeURIComponent(profileId)}&date=${encodeURIComponent(date)}&v=${v}`;
   },
   async reset(startDate){
-    const r = await fetch('/api/reset', {
-      method:'POST',
-      headers:{ 'Content-Type':'application/json' },
-      body: JSON.stringify({ startDate })
-    });
-    if(!r.ok) throw new Error('reset failed');
+    const r = await fetch('/api/reset', { method:'POST',
+      headers:{'Content-Type':'application/json'}, body: JSON.stringify({ startDate }) });
+    if(!r.ok) throw new Error('reset');
     return r.json();
   }
 };
 
-/* ════════════════════════════════════════════════
-   STATE
-   ════════════════════════════════════════════════ */
+/* ═══════════ state ═══════════ */
 const state = {
-  startDate: null,
-  data: { sachin:{}, aarya:{} },
-  photoDays: { sachin:[], aarya:[] },
-  photoV: {},
-  reactions: [],
+  startDate:null,
+  data:{ sachin:{}, aarya:{} },
+  photoDays:{ sachin:[], aarya:[] },
+  photoV:{},
+  reactions:[],
   me: localStorage.getItem('me') || null,
-  tab: 'today',
-  wallView: 'both',
-  online: true
+  tab:'today',
+  wallView:'both',
+  online:true
 };
 
 const me   = () => state.me;
 const them = () => state.me === 'sachin' ? 'aarya' : 'sachin';
 const nameOf = id => PROFILES.find(p => p.id === id).label;
-const initialOf = id => PROFILES.find(p => p.id === id).initial;
+const whoAttr = id => id === me() ? 'you' : 'them';
 
-/* ════════════════════════════════════════════════
-   DATES — all local, never UTC. A habit tracker that
-   rolls over at 7pm local time is worse than useless.
-   ════════════════════════════════════════════════ */
+/* ═══════════ dates (local, never UTC) ═══════════ */
 function isoOf(d){
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 function todayISO(){ return isoOf(new Date()); }
-function parseISO(iso){
-  const [y,m,d] = iso.split('-').map(Number);
-  return new Date(y, m-1, d);
-}
-function addDays(iso, n){
-  const d = parseISO(iso);
-  d.setDate(d.getDate() + n);
-  return isoOf(d);
-}
-function dayIndex(iso){
-  const ms = parseISO(iso) - parseISO(state.startDate);
-  return Math.round(ms / 86400000) + 1;
-}
+function parseISO(iso){ const [y,m,d] = iso.split('-').map(Number); return new Date(y, m-1, d); }
+function addDays(iso, n){ const d = parseISO(iso); d.setDate(d.getDate()+n); return isoOf(d); }
+function dayIndex(iso){ return Math.round((parseISO(iso) - parseISO(state.startDate))/86400000) + 1; }
 function isoForDay(n){ return addDays(state.startDate, n-1); }
 function todayIndex(){ return dayIndex(todayISO()); }
 function fmtDate(iso){
-  return parseISO(iso).toLocaleDateString(undefined, { weekday:'short', month:'short', day:'numeric' });
+  return parseISO(iso).toLocaleDateString(undefined,{ weekday:'short', month:'short', day:'numeric' });
 }
 function msToMidnight(){
-  const now = new Date();
-  const mid = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-  return mid - now;
+  const n = new Date();
+  return new Date(n.getFullYear(), n.getMonth(), n.getDate()+1) - n;
 }
-function fmtCountdown(ms){
-  const total = Math.max(0, Math.floor(ms/1000));
-  const h = Math.floor(total/3600);
-  const m = Math.floor((total%3600)/60);
-  const s = total % 60;
+function fmtLeft(ms){
+  const t = Math.max(0, Math.floor(ms/1000));
+  const h = Math.floor(t/3600), m = Math.floor((t%3600)/60), s = t%60;
   return h > 0 ? `${h}h ${String(m).padStart(2,'0')}m` : `${m}m ${String(s).padStart(2,'0')}s`;
 }
 
-/* ════════════════════════════════════════════════
-   SELECTORS
-   ════════════════════════════════════════════════ */
+/* ═══════════ selectors ═══════════ */
 const entryOf = (p, iso) => state.data[p]?.[iso] || {};
 const doneCount = (p, iso) => TASKS.reduce((n,t) => n + (entryOf(p,iso)[t.id] ? 1 : 0), 0);
 const isComplete = (p, iso) => doneCount(p, iso) === TASKS.length;
@@ -704,7 +524,7 @@ function streak(p){
   let n = 0;
   for(let d = ti; d >= 1; d--){
     if(isComplete(p, isoForDay(d))) n++;
-    else if(d === ti) continue;   // today still in play — doesn't break it yet
+    else if(d === ti) continue;
     else break;
   }
   return n;
@@ -713,8 +533,7 @@ function bestStreak(p){
   const ti = Math.min(todayIndex(), TOTAL_DAYS);
   let best = 0, run = 0;
   for(let d = 1; d <= ti; d++){
-    if(isComplete(p, isoForDay(d))){ run++; best = Math.max(best, run); }
-    else run = 0;
+    if(isComplete(p, isoForDay(d))){ run++; best = Math.max(best, run); } else run = 0;
   }
   return best;
 }
@@ -729,135 +548,37 @@ function taskRate(p, taskId){
   if(ti < 1) return 0;
   let n = 0;
   for(let d = 1; d <= ti; d++) if(entryOf(p, isoForDay(d))[taskId]) n++;
-  return Math.round(n / ti * 100);
+  return Math.round(n/ti*100);
 }
-function kudosFor(to, date){
-  const list = state.reactions.filter(r => r.to === to && r.date === date);
-  const counts = {};
-  for(const r of list) counts[r.emoji] = (counts[r.emoji] || 0) + 1;
-  return counts;
-}
-function iReacted(to, date, emoji){
-  return state.reactions.some(r => r.to === to && r.date === date && r.emoji === emoji && r.from === me());
-}
+const kudosCount = (to, date) => state.reactions.filter(r => r.to === to && r.date === date).length;
+const iGaveKudos = (to, date) => state.reactions.some(r => r.to === to && r.date === date && r.from === me());
 function unseenKudos(){
-  // kudos given to me that I haven't opened the feed since
   const seen = Number(localStorage.getItem('kudosSeen') || 0);
   return state.reactions.filter(r => r.to === me()).length > seen;
 }
 
-/* ════════════════════════════════════════════════
-   FX — haptics, sound, confetti, toast
-   ════════════════════════════════════════════════ */
-function haptic(ms = 12){
-  if(navigator.vibrate) try{ navigator.vibrate(ms); }catch(_){}
-}
-
-let audioCtx;
-function chime(complete){
-  if(localStorage.getItem('sound') === 'off') return;
-  try{
-    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-    const notes = complete ? [523.25, 659.25, 783.99, 1046.5] : [880];
-    notes.forEach((f, i) => {
-      const o = audioCtx.createOscillator();
-      const g = audioCtx.createGain();
-      o.type = 'sine';
-      o.frequency.value = f;
-      const t0 = audioCtx.currentTime + i * 0.09;
-      g.gain.setValueAtTime(0, t0);
-      g.gain.linearRampToValueAtTime(complete ? 0.16 : 0.05, t0 + 0.015);
-      g.gain.exponentialRampToValueAtTime(0.0001, t0 + (complete ? 0.42 : 0.13));
-      o.connect(g); g.connect(audioCtx.destination);
-      o.start(t0); o.stop(t0 + 0.5);
-    });
-  }catch(_){}
-}
-
-let fxRAF = null;
-function confetti({ x = innerWidth/2, y = innerHeight/2, count = 90, spread = Math.PI, power = 15, colors }){
-  if(matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  const cvs = document.getElementById('fx');
-  const ctx = cvs.getContext('2d');
-  const dpr = Math.min(devicePixelRatio || 1, 2);
-  cvs.width = innerWidth * dpr;
-  cvs.height = innerHeight * dpr;
-  cvs.style.display = 'block';
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-  const parts = [];
-  for(let i = 0; i < count; i++){
-    const a = -Math.PI/2 + (Math.random() - 0.5) * spread;
-    const v = power * (0.45 + Math.random() * 0.75);
-    parts.push({
-      x, y,
-      vx: Math.cos(a) * v,
-      vy: Math.sin(a) * v,
-      w: 5 + Math.random() * 6,
-      h: 3 + Math.random() * 5,
-      rot: Math.random() * Math.PI,
-      vr: (Math.random() - 0.5) * 0.35,
-      c: colors[(Math.random() * colors.length) | 0],
-      life: 1
-    });
-  }
-
-  if(fxRAF) cancelAnimationFrame(fxRAF);
-  let last = performance.now();
-
-  (function frame(now){
-    const dt = Math.min((now - last) / 16.67, 2.5);
-    last = now;
-    ctx.clearRect(0, 0, innerWidth, innerHeight);
-    let alive = 0;
-
-    for(const p of parts){
-      p.vy += 0.42 * dt;
-      p.vx *= 0.995;
-      p.x += p.vx * dt;
-      p.y += p.vy * dt;
-      p.rot += p.vr * dt;
-      if(p.y > innerHeight + 40) p.life = 0;
-      else p.life -= 0.006 * dt;
-      if(p.life <= 0) continue;
-      alive++;
-      ctx.save();
-      ctx.translate(p.x, p.y);
-      ctx.rotate(p.rot);
-      ctx.globalAlpha = Math.max(0, Math.min(1, p.life));
-      ctx.fillStyle = p.c;
-      ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
-      ctx.restore();
-    }
-
-    if(alive > 0) fxRAF = requestAnimationFrame(frame);
-    else { ctx.clearRect(0,0,innerWidth,innerHeight); cvs.style.display = 'none'; fxRAF = null; }
-  })(last);
-}
-
+/* ═══════════ fx ═══════════ */
+function haptic(ms = 10){ if(navigator.vibrate) try{ navigator.vibrate(ms); }catch(_){} }
 let toastT;
 function toast(msg){
   const el = document.getElementById('toast');
   el.textContent = msg;
   el.classList.add('on');
   clearTimeout(toastT);
-  toastT = setTimeout(() => el.classList.remove('on'), 2000);
+  toastT = setTimeout(() => el.classList.remove('on'), 1900);
 }
 
-/* ════════════════════════════════════════════════
-   IMAGE HELPERS
-   ════════════════════════════════════════════════ */
+/* ═══════════ images ═══════════ */
 async function compressImage(file){
-  const bitmap = await createImageBitmap(file);
-  const maxDim = 1200;
-  const scale = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height));
-  const w = Math.round(bitmap.width * scale);
-  const h = Math.round(bitmap.height * scale);
-  const canvas = document.createElement('canvas');
-  canvas.width = w; canvas.height = h;
-  canvas.getContext('2d').drawImage(bitmap, 0, 0, w, h);
-  const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.82));
-  bitmap.close();
+  const bmp = await createImageBitmap(file);
+  const max = 1200;
+  const s = Math.min(1, max/Math.max(bmp.width, bmp.height));
+  const w = Math.round(bmp.width*s), h = Math.round(bmp.height*s);
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  c.getContext('2d').drawImage(bmp, 0, 0, w, h);
+  const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.82));
+  bmp.close();
   return blob;
 }
 function blobToBase64(blob){
@@ -869,458 +590,305 @@ function blobToBase64(blob){
   });
 }
 
-/* ════════════════════════════════════════════════
-   ICONS
-   ════════════════════════════════════════════════ */
-const ICON = {
-  today:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
-  wall:'<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="7" rx="1.5"/><rect x="3" y="13" width="18" height="7" rx="1.5"/><path d="M9 4v7M15 13v7"/></svg>',
-  feed:'<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="2"/><path d="M3 17l4.5-4.5 4 4 3-2.5L21 18"/></svg>',
-  rivals:'<svg viewBox="0 0 24 24"><path d="M7 21V11M12 21V4M17 21v-6"/></svg>',
-  gear:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 9 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.6 9a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></svg>',
-  tick:'<svg viewBox="0 0 24 24"><path d="M4 12.5l5.5 5.5L20 7"/></svg>'
-};
-
-/* ════════════════════════════════════════════════
-   RENDER — router
-   ════════════════════════════════════════════════ */
+/* ═══════════ render ═══════════ */
 const screen = () => document.getElementById('screen');
 
 function render(){
   if(!state.me){ renderPicker(); return; }
-  document.getElementById('tabbar').hidden = false;
-  renderTabbar();
-
+  document.getElementById('nav').hidden = false;
+  renderNav();
   const el = screen();
   el.classList.toggle('flush', state.tab === 'feed');
   el.scrollTop = 0;
-
-  if(state.tab === 'today')  el.innerHTML = viewToday();
-  if(state.tab === 'wall')   el.innerHTML = viewWall();
-  if(state.tab === 'feed')   el.innerHTML = viewFeed();
-  if(state.tab === 'rivals') el.innerHTML = viewRivals();
-
+  el.innerHTML =
+    state.tab === 'today'  ? viewToday()  :
+    state.tab === 'wall'   ? viewWall()   :
+    state.tab === 'feed'   ? viewFeed()   : viewRivals();
   wire();
 }
 
-function renderTabbar(){
-  const tabs = [
-    ['today','Today',ICON.today],
-    ['wall','Wall',ICON.wall],
-    ['feed','Feed',ICON.feed],
-    ['rivals','Rivals',ICON.rivals]
-  ];
+function renderNav(){
+  const tabs = [['today','Today'],['wall','Wall'],['feed','Feed'],['rivals','Rivals']];
   const badge = unseenKudos();
-  document.getElementById('tabbar').innerHTML = tabs.map(([id,label,svg]) => `
+  document.getElementById('nav').innerHTML = tabs.map(([id,label]) => `
     <button class="tab ${state.tab===id?'on':''}" data-tab="${id}">
-      ${svg}<span>${label}</span>
+      <span class="ic">${ICON[id]}</span><span>${label}</span>
       ${id==='feed' && badge ? '<i class="dot"></i>' : ''}
-    </button>
-  `).join('');
+    </button>`).join('');
 }
 
-/* ── identity picker ─────────────────────────── */
+/* ── identity ── */
 function renderPicker(){
-  document.getElementById('tabbar').hidden = true;
+  document.getElementById('nav').hidden = true;
   screen().innerHTML = `
     <div class="pick">
-      <div style="font-size:52px">🧱</div>
-      <h2>Who's checking in?</h2>
-      <p>Pick yourself. The app shows your progress next to your partner's.</p>
-      ${PROFILES.map(p => `
-        <button class="pick-btn" data-pick="${p.id}" data-p="${p.id}">
-          <span class="avatar lg">${p.initial}</span>
+      <div class="mark">75 Hard</div>
+      <h2>Who's<br>checking in</h2>
+      ${PROFILES.map((p,i) => `
+        <button class="pick-btn" data-pick="${p.id}">
           <span class="nm">${p.label}</span>
-        </button>
-      `).join('')}
+          <span class="ix">0${i+1}</span>
+        </button>`).join('')}
+      <div class="note" style="margin-top:26px">You can switch later</div>
     </div>`;
   screen().querySelectorAll('[data-pick]').forEach(b => {
     b.onclick = () => {
       state.me = b.dataset.pick;
       localStorage.setItem('me', state.me);
-      haptic(18);
+      haptic(14);
       render();
     };
   });
 }
 
-/* ── TODAY ───────────────────────────────────── */
+/* ── today ── */
 function viewToday(){
   const ti = todayIndex();
-
   if(ti > TOTAL_DAYS) return viewFinished();
   if(ti < 1) return `
-    <div class="topbar"><div><div class="title">75 Hard</div></div></div>
-    <div class="card" style="text-align:center;padding:36px 20px">
-      <div style="font-size:44px">⏳</div>
-      <h3 style="margin-top:12px;font-size:18px">Starts ${fmtDate(state.startDate)}</h3>
-      <p style="color:var(--txt-3);font-size:13px;margin-top:8px">${dayIndex(state.startDate) - ti} day(s) to go.</p>
+    ${topbar()}
+    <div class="hero">
+      <div class="eyebrow">Begins</div>
+      <div class="day num">${Math.abs(ti-1)}</div>
+      <div class="rule"></div>
+      <div class="hero-foot"><span class="state">Days out</span>
+        <span class="lbl" style="color:var(--bone-3)">${fmtDate(state.startDate)}</span></div>
     </div>`;
 
-  const iso  = todayISO();
-  const you  = me(), rival = them();
-  const n    = doneCount(you, iso);
-  const done = n === TASKS.length;
-  const rn   = doneCount(rival, iso);
-  const st   = streak(you);
-  const hrsLeft = msToMidnight() / 3600000;
-  const atRisk = !done && hrsLeft < 5;
-
-  const lead =
-    done && rn === TASKS.length ? `Both of you are done. <b>Perfect day.</b>` :
-    done                       ? `You're done. ${nameOf(rival)} is at <b>${rn}/5</b>.` :
-    rn === TASKS.length        ? `<b>${nameOf(rival)} already finished.</b> You're at ${n}/5.` :
-    rn > n                     ? `<b>${nameOf(rival)} is ahead</b> — ${rn}/5 to your ${n}/5.` :
-    n > rn                     ? `You're ahead — ${n}/5 to ${nameOf(rival)}'s ${rn}/5.` :
-                                 `Dead even at <b>${n}/5</b>.`;
+  const iso = todayISO(), you = me(), rival = them();
+  const n = doneCount(you, iso), done = n === TASKS.length;
+  const rn = doneCount(rival, iso);
+  const hrs = msToMidnight()/3600000;
 
   return `
-  <div data-p="${you}">
-    <div class="topbar">
-      <div>
-        <div class="title">Day ${ti}</div>
-        <div class="sub">${fmtDate(iso)} · ${TOTAL_DAYS - ti} to go</div>
+  <div data-who="you">
+    ${topbar()}
+    <div class="hero">
+      <div class="eyebrow">Day</div>
+      <div class="day num">${ti}</div>
+      <div class="rule"></div>
+      <div class="hero-foot">
+        <span class="state ${done?'done':''}">${done ? 'Complete' : word(n)+' of five'}</span>
+        <span class="lbl" style="color:var(--bone-3)">${TOTAL_DAYS-ti} left</span>
       </div>
-      <button class="icon-btn" id="settingsBtn">${ICON.gear}</button>
-    </div>
-
-    <div class="hero ${done?'complete':''}">
-      <div class="ring-wrap" id="ringWrap">
-        ${ringSVG(you, iso)}
-        <div class="ring-center">
-          <div class="ring-count ${done?'done':''}" id="ringCount">${n}</div>
-          <div class="ring-of">OF ${TASKS.length} DONE</div>
-          <div class="ring-day">${done ? 'DAY LOCKED IN' : 'KEEP GOING'}</div>
+      <div class="seg">${TASKS.map(t => `<i class="${entryOf(you,iso)[t.id]?'on':''}" data-seg="${t.id}"></i>`).join('')}</div>
+      <div class="stats">
+        <div class="stat">
+          <div class="eyebrow">Streak</div>
+          <div class="v num" id="streakV">${streak(you)}</div>
         </div>
-      </div>
-    </div>
-
-    <div class="pill-row">
-      <div class="pill streak">
-        <span class="flame">🔥</span>
-        <span class="v num">${st}</span>
-        <span class="k">Day Streak</span>
-      </div>
-      <div class="pill ${atRisk?'danger':''}" id="cdPill">
-        <span class="v num" id="cdVal">—</span>
-        <span class="k">${done ? 'Til Day '+(ti+1) : 'Left Today'}</span>
-      </div>
-    </div>
-
-    <div class="h2h">
-      <div class="h2h-head">
-        <span class="eyebrow">Head to head</span>
-        <span class="lead">${lead}</span>
-      </div>
-      <div class="vs-card">
-        ${[you, rival].map(p => {
-          const c = doneCount(p, iso);
-          return `
-          <div class="vs-row ${c===TASKS.length?'win':''}" data-p="${p}">
-            <span class="avatar">${initialOf(p)}</span>
-            <span class="who">${p===you?'You':nameOf(p)}</span>
-            <span class="vs-bar"><i style="width:${c/TASKS.length*100}%"></i></span>
-            <span class="score num">${c===TASKS.length?'✓':c+'/5'}</span>
-          </div>`;
-        }).join('')}
+        <div class="stat ${!done && hrs < 5 ? 'risk':''}" id="cdStat">
+          <div class="eyebrow">${done ? 'Next day in' : 'Left today'}</div>
+          <div class="v num" id="cdV">&nbsp;</div>
+        </div>
       </div>
     </div>
 
     <div class="tasks" id="tasks">
       ${TASKS.map(t => `
         <button class="task ${entryOf(you,iso)[t.id]?'on':''}" data-task="${t.id}">
-          <span class="emo">${t.emo}</span>
           <span class="meta">
-            <span class="label">${t.label}</span>
-            <span class="desc">${t.desc}</span>
+            <span class="nm">${t.nm}</span>
+            <span class="sub">${t.sub}</span>
           </span>
-          <span class="check">${ICON.tick}</span>
-        </button>
-      `).join('')}
+          <span class="box"><span class="ic">${ICON.check}</span></span>
+        </button>`).join('')}
     </div>
 
-    <button class="photo-cta ${hasPhoto(you,iso)?'filled':''}" id="photoCta">
+    <div class="rival" data-who="them">
+      <div class="rival-head">
+        <span class="who">${nameOf(rival)}</span>
+        <span class="sc ${rn===TASKS.length?'done':''}">${rn===TASKS.length?'Complete':rn+' / '+TASKS.length}</span>
+      </div>
+      <div class="seg">${TASKS.map(t => `<i class="${entryOf(rival,iso)[t.id]?'on':''}"></i>`).join('')}</div>
+    </div>
+
+    <button class="frame ${hasPhoto(you,iso)?'filled':''}" id="frameBtn">
       ${hasPhoto(you,iso)
-        ? `<img class="thumb" src="${api.photoUrl(you,iso)}" alt="">`
-        : `<span class="emo">📸</span>`}
+        ? `<img src="${api.photoUrl(you,iso)}" alt="">`
+        : `<span class="ic">${ICON.camera}</span>`}
       <span class="meta">
-        <span class="label">${hasPhoto(you,iso)?"Today's photo is up":'Add your progress photo'}</span>
-        <span class="desc">${hasPhoto(you,iso)?'Tap to replace or remove':'Required — and it feeds the timeline'}</span>
+        <span class="nm">${hasPhoto(you,iso)?'Frame logged':"Today's frame"}</span>
+        <span class="sub">${hasPhoto(you,iso)?'Tap to replace or remove':'Add your progress photo'}</span>
       </span>
     </button>
   </div>`;
 }
 
-function ringSVG(p, iso){
-  const R = 92, CX = 116, C = 2 * Math.PI * R;
-  const gap = 7, span = 360 / TASKS.length;
-  const len = C * (span - gap) / 360;
-  const segs = TASKS.map((t, i) => {
-    const rot = -90 + i * span + gap/2;
-    const on = !!entryOf(p, iso)[t.id];
-    return `
-      <circle class="seg-bg" cx="${CX}" cy="${CX}" r="${R}" fill="none" stroke-width="15"
-        stroke-linecap="round" stroke-dasharray="${len} ${C-len}"
-        transform="rotate(${rot} ${CX} ${CX})"/>
-      <circle class="seg-fg ${on?'lit':''}" data-seg="${t.id}" cx="${CX}" cy="${CX}" r="${R}" fill="none" stroke-width="15"
-        stroke-linecap="round" style="stroke-dasharray:${on?len:0} ${C}"
-        transform="rotate(${rot} ${CX} ${CX})"/>`;
-  }).join('');
-  return `
-    <svg class="ring" viewBox="0 0 232 232">
-      <defs>
-        <linearGradient id="ringgrad" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="var(--p)"/>
-          <stop offset="100%" stop-color="var(--p2)"/>
-        </linearGradient>
-        <linearGradient id="ringdone" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="var(--lime)"/>
-          <stop offset="100%" stop-color="var(--green)"/>
-        </linearGradient>
-      </defs>
-      ${segs}
-    </svg>`;
-}
+const topbar = () => `
+  <div class="top">
+    <span class="mark">75 Hard</span>
+    <button class="icon-btn" id="gearBtn">${ICON.gear}</button>
+  </div>`;
 
 function viewFinished(){
   return `
-  <div data-p="${me()}">
-    <div class="topbar"><div><div class="title">75 / 75</div><div class="sub">Challenge window closed</div></div>
-      <button class="icon-btn" id="settingsBtn">${ICON.gear}</button></div>
-    <div class="card" style="text-align:center;padding:34px 20px">
-      <div style="font-size:60px">👑</div>
-      <h2 style="font-size:30px;margin-top:12px;letter-spacing:-1px">It's done.</h2>
-      <div class="podium" style="margin-top:22px">
-        ${PROFILES.map(p => `
-          <div class="pod" data-p="${p.id}">
-            <div class="big num">${totalComplete(p.id)}</div>
-            <div class="lbl">${p.label} · of 75</div>
-          </div>`).join('')}
-      </div>
+  <div data-who="you">
+    ${topbar()}
+    <div class="hero">
+      <div class="eyebrow">Finished</div>
+      <div class="day num">75</div>
+      <div class="rule"></div>
+      <div class="hero-foot"><span class="state done">Window closed</span></div>
     </div>
-    <div style="margin-top:16px"><button class="btn" id="newWallBtn">Start a new 75</button></div>
+    <div style="margin-top:30px">
+      ${PROFILES.map(p => `
+        <div class="rv-row" data-who="${whoAttr(p.id)}">
+          <span class="k">${p.id===me()?'You':nameOf(p.id)}</span>
+          <span class="v" style="color:var(--p)">${totalComplete(p.id)}</span>
+        </div>`).join('')}
+    </div>
+    <button class="btn" id="newBtn" style="margin-top:26px">Start a new 75</button>
   </div>`;
 }
 
-/* ── WALL ────────────────────────────────────── */
+/* ── wall ── */
 function viewWall(){
   const ti = todayIndex();
   const show = state.wallView === 'both' ? [me(), them()] : [state.wallView];
+  const done = totalComplete(me());
   return `
   <div>
-    <div class="topbar">
-      <div><div class="title">The Wall</div>
-        <div class="sub">${Math.min(Math.max(ti,0),TOTAL_DAYS)} of ${TOTAL_DAYS} days elapsed</div></div>
-      <button class="icon-btn" id="settingsBtn">${ICON.gear}</button>
-    </div>
-
-    <div class="seg-toggle" id="wallToggle">
+    ${topbar()}
+    <div class="switch" id="switch">
       <button class="${state.wallView==='both'?'on':''}" data-wv="both">Both</button>
       <button class="${state.wallView===me()?'on':''}" data-wv="${me()}">You</button>
       <button class="${state.wallView===them()?'on':''}" data-wv="${them()}">${nameOf(them())}</button>
     </div>
 
     ${show.map(p => `
-      <div class="card wall-card" data-p="${p}">
-        <div class="wall-top">
-          <span class="avatar">${initialOf(p)}</span>
-          <span class="name">${p===me()?'You':nameOf(p)}</span>
-          <span class="tally num">${totalComplete(p)} / ${Math.min(Math.max(ti,0),TOTAL_DAYS)}</span>
+      <div class="wall" data-who="${whoAttr(p)}">
+        <div class="wall-head">
+          <span class="who">${p===me()?'You':nameOf(p)}</span>
+          <span class="tally num">${totalComplete(p)} / ${Math.max(0,Math.min(ti,TOTAL_DAYS))}</span>
         </div>
-        <div class="grid">${cellsFor(p, ti)}</div>
+        <div class="grid">${cells(p, ti)}</div>
         <div class="legend">
-          <span><i style="background:linear-gradient(150deg,var(--p),var(--p2))"></i>Done</span>
-          <span><i style="background:rgba(255,255,255,.045);box-shadow:inset 0 0 0 1px rgba(255,59,92,.4)"></i>Missed</span>
-          <span><i style="box-shadow:inset 0 0 0 2px var(--p)"></i>Today</span>
-          <span><i style="background:rgba(255,255,255,.03)"></i>Ahead</span>
+          <span><i style="background:var(--p)"></i>Done</span>
+          <span><i style="background:var(--ink-3);box-shadow:inset 0 0 0 1px var(--miss)"></i>Missed</span>
+          <span><i style="box-shadow:inset 0 0 0 1px var(--bone)"></i>Today</span>
+          <span><i style="background:var(--ink-2)"></i>Ahead</span>
         </div>
-      </div>
-    `).join('')}
+      </div>`).join('')}
 
-    <div class="sect" data-p="${me()}">
-      <span class="eyebrow">Your milestones · ${BADGES.filter(b=>totalComplete(me())>=b.d).length}/${BADGES.length}</span>
-      <div class="badges">
-        ${BADGES.map(b => `
-          <div class="badge ${totalComplete(me())>=b.d?'got':''}">
-            <div class="ic">${b.ic}</div>
-            <div class="nm">${b.nm}</div>
-            <div class="dy">${b.d} day${b.d>1?'s':''}</div>
+    <div class="sect" data-who="you">
+      <span class="eyebrow">Milestones — ${MILES.filter(m=>done>=m.d).length} of ${MILES.length}</span>
+      <div class="miles">
+        ${MILES.map(m => `
+          <div class="mile ${done>=m.d?'got':''}">
+            <span class="d num">${String(m.d).padStart(2,'0')}</span>
+            <span class="nm">${m.nm}</span>
+            <span class="ic">${ICON.check}</span>
           </div>`).join('')}
       </div>
     </div>
   </div>`;
 }
 
-function cellsFor(p, ti){
+function cells(p, ti){
   let out = '';
   for(let d = 1; d <= TOTAL_DAYS; d++){
     const iso = isoForDay(d);
-    let cls = 'cell';
-    if(d > ti) cls += ' future';
-    else if(d === ti) cls += ' today' + (isComplete(p, iso) ? ' done' : '');
-    else cls += isComplete(p, iso) ? ' done' : ' miss';
-    if(hasPhoto(p, iso)) cls += ' pic';
-    if(MILESTONES.has(d)) cls += ' mile';
-    out += `<button class="${cls}" data-day="${d}" data-prof="${p}" aria-label="Day ${d}"></button>`;
+    let c = 'cell';
+    if(d > ti) c += ' future';
+    else if(d === ti) c += ' today' + (isComplete(p,iso) ? ' done' : '');
+    else c += isComplete(p,iso) ? ' done' : ' miss';
+    if(hasPhoto(p,iso)) c += ' pic';
+    out += `<button class="${c}" data-day="${d}" data-prof="${p}" aria-label="Day ${d}"></button>`;
   }
   return out;
 }
 
-/* ── FEED ────────────────────────────────────── */
+/* ── feed ── */
 function viewFeed(){
   localStorage.setItem('kudosSeen', String(state.reactions.length));
-
   const posts = [];
-  for(const p of PROFILES){
-    for(const iso of state.photoDays[p.id] || []) posts.push({ p: p.id, iso });
-  }
+  for(const p of PROFILES) for(const iso of state.photoDays[p.id] || []) posts.push({ p:p.id, iso });
   posts.sort((a,b) => a.iso === b.iso ? (a.p === me() ? -1 : 1) : (a.iso < b.iso ? 1 : -1));
 
-  if(!posts.length){
-    return `
+  if(!posts.length) return `
     <div class="feed-empty">
-      <div class="ic">📸</div>
-      <h3>Nothing here yet</h3>
-      <p>Progress photos from both of you land here as a scrollable timeline. Post today's from the Today tab.</p>
-      <button class="btn primary" style="max-width:220px" data-goto="today" data-p="${me()}">Take today's photo</button>
+      <span class="ic">${ICON.camera}</span>
+      <h3>No frames yet</h3>
+      <p>Progress photos from both of you land here as one timeline. Post today's from the Today tab.</p>
+      <button class="btn primary" style="max-width:220px;margin-top:8px" data-goto="today">Add today's frame</button>
     </div>`;
-  }
 
-  return `<div class="feed" id="feed">${posts.map(post => {
-    const d = dayIndex(post.iso);
-    const full = isComplete(post.p, post.iso);
-    const counts = kudosFor(post.p, post.iso);
+  return `<div class="feed" id="feed">${posts.map(o => {
+    const d = dayIndex(o.iso);
+    const n = doneCount(o.p, o.iso);
+    const full = n === TASKS.length;
+    const c = kudosCount(o.p, o.iso);
+    const mine = iGaveKudos(o.p, o.iso);
+    const own = o.p === me();
     return `
-    <div class="post" data-p="${post.p}" data-post-p="${post.p}" data-post-iso="${post.iso}">
-      <img src="${api.photoUrl(post.p, post.iso)}" alt="Day ${d}" loading="lazy" draggable="false">
+    <div class="post" data-who="${whoAttr(o.p)}" data-post-p="${o.p}" data-post-iso="${o.iso}">
+      <img src="${api.photoUrl(o.p,o.iso)}" alt="Day ${d}" loading="lazy" draggable="false">
       <div class="shade"></div>
       <div class="post-top">
-        <span class="avatar ring-on">${initialOf(post.p)}</span>
-        <span>
-          <div class="nm">${post.p===me()?'You':nameOf(post.p)}</div>
-          <div class="dy">Day ${d} · ${fmtDate(post.iso)}</div>
-        </span>
+        <span class="who">${own?'You':nameOf(o.p)}</span>
+        <span class="dt">${fmtDate(o.iso)}</span>
       </div>
       <div class="post-bot">
-        <div class="post-chips">
-          ${full
-            ? `<span class="chip full">✓ ALL 5 DONE</span>`
-            : TASKS.filter(t => entryOf(post.p, post.iso)[t.id]).map(t => `<span class="chip">${t.emo} ${t.label}</span>`).join('')
-              || `<span class="chip">No tasks logged</span>`}
-        </div>
-        <div class="kudos-row">
-          ${KUDOS.map(e => {
-            const c = counts[e] || 0;
-            const mine = iReacted(post.p, post.iso, e);
-            if(!c && !['🔥','💪'].includes(e)) return '';
-            return `<button class="kudo ${mine?'mine':''}" data-kudo="${e}">${e}${c?`<span class="n num">${c}</span>`:''}</button>`;
-          }).join('')}
-        </div>
+        <div class="day num">${d}</div>
+        <div class="rule"></div>
+        <div class="state">${full ? '<b>All five complete</b>' : n + ' of ' + TASKS.length + ' complete'}</div>
+        <button class="kudos ${mine?'mine':''}" ${own?'disabled':''}>
+          ${own ? 'Kudos' : (mine ? 'Kudos given' : 'Give kudos')}
+          ${c ? `<span class="n">${c}</span>` : ''}
+        </button>
       </div>
     </div>`;
   }).join('')}</div>`;
 }
 
-/* ── RIVALS ──────────────────────────────────── */
+/* ── rivals ── */
 function viewRivals(){
-  const a = 'sachin', b = 'aarya';
-  const ta = totalComplete(a), tb = totalComplete(b);
+  const a = me(), b = them();
   const ti = Math.max(0, Math.min(todayIndex(), TOTAL_DAYS));
-
-  // `scale` is what a full bar means. Percentages scale to 100; raw counts scale
-  // to whichever of the two is larger, so the leader's bar always reads as full.
-  const row = (label, va, vb, suffix = '%', scale = 100) => {
-    const span = Math.max(scale, 1);
-    return `
-    <div class="srow">
-      <span class="nm">${label}</span>
-      <span class="dual">
-        <span class="bar a"><i style="width:${Math.min(100, va/span*100)}%"></i></span>
-        <span class="bar b"><i style="width:${Math.min(100, vb/span*100)}%"></i></span>
-      </span>
-      <span class="pc num">${va}${suffix}<br>${vb}${suffix}</span>
+  const row = (k, va, vb, small) => `
+    <div class="rv-row ${small?'small':''}">
+      <span class="k">${k}</span>
+      <span class="v a">${va}</span>
+      <span class="v b">${vb}</span>
     </div>`;
-  };
-  const pair = (x, y) => Math.max(x, y);
-
-  const gap = Math.abs(ta - tb);
-  const verdict = gap === 0
-    ? `Neck and neck at ${ta} days each.`
-    : `<b>${nameOf(ta > tb ? a : b)}</b> leads by ${gap} day${gap>1?'s':''}.`;
 
   return `
   <div>
-    <div class="topbar">
-      <div><div class="title">Rivals</div><div class="sub">${verdict.replace(/<[^>]+>/g,'')}</div></div>
-      <button class="icon-btn" id="settingsBtn">${ICON.gear}</button>
+    ${topbar()}
+    <div class="rv-head">
+      <span></span>
+      <span class="c" style="color:var(--you)">You</span>
+      <span class="c" style="color:var(--them)">${nameOf(b)}</span>
     </div>
+    ${row('Perfect days', totalComplete(a), totalComplete(b))}
+    ${row('Current streak', streak(a), streak(b))}
+    ${row('Longest run', bestStreak(a), bestStreak(b))}
+    ${row('Consistency', (ti?Math.round(totalComplete(a)/ti*100):0)+'%', (ti?Math.round(totalComplete(b)/ti*100):0)+'%')}
 
-    <div class="podium">
-      ${[a,b].map(p => {
-        const t = totalComplete(p);
-        const lead = t === Math.max(ta,tb) && ta !== tb;
-        return `
-        <div class="pod ${lead?'lead':''}" data-p="${p}">
-          ${lead?'<div class="crown">👑</div>':''}
-          <span class="avatar" style="margin:0 auto">${initialOf(p)}</span>
-          <div class="big num">${t}</div>
-          <div class="lbl">${p===me()?'You':nameOf(p)} · perfect days</div>
-        </div>`;
-      }).join('')}
+    <div class="sect">
+      <span class="eyebrow">By task</span>
+      ${TASKS.map(t => row(t.nm, taskRate(a,t.id)+'%', taskRate(b,t.id)+'%', true)).join('')}
     </div>
 
     <div class="sect">
-      <span class="eyebrow">Streaks</span>
-      <div class="card stat-list">
-        ${row('Current', streak(a), streak(b), 'd', pair(streak(a), streak(b)))}
-        ${row('Longest ever', bestStreak(a), bestStreak(b), 'd', pair(bestStreak(a), bestStreak(b)))}
-        ${row('Consistency', ti?Math.round(ta/ti*100):0, ti?Math.round(tb/ti*100):0)}
-      </div>
-    </div>
-
-    <div class="sect">
-      <span class="eyebrow">Task breakdown</span>
-      <div class="card stat-list">
-        ${TASKS.map(t => row(`${t.emo} ${t.label}`, taskRate(a, t.id), taskRate(b, t.id))).join('')}
-      </div>
-      <div style="display:flex;gap:14px;margin-top:11px;justify-content:center">
-        ${[a,b].map(p => `
-          <span style="display:flex;align-items:center;gap:6px;font-size:10.5px;font-weight:700;color:var(--txt-3)" data-p="${p}">
-            <i style="width:16px;height:5px;border-radius:99px;background:linear-gradient(90deg,var(--p),var(--p2));display:block"></i>
-            ${nameOf(p)}
-          </span>`).join('')}
-      </div>
-    </div>
-
-    <div class="sect">
-      <span class="eyebrow">Photos posted</span>
-      <div class="card stat-list">
-        ${(() => {
-          const pa = (state.photoDays[a]||[]).length, pb = (state.photoDays[b]||[]).length;
-          const ka = state.reactions.filter(r=>r.to===a).length, kb = state.reactions.filter(r=>r.to===b).length;
-          return row('Progress pics', pa, pb, '', pair(pa,pb)) + row('Kudos received', ka, kb, '', pair(ka,kb));
-        })()}
-      </div>
+      <span class="eyebrow">Record</span>
+      ${row('Frames posted', (state.photoDays[a]||[]).length, (state.photoDays[b]||[]).length, true)}
+      ${row('Kudos received', state.reactions.filter(r=>r.to===a).length,
+                              state.reactions.filter(r=>r.to===b).length, true)}
     </div>
   </div>`;
 }
 
-/* ════════════════════════════════════════════════
-   EVENT WIRING
-   ════════════════════════════════════════════════ */
+/* ═══════════ wiring ═══════════ */
 function wire(){
   const el = screen();
 
-  document.getElementById('tabbar').querySelectorAll('.tab').forEach(b => {
-    b.onclick = () => {
-      if(state.tab === b.dataset.tab) return;
-      state.tab = b.dataset.tab;
-      haptic(8);
-      render();
-    };
+  document.getElementById('nav').querySelectorAll('.tab').forEach(b => {
+    b.onclick = () => { if(state.tab !== b.dataset.tab){ state.tab = b.dataset.tab; haptic(6); render(); } };
   });
 
-  const gear = el.querySelector('#settingsBtn');
+  const gear = el.querySelector('#gearBtn');
   if(gear) gear.onclick = openSettings;
 
   el.querySelectorAll('[data-goto]').forEach(b => {
@@ -1331,392 +899,291 @@ function wire(){
     b.onclick = () => toggleTask(b.dataset.task, b);
   });
 
-  const cta = el.querySelector('#photoCta');
-  if(cta) cta.onclick = () => openDay(me(), todayISO());
+  const frame = el.querySelector('#frameBtn');
+  if(frame) frame.onclick = () => openDay(me(), todayISO());
 
-  el.querySelectorAll('#wallToggle button').forEach(b => {
-    b.onclick = () => { state.wallView = b.dataset.wv; haptic(8); render(); };
+  el.querySelectorAll('#switch button').forEach(b => {
+    b.onclick = () => { state.wallView = b.dataset.wv; haptic(6); render(); };
   });
 
   el.querySelectorAll('.cell').forEach(b => {
     b.onclick = () => {
       const d = Number(b.dataset.day);
-      if(d > todayIndex()) { toast("That day hasn't happened yet"); return; }
+      if(d > todayIndex()){ toast("Hasn't happened yet"); return; }
       openDay(b.dataset.prof, isoForDay(d));
     };
   });
 
-  const newWall = el.querySelector('#newWallBtn');
-  if(newWall) newWall.onclick = confirmReset;
+  const nb = el.querySelector('#newBtn');
+  if(nb) nb.onclick = confirmReset;
 
-  wireFeed(el);
+  el.querySelectorAll('.post').forEach(post => {
+    const p = post.dataset.postP, iso = post.dataset.postIso;
+    if(p === me()) return;
+    const btn = post.querySelector('.kudos');
+    if(btn) btn.onclick = e => { e.stopPropagation(); sendKudos(p, iso, post, false); };
+    let last = 0;
+    post.addEventListener('click', e => {
+      if(e.target.closest('.kudos')) return;
+      const now = Date.now();
+      if(now - last < 320){ last = 0; sendKudos(p, iso, post, true); } else last = now;
+    });
+  });
+
   startCountdown();
 }
 
-function wireFeed(el){
-  el.querySelectorAll('.post').forEach(post => {
-    const p = post.dataset.postP, iso = post.dataset.postIso;
-
-    post.querySelectorAll('[data-kudo]').forEach(k => {
-      k.onclick = e => { e.stopPropagation(); sendKudos(p, iso, k.dataset.kudo, post); };
-    });
-
-    // double-tap anywhere on the photo = 🔥
-    let lastTap = 0;
-    post.addEventListener('click', e => {
-      if(e.target.closest('[data-kudo]')) return;
-      const now = Date.now();
-      if(now - lastTap < 320){ lastTap = 0; sendKudos(p, iso, '🔥', post, true); }
-      else lastTap = now;
-    });
-  });
-}
-
-/* ════════════════════════════════════════════════
-   ACTIONS
-   ════════════════════════════════════════════════ */
+/* ═══════════ actions ═══════════ */
 async function toggleTask(taskId, btn){
   const you = me(), iso = todayISO();
   if(!state.data[you][iso]) state.data[you][iso] = {};
-
-  const wasComplete = isComplete(you, iso);
+  const was = isComplete(you, iso);
   const now = !state.data[you][iso][taskId];
   state.data[you][iso][taskId] = now;
 
-  // targeted DOM update — a full re-render would kill the animation
   btn.classList.toggle('on', now);
-  if(now){ btn.classList.add('just'); setTimeout(() => btn.classList.remove('just'), 460); }
-  refreshTodayChrome();
-  haptic(now ? 14 : 8);
+  if(now){ btn.classList.add('just'); setTimeout(() => btn.classList.remove('just'), 320); }
+  refreshToday();
+  haptic(now ? 12 : 6);
 
-  const nowComplete = isComplete(you, iso);
-  if(now && !wasComplete && nowComplete){
-    chime(true);
-    celebrate();
-  } else if(now){
-    chime(false);
-    const r = document.getElementById('ringWrap');
-    if(r){
-      r.classList.add('pop');
-      setTimeout(() => r.classList.remove('pop'), 440);
-      const b = r.getBoundingClientRect();
-      confetti({
-        x: b.left + b.width/2, y: b.top + b.height/2,
-        count: 22, power: 9, spread: Math.PI*2,
-        colors: ['#FF6B35','#F7386B','#FFB03B']
-      });
-    }
-  }
+  if(now && !was && isComplete(you, iso)) showComplete();
 
-  try{
-    await api.saveDay(you, iso, state.data[you][iso]);
-    state.online = true;
-  }catch(_){
-    toast('Offline — change not saved');
-  }
+  try{ await api.saveDay(you, iso, state.data[you][iso]); state.online = true; }
+  catch(_){ toast('Offline — not saved'); }
 }
 
-function refreshTodayChrome(){
+function refreshToday(){
   const you = me(), iso = todayISO();
-  const n = doneCount(you, iso);
-  const done = n === TASKS.length;
+  const n = doneCount(you, iso), done = n === TASKS.length;
 
-  const count = document.getElementById('ringCount');
-  if(count){ count.textContent = n; count.classList.toggle('done', done); }
-
-  const hero = document.querySelector('.hero');
-  if(hero) hero.classList.toggle('complete', done);
-
-  const dayLbl = document.querySelector('.ring-day');
-  if(dayLbl) dayLbl.textContent = done ? 'DAY LOCKED IN' : 'KEEP GOING';
-
-  // ring segments
-  const R = 92, C = 2*Math.PI*R, gap = 7, span = 360/TASKS.length;
-  const len = C * (span - gap)/360;
   TASKS.forEach(t => {
-    const seg = document.querySelector(`[data-seg="${t.id}"]`);
-    if(!seg) return;
-    const on = !!entryOf(you, iso)[t.id];
-    seg.style.strokeDasharray = `${on?len:0} ${C}`;
-    seg.classList.toggle('lit', on);
+    const s = document.querySelector(`[data-seg="${t.id}"]`);
+    if(s) s.classList.toggle('on', !!entryOf(you,iso)[t.id]);
   });
-
-  // head-to-head + streak
-  const rows = document.querySelectorAll('.vs-row');
-  if(rows.length){
-    const bar = rows[0].querySelector('.vs-bar i');
-    const score = rows[0].querySelector('.score');
-    if(bar) bar.style.width = `${n/TASKS.length*100}%`;
-    if(score) score.textContent = done ? '✓' : `${n}/5`;
-    rows[0].classList.toggle('win', done);
+  const st = document.querySelector('.hero-foot .state');
+  if(st){ st.textContent = done ? 'Complete' : `${word(n)} of five`; st.classList.toggle('done', done); }
+  const sv = document.getElementById('streakV');
+  if(sv) sv.textContent = streak(you);
+  const cd = document.getElementById('cdStat');
+  if(cd){
+    cd.classList.toggle('risk', !done && msToMidnight()/3600000 < 5);
+    const k = cd.querySelector('.eyebrow');
+    if(k) k.textContent = done ? 'Next day in' : 'Left today';
   }
-  const streakEl = document.querySelector('.pill.streak .v');
-  if(streakEl) streakEl.textContent = streak(you);
-
-  const cd = document.getElementById('cdPill');
-  if(cd) cd.classList.toggle('danger', !done && msToMidnight()/3600000 < 5);
 }
 
-function celebrate(){
-  const ti = todayIndex();
-  const you = me();
-  const st = streak(you);
-  const total = totalComplete(you);
-  const badge = BADGES.find(b => b.d === total);
-
-  const el = document.getElementById('celebrate');
+function showComplete(){
+  const ti = todayIndex(), you = me();
+  const st = streak(you), total = totalComplete(you);
+  const mile = MILES.find(m => m.d === total);
+  const el = document.getElementById('done');
+  el.setAttribute('data-who','you');
   el.innerHTML = `
     <div class="inner">
-      <div class="ic">${badge ? badge.ic : '🔥'}</div>
-      <div class="big">DAY ${ti}<br>COMPLETE</div>
-      <div class="sub">
-        ${badge ? `<b>${badge.nm}</b> unlocked · ` : ''}${st} day streak<br>
-        ${total} of ${TOTAL_DAYS} bricks laid
-      </div>
-      <div class="hint">TAP TO CLOSE</div>
+      <div class="eyebrow">Day</div>
+      <div class="big num">${ti}</div>
+      <div class="rule"></div>
+      <div class="word">Complete</div>
+      <div class="meta">${word(st)} consecutive${mile ? ' — ' + mile.nm : ''}</div>
     </div>`;
   el.classList.add('on');
-  el.onclick = () => el.classList.remove('on');
-
-  haptic([18,60,18,60,34]);
-  confetti({
-    x: innerWidth/2, y: innerHeight * 0.62,
-    count: 130, power: 19, spread: Math.PI * 1.5,
-    colors: ['#B8FF3B','#22C55E','#FF6B35','#F7386B','#A855F7','#FFFFFF']
-  });
-  setTimeout(() => el.classList.remove('on'), 4200);
+  haptic([14,50,14]);
+  const close = () => { el.style.opacity = '0'; setTimeout(() => { el.classList.remove('on'); el.style.opacity=''; }, 280); };
+  el.onclick = close;
+  clearTimeout(showComplete._t);
+  showComplete._t = setTimeout(close, 1600);
 }
 
-async function sendKudos(to, iso, emoji, postEl, showBurst){
-  if(to === me()){ toast("Can't give yourself kudos"); return; }
-  haptic(16);
+async function sendKudos(to, iso, postEl, isDoubleTap){
+  if(to === me()) return;
+  const had = iGaveKudos(to, iso);
+  if(isDoubleTap && had) return;   // double-tap only ever adds
+  haptic(12);
 
-  if(showBurst && postEl){
-    const b = document.createElement('div');
-    b.className = 'burst';
-    b.textContent = emoji;
-    postEl.appendChild(b);
-    setTimeout(() => b.remove(), 860);
+  if(isDoubleTap){
+    const s = document.createElement('div');
+    s.className = 'stamp';
+    s.textContent = 'KUDOS';
+    postEl.appendChild(s);
+    setTimeout(() => s.remove(), 920);
   }
 
-  const had = iReacted(to, iso, emoji);
-
-  // Double-tap only ever adds, like Instagram — an accidental second tap should
-  // never silently retract kudos. Tapping the chip is the way to undo.
-  if(showBurst && had) return;
-
-  // optimistic
-  if(had) state.reactions = state.reactions.filter(r => !(r.to===to && r.date===iso && r.emoji===emoji && r.from===me()));
-  else state.reactions.push({ from:me(), to, date:iso, emoji });
-  repaintKudos(postEl, to, iso);
+  if(had) state.reactions = state.reactions.filter(r => !(r.to===to && r.date===iso && r.from===me()));
+  else state.reactions.push({ from:me(), to, date:iso, emoji:KUDOS_TOKEN });
+  paintKudos(postEl, to, iso);
 
   try{
-    await api.react(me(), to, iso, emoji);
-    if(!had) toast(`${emoji} sent to ${nameOf(to)}`);
+    await api.react(me(), to, iso, KUDOS_TOKEN);
   }catch(_){
-    // roll back
-    if(had) state.reactions.push({ from:me(), to, date:iso, emoji });
-    else state.reactions = state.reactions.filter(r => !(r.to===to && r.date===iso && r.emoji===emoji && r.from===me()));
-    repaintKudos(postEl, to, iso);
-    toast('Could not send kudos');
+    if(had) state.reactions.push({ from:me(), to, date:iso, emoji:KUDOS_TOKEN });
+    else state.reactions = state.reactions.filter(r => !(r.to===to && r.date===iso && r.from===me()));
+    paintKudos(postEl, to, iso);
+    toast('Kudos failed');
   }
 }
 
-function repaintKudos(postEl, to, iso){
-  if(!postEl) return;
-  const row = postEl.querySelector('.kudos-row');
-  if(!row) return;
-  const counts = kudosFor(to, iso);
-  row.innerHTML = KUDOS.map(e => {
-    const c = counts[e] || 0;
-    const mine = iReacted(to, iso, e);
-    if(!c && !['🔥','💪'].includes(e)) return '';
-    return `<button class="kudo ${mine?'mine':''}" data-kudo="${e}">${e}${c?`<span class="n num">${c}</span>`:''}</button>`;
-  }).join('');
-  row.querySelectorAll('[data-kudo]').forEach(k => {
-    k.onclick = ev => { ev.stopPropagation(); sendKudos(to, iso, k.dataset.kudo, postEl); };
-  });
+function paintKudos(postEl, to, iso){
+  const btn = postEl?.querySelector('.kudos');
+  if(!btn) return;
+  const c = kudosCount(to, iso), mine = iGaveKudos(to, iso);
+  btn.classList.toggle('mine', mine);
+  btn.innerHTML = `${mine ? 'Kudos given' : 'Give kudos'}${c ? `<span class="n">${c}</span>` : ''}`;
+  btn.onclick = e => { e.stopPropagation(); sendKudos(to, iso, postEl, false); };
 }
 
-let cdTimer;
+let cdT;
 function startCountdown(){
-  clearInterval(cdTimer);
+  clearInterval(cdT);
   const tick = () => {
-    const v = document.getElementById('cdVal');
-    if(!v){ clearInterval(cdTimer); return; }
-    v.textContent = fmtCountdown(msToMidnight());
+    const v = document.getElementById('cdV');
+    if(!v){ clearInterval(cdT); return; }
+    v.textContent = fmtLeft(msToMidnight());
   };
   tick();
-  cdTimer = setInterval(tick, 1000);
+  cdT = setInterval(tick, 1000);
 }
 
-/* ════════════════════════════════════════════════
-   SHEETS
-   ════════════════════════════════════════════════ */
+/* ═══════════ sheets ═══════════ */
 function openSheet(html, onMount){
-  const root = document.getElementById('sheet-root');
-  root.innerHTML = `<div class="scrim"></div><div class="sheet"><div class="grabber"></div>${html}</div>`;
+  const root = document.getElementById('sheets');
+  root.innerHTML = `<div class="scrim"></div><div class="sheet">${html}</div>`;
   requestAnimationFrame(() => root.classList.add('open'));
   root.querySelector('.scrim').onclick = closeSheet;
   if(onMount) onMount(root.querySelector('.sheet'));
 }
 function closeSheet(){
-  const root = document.getElementById('sheet-root');
+  const root = document.getElementById('sheets');
   root.classList.remove('open');
-  setTimeout(() => { if(!root.classList.contains('open')) root.innerHTML = ''; }, 340);
+  setTimeout(() => { if(!root.classList.contains('open')) root.innerHTML = ''; }, 320);
 }
 
 function openDay(prof, iso){
-  const d = dayIndex(iso);
-  const mine = prof === me();
+  const d = dayIndex(iso), mine = prof === me();
   const pic = hasPhoto(prof, iso);
-  const n = doneCount(prof, iso);
 
   openSheet(`
-    <div data-p="${prof}">
+    <div data-who="${whoAttr(prof)}">
       <div class="sheet-head">
-        <span class="avatar lg">${initialOf(prof)}</span>
-        <div style="flex:1">
-          <div class="t">Day ${d}${iso===todayISO()?' · Today':''}</div>
-          <div class="s">${fmtDate(iso)} · ${mine?'You':nameOf(prof)} · ${n}/${TASKS.length} done</div>
+        <div>
+          <div class="t num">Day ${d}</div>
+          <div class="s">${fmtDate(iso)} — ${mine?'You':nameOf(prof)} — ${doneCount(prof,iso)}/${TASKS.length}</div>
         </div>
+        <button class="icon-btn" id="x">${ICON.close}</button>
       </div>
 
-      <div class="photo-box">
-        ${pic ? `<img src="${api.photoUrl(prof,iso)}" alt="Day ${d}">`
-              : `<div class="none">No photo for this day</div>`}
-      </div>
+      ${pic ? `<img class="shot" src="${api.photoUrl(prof,iso)}" alt="Day ${d}">`
+            : `<div class="shot-none">No frame for this day</div>`}
 
       ${mine ? `
-        <label class="btn primary" style="cursor:pointer">
-          ${pic ? 'Replace photo' : 'Add photo'}
+        <label class="btn primary" style="cursor:pointer;margin-top:0">
+          ${pic ? 'Replace frame' : 'Add frame'}
           <input type="file" accept="image/*" capture="environment" id="picIn" hidden>
         </label>
-        ${pic ? `<button class="btn danger" id="picDel">Remove photo</button>` : ''}
-      ` : ''}
+        ${pic ? `<button class="btn danger" id="picDel">Remove frame</button>` : ''}` : ''}
 
-      <div class="tasks" style="margin-top:16px">
+      <div class="tasks" style="margin-top:22px;border-top:none">
         ${TASKS.map(t => `
           <button class="task ${entryOf(prof,iso)[t.id]?'on':''}" data-sheet-task="${t.id}" ${mine?'':'disabled'}>
-            <span class="emo">${t.emo}</span>
-            <span class="meta"><span class="label">${t.label}</span><span class="desc">${t.desc}</span></span>
-            <span class="check">${ICON.tick}</span>
+            <span class="meta"><span class="nm">${t.nm}</span><span class="sub">${t.sub}</span></span>
+            <span class="box"><span class="ic">${ICON.check}</span></span>
           </button>`).join('')}
       </div>
 
-      ${mine ? '' : `<div style="text-align:center;font-size:11.5px;color:var(--txt-3);margin-top:14px;font-weight:600">
-        Read-only — only ${nameOf(prof)} can check these off.</div>`}
+      ${mine ? '' : `<div class="note">Read only — only ${nameOf(prof)} can check these</div>`}
+    </div>`, sheet => {
 
-      <button class="btn ghost" style="margin-top:14px" id="sheetClose">Close</button>
-    </div>
-  `, sheet => {
-    sheet.querySelector('#sheetClose').onclick = closeSheet;
+    sheet.querySelector('#x').onclick = closeSheet;
+    if(!mine) return;
 
-    if(mine){
-      sheet.querySelectorAll('[data-sheet-task]').forEach(b => {
-        b.onclick = async () => {
-          const id = b.dataset.sheetTask;
-          if(!state.data[prof][iso]) state.data[prof][iso] = {};
-          const val = !state.data[prof][iso][id];
-          state.data[prof][iso][id] = val;
-          b.classList.toggle('on', val);
-          if(val){ b.classList.add('just'); setTimeout(()=>b.classList.remove('just'),460); }
-          haptic(12);
-          const head = sheet.querySelector('.sheet-head .s');
-          if(head) head.textContent = `${fmtDate(iso)} · You · ${doneCount(prof,iso)}/${TASKS.length} done`;
-          try{ await api.saveDay(prof, iso, state.data[prof][iso]); }
-          catch(_){ toast('Offline — change not saved'); }
-        };
-      });
-
-      const input = sheet.querySelector('#picIn');
-      if(input) input.onchange = async () => {
-        const file = input.files && input.files[0];
-        if(!file) return;
-        try{
-          toast('Uploading…');
-          const blob = await compressImage(file);
-          const b64 = await blobToBase64(blob);
-          await api.uploadPhoto(prof, iso, 'image/jpeg', b64);
-          if(!state.photoDays[prof].includes(iso)) state.photoDays[prof].push(iso);
-          state.photoV[`${prof}|${iso}`] = Date.now();
-          haptic(20);
-          toast('Photo posted 📸');
-          closeSheet();
-          render();
-        }catch(_){ toast('Upload failed'); }
-        input.value = '';
+    sheet.querySelectorAll('[data-sheet-task]').forEach(b => {
+      b.onclick = async () => {
+        const id = b.dataset.sheetTask;
+        if(!state.data[prof][iso]) state.data[prof][iso] = {};
+        const v = !state.data[prof][iso][id];
+        state.data[prof][iso][id] = v;
+        b.classList.toggle('on', v);
+        if(v){ b.classList.add('just'); setTimeout(()=>b.classList.remove('just'),320); }
+        haptic(10);
+        const s = sheet.querySelector('.sheet-head .s');
+        if(s) s.textContent = `${fmtDate(iso)} — You — ${doneCount(prof,iso)}/${TASKS.length}`;
+        try{ await api.saveDay(prof, iso, state.data[prof][iso]); }
+        catch(_){ toast('Offline — not saved'); }
       };
+    });
 
-      const del = sheet.querySelector('#picDel');
-      if(del) del.onclick = async () => {
-        if(!confirm('Remove this progress photo?')) return;
-        try{
-          await api.deletePhoto(prof, iso);
-          state.photoDays[prof] = state.photoDays[prof].filter(x => x !== iso);
-          toast('Photo removed');
-          closeSheet();
-          render();
-        }catch(_){ toast('Delete failed'); }
-      };
-    }
+    const input = sheet.querySelector('#picIn');
+    if(input) input.onchange = async () => {
+      const f = input.files && input.files[0];
+      if(!f) return;
+      try{
+        toast('Uploading');
+        const blob = await compressImage(f);
+        const b64 = await blobToBase64(blob);
+        await api.uploadPhoto(prof, iso, 'image/jpeg', b64);
+        if(!state.photoDays[prof].includes(iso)) state.photoDays[prof].push(iso);
+        state.photoV[`${prof}|${iso}`] = Date.now();
+        haptic(16);
+        toast('Frame logged');
+        closeSheet(); render();
+      }catch(_){ toast('Upload failed'); }
+      input.value = '';
+    };
+
+    const del = sheet.querySelector('#picDel');
+    if(del) del.onclick = async () => {
+      if(!confirm('Remove this frame?')) return;
+      try{
+        await api.deletePhoto(prof, iso);
+        state.photoDays[prof] = state.photoDays[prof].filter(x => x !== iso);
+        toast('Frame removed');
+        closeSheet(); render();
+      }catch(_){ toast('Delete failed'); }
+    };
   });
 }
 
 function openSettings(){
-  const soundOn = localStorage.getItem('sound') !== 'off';
   openSheet(`
-    <div data-p="${me()}">
+    <div data-who="you">
       <div class="sheet-head">
-        <span class="avatar lg">${initialOf(me())}</span>
-        <div style="flex:1">
+        <div>
           <div class="t">${nameOf(me())}</div>
-          <div class="s">Started ${fmtDate(state.startDate)}${state.online?'':' · offline'}</div>
+          <div class="s">Started ${fmtDate(state.startDate)}${state.online?'':' — offline'}</div>
         </div>
+        <button class="icon-btn" id="x">${ICON.close}</button>
       </div>
-      <button class="btn" id="soundBtn">Completion sound: ${soundOn?'On':'Off'}</button>
-      <button class="btn" id="switchBtn">Switch to ${nameOf(them())}</button>
-      <button class="btn danger" id="resetBtn">Reset &amp; start a new 75</button>
-      <button class="btn ghost" id="closeBtn">Close</button>
-    </div>
-  `, sheet => {
-    sheet.querySelector('#closeBtn').onclick = closeSheet;
-    sheet.querySelector('#soundBtn').onclick = e => {
-      const on = localStorage.getItem('sound') !== 'off';
-      localStorage.setItem('sound', on ? 'off' : 'on');
-      e.currentTarget.textContent = `Completion sound: ${on?'Off':'On'}`;
-      if(on === false) chime(false);
-    };
-    sheet.querySelector('#switchBtn').onclick = () => {
+      <button class="btn" id="swap">Switch to ${nameOf(them())}</button>
+      <button class="btn danger" id="reset">Reset — start a new 75</button>
+      <button class="btn ghost" id="close">Close</button>
+    </div>`, sheet => {
+    sheet.querySelector('#x').onclick = closeSheet;
+    sheet.querySelector('#close').onclick = closeSheet;
+    sheet.querySelector('#swap').onclick = () => {
       state.me = them();
       localStorage.setItem('me', state.me);
-      closeSheet();
-      render();
-      toast(`Now tracking as ${nameOf(state.me)}`);
+      closeSheet(); render();
+      toast(`Tracking as ${nameOf(state.me)}`);
     };
-    sheet.querySelector('#resetBtn').onclick = confirmReset;
+    sheet.querySelector('#reset').onclick = confirmReset;
   });
 }
 
 async function confirmReset(){
-  if(!confirm('Start a brand new 75-day challenge?\n\nThis erases all tasks, photos and kudos for BOTH of you. It cannot be undone.')) return;
+  if(!confirm('Start a brand new 75 days?\n\nThis erases all tasks, frames and kudos for BOTH of you. It cannot be undone.')) return;
   try{
-    const startDate = todayISO();
-    await api.reset(startDate);
-    state.startDate = startDate;
+    const sd = todayISO();
+    await api.reset(sd);
+    state.startDate = sd;
     state.data = { sachin:{}, aarya:{} };
     state.photoDays = { sachin:[], aarya:[] };
     state.reactions = [];
     state.tab = 'today';
-    closeSheet();
-    render();
-    toast('New wall started — day 1');
+    closeSheet(); render();
+    toast('New 75 started');
   }catch(_){ toast('Reset failed'); }
 }
 
-/* ════════════════════════════════════════════════
-   BOOT
-   ════════════════════════════════════════════════ */
+/* ═══════════ boot ═══════════ */
 async function loadState(){
   try{
     const r = await api.getState();
@@ -1726,8 +1193,8 @@ async function loadState(){
     state.online = true;
   }catch(_){
     state.online = false;
-    state.startDate = todayISO();
-    toast('Could not reach the server');
+    state.startDate = state.startDate || todayISO();
+    toast('Server unreachable');
   }
   try{
     const r = await api.getReactions();
@@ -1738,7 +1205,6 @@ async function loadState(){
 let lastDay = null;
 document.addEventListener('visibilitychange', async () => {
   if(document.hidden) return;
-  // rolled past midnight, or partner made moves while we were away
   await loadState();
   if(lastDay !== todayISO()){ lastDay = todayISO(); state.tab = 'today'; }
   render();
@@ -1748,9 +1214,7 @@ document.addEventListener('visibilitychange', async () => {
   await loadState();
   lastDay = todayISO();
   render();
-  if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('/sw.js').catch(() => {});
-  }
+  if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
 })();
 </script>
 </body>
