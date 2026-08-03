@@ -60,9 +60,17 @@ let demoStart;
       demo.photos.aarya[day] = i % 6 === 0 ? ['day', 'workout2'] : ['workout1'];
     }
   }
+  // completed past days carry a full log; today is mid-way so the meter shows
+  for (const p of ['sachin', 'aarya']) {
+    for (const [day, e] of Object.entries(demo.data[p])) {
+      if (e.water) { e.waterOz = 128; e.waterLog = [32, 32, 32, 16, 16]; }
+    }
+  }
   const t = iso(today);
-  demo.data.sachin[t] = { diet: true, workout1: true, workout2: false, water: false, read: false };
-  demo.data.aarya[t]  = { diet: true, workout1: true, workout2: true, water: true, read: false };
+  demo.data.sachin[t] = { diet: true, workout1: true, workout2: false, water: false, read: false,
+                          waterOz: 48, waterLog: [16, 16, 16] };
+  demo.data.aarya[t]  = { diet: true, workout1: true, workout2: true, water: true, read: false,
+                          waterOz: 128, waterLog: [32, 32, 32, 32] };
   demo.reactions = [
     { from: 'aarya', to: 'sachin', date: at(20), emoji: 'kudos' },
     { from: 'aarya', to: 'sachin', date: at(18), emoji: 'kudos' },
