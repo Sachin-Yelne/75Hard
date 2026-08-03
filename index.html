@@ -163,6 +163,14 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
 @keyframes tick{0%{transform:scale(1)}40%{transform:scale(.86)}100%{transform:scale(1)}}
 .task.just .box{animation:tick .3s ease;}
 
+/* water meter: the row's bottom rule fills as you log */
+.task.meter{position:relative;}
+.task.meter .fill{
+  position:absolute;left:0;bottom:-1px;height:1px;
+  background:var(--p);transition:width .45s cubic-bezier(.3,1,.4,1);
+}
+.task.meter.on .fill{height:2px;}
+
 /* optional per-task photo */
 .shot-btn{
   width:34px;height:34px;flex-shrink:0;cursor:pointer;
@@ -370,6 +378,43 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
 .shot-none{border:1px solid var(--rule);padding:44px 0;text-align:center;margin-bottom:14px;
   font-family:var(--cond);font-weight:500;font-size:12px;letter-spacing:.16em;
   text-transform:uppercase;color:var(--bone-3);}
+/* ── water sheet ── */
+.wtr-read{display:flex;align-items:baseline;gap:10px;padding:6px 0 14px;}
+.wtr-big{font-family:var(--display);font-size:72px;line-height:.8;letter-spacing:-.03em;color:var(--p);}
+.wtr-unit{font-family:var(--cond);font-weight:600;font-size:14px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--bone-3);}
+.wtr-bar{height:3px;background:var(--rule-2);}
+.wtr-bar i{display:block;height:100%;background:var(--p);transition:width .45s cubic-bezier(.3,1,.4,1);}
+.wtr-note{display:flex;justify-content:space-between;margin-top:9px;
+  font-family:var(--cond);font-weight:600;font-size:11px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--bone-3);}
+.wtr-head{display:flex;align-items:center;justify-content:space-between;margin:26px 0 11px;}
+.wtr-edit{font-family:var(--cond);font-weight:600;font-size:11px;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--bone-2);}
+.vessels{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.vessel{
+  border:1px solid var(--rule-2);padding:14px 13px;position:relative;
+  transition:border-color .15s,background .15s;
+}
+.vessel:active{border-color:var(--p);}
+.vessel .nm{display:block;font-family:var(--cond);font-weight:600;font-size:13px;
+  letter-spacing:.14em;text-transform:uppercase;}
+.vessel .oz{display:block;font-family:var(--display);font-size:22px;color:var(--p);margin-top:6px;}
+.vessel .del{position:absolute;top:8px;right:8px;width:11px;height:11px;color:var(--bone-3);}
+@keyframes vpulse{0%{transform:scale(1)}45%{transform:scale(.95)}100%{transform:scale(1)}}
+.vessel.pulse{animation:vpulse .32s ease;}
+.vnew{display:flex;gap:8px;margin-top:8px;}
+.vnew input{
+  flex:1;min-width:0;background:var(--ink-3);border:1px solid var(--rule-2);color:var(--bone);
+  padding:13px 12px;font-family:var(--cond);font-weight:600;font-size:13px;
+  letter-spacing:.1em;text-transform:uppercase;
+}
+.vnew input:focus{outline:none;border-color:var(--p);}
+.vnew input#vOz{flex:0 0 72px;}
+.vnew .vadd{
+  flex:0 0 auto;padding:0 18px;background:var(--bone);color:var(--ink);
+  font-family:var(--cond);font-weight:600;font-size:12px;letter-spacing:.16em;text-transform:uppercase;
+}
 .note{font-family:var(--cond);font-weight:500;font-size:11.5px;letter-spacing:.14em;
   text-transform:uppercase;color:var(--bone-3);text-align:center;margin-top:16px;}
 
@@ -443,7 +488,7 @@ const TASKS = [
   { id:'diet',     nm:'Diet',        sub:'No cheat meals, no alcohol' },
   { id:'workout1', nm:'Workout One', sub:'45 minutes',            photo:true },
   { id:'workout2', nm:'Workout Two', sub:'45 minutes, outdoors',  photo:true },
-  { id:'water',    nm:'Water',       sub:'1 gallon',              photo:true },
+  { id:'water',    nm:'Water',       sub:'1 gallon',              photo:true, meter:true },
   { id:'read',     nm:'Read',        sub:'10 pages, non-fiction', photo:true }
 ];
 
@@ -471,6 +516,15 @@ const MILES = [
   { d:45, nm:'Past Halfway' },
   { d:60, nm:'Home Stretch' },
   { d:75, nm:'Seventy Five' }
+];
+
+// Water is logged incrementally rather than ticked. The boolean stays derived
+// from the total so streaks, the wall and completion logic are untouched.
+const WATER_GOAL_OZ = 128;                       // 1 US gallon
+const DEFAULT_VESSELS = [
+  { nm:'Bottle',  oz:16 },
+  { nm:'Glass',   oz:8  },
+  { nm:'Tumbler', oz:32 }
 ];
 
 const KUDOS_TOKEN = 'kudos';
@@ -586,6 +640,29 @@ function fmtLeft(ms){
 const entryOf = (p, iso) => state.data[p]?.[iso] || {};
 const doneCount = (p, iso) => TASKS.reduce((n,t) => n + (entryOf(p,iso)[t.id] ? 1 : 0), 0);
 const isComplete = (p, iso) => doneCount(p, iso) === TASKS.length;
+/* ── water ── */
+// Days ticked before the meter existed carry `water:true` and no ounces —
+// read those as a full gallon so the gauge agrees with the checkbox.
+const waterOz = (p, iso) => {
+  const e = entryOf(p, iso);
+  if(e.waterOz != null) return Number(e.waterOz) || 0;
+  return e.water ? WATER_GOAL_OZ : 0;
+};
+const waterLog = (p, iso) => entryOf(p, iso).waterLog || [];
+const waterPct = (p, iso) => Math.min(100, Math.round(waterOz(p, iso) / WATER_GOAL_OZ * 100));
+
+/* Vessels are personal kit, not shared progress, so they live on the device. */
+function vessels(){
+  try{
+    const v = JSON.parse(localStorage.getItem('vessels:' + me()));
+    if(Array.isArray(v) && v.length) return v;
+  }catch(_){}
+  return DEFAULT_VESSELS.map(v => ({ ...v }));
+}
+function saveVessels(list){
+  localStorage.setItem('vessels:' + me(), JSON.stringify(list));
+}
+
 /* Slots for one person on one day, in carousel order. */
 const slotsFor = (p, iso) => {
   const have = state.photos[p]?.[iso] || [];
@@ -820,6 +897,10 @@ const topbar = () => `
 function taskRow(prof, iso, t, editable){
   const on = !!entryOf(prof, iso)[t.id];
   const pic = hasPhoto(prof, iso, t.id);
+  const oz = t.meter ? waterOz(prof, iso) : 0;
+  const sub = t.meter
+    ? (oz ? `${oz} of ${WATER_GOAL_OZ} oz` : `${WATER_GOAL_OZ} oz — tap to log`)
+    : t.sub;
   let shot = '';
   if(t.photo){
     if(pic){
@@ -835,18 +916,26 @@ function taskRow(prof, iso, t, editable){
       shot = `<span class="shot-btn empty"></span>`;
     }
   }
+  // the meter row's own bottom hairline doubles as the gauge
+  const fill = t.meter
+    ? `<i class="fill" style="width:${waterPct(prof, iso)}%"></i>` : '';
+  const mainAttr = t.meter
+    ? `data-meter="${t.id}"`                       // opens the tracker
+    : `data-task="${t.id}" ${editable?'':'disabled'}`;
+
   return `
-    <div class="task ${on?'on':''}" data-row="${t.id}">
-      <button class="task-main" data-task="${t.id}" ${editable?'':'disabled'}>
+    <div class="task ${on?'on':''}${t.meter?' meter':''}" data-row="${t.id}">
+      <button class="task-main" ${mainAttr}>
         <span class="meta">
           <span class="nm">${t.nm}</span>
-          <span class="sub">${t.sub}</span>
+          <span class="sub">${sub}</span>
         </span>
       </button>
       ${shot}
       <button class="task-check" data-task="${t.id}" ${editable?'':'disabled'} aria-label="Toggle ${t.nm}">
         <span class="box"><span class="ic">${ICON.check}</span></span>
       </button>
+      ${fill}
     </div>`;
 }
 
@@ -1043,6 +1132,10 @@ function wire(){
     b.onclick = () => toggleTask(b.dataset.task, b.closest('.task'));
   });
 
+  el.querySelectorAll('[data-meter]').forEach(b => {
+    b.onclick = () => openWater(me(), todayISO());
+  });
+
   // optional per-task photo: empty camera picks a file, filled thumb opens the day
   el.querySelectorAll('[data-shot]').forEach(input => {
     input.onchange = () => uploadFrom(input, me(), todayISO(), input.dataset.shot);
@@ -1117,6 +1210,16 @@ function wireReel(post, p, iso){
 async function toggleTask(taskId, row){
   const you = me(), iso = todayISO();
   if(!state.data[you][iso]) state.data[you][iso] = {};
+
+  // ticking the water box is a shortcut for "filled it" / "actually didn't"
+  if(TASKS.find(t => t.id === taskId)?.meter){
+    const done = !!state.data[you][iso][taskId];
+    await setWater(you, iso, done ? 0 : WATER_GOAL_OZ, done ? [] : [WATER_GOAL_OZ]);
+    row.classList.toggle('on', !done);
+    haptic(done ? 6 : 12);
+    return;
+  }
+
   const was = isComplete(you, iso);
   const now = !state.data[you][iso][taskId];
   state.data[you][iso][taskId] = now;
@@ -1344,6 +1447,12 @@ function openDay(prof, iso){
     }
     bindGallery();
 
+    // the water row opens its tracker instead of toggling — readable either way,
+    // so this is bound before the read-only bail-out
+    sheet.querySelectorAll('[data-meter]').forEach(b => {
+      b.onclick = () => { closeSheet(); setTimeout(() => openWater(prof, iso), 340); };
+    });
+
     if(!mine) return;
 
     sheet.querySelectorAll('[data-task]').forEach(b => {
@@ -1351,6 +1460,14 @@ function openDay(prof, iso){
         const id = b.dataset.task;
         const row = b.closest('.task');
         if(!state.data[prof][iso]) state.data[prof][iso] = {};
+        if(TASKS.find(t => t.id === id)?.meter){
+          const done = !!state.data[prof][iso][id];
+          await setWater(prof, iso, done ? 0 : WATER_GOAL_OZ, done ? [] : [WATER_GOAL_OZ]);
+          row.classList.toggle('on', !done);
+          const h = sheet.querySelector('.sheet-head .s');
+          if(h) h.textContent = `${fmtDate(iso)} — You — ${doneCount(prof,iso)}/${TASKS.length}`;
+          return;
+        }
         const v = !state.data[prof][iso][id];
         state.data[prof][iso][id] = v;
         row.classList.toggle('on', v);
@@ -1407,6 +1524,164 @@ function refreshSheetTaskShot(sheet, prof, iso, slot){
   wrap.innerHTML = taskRow(prof, iso, t, prof === me()).trim();
   const fresh = wrap.firstChild.querySelector('.shot-btn');
   if(fresh) old.replaceWith(fresh);
+}
+
+/* ── water tracker ── */
+function openWater(prof, iso){
+  const mine = prof === me();
+  let editing = false;
+
+  const body = () => {
+    const oz = waterOz(prof, iso), pct = waterPct(prof, iso);
+    const left = Math.max(0, WATER_GOAL_OZ - oz);
+    const log = waterLog(prof, iso);
+    const list = vessels();
+    return `
+      <div class="wtr-read">
+        <div class="wtr-big num">${oz}</div>
+        <div class="wtr-unit">of ${WATER_GOAL_OZ} oz</div>
+      </div>
+      <div class="wtr-bar"><i style="width:${pct}%"></i></div>
+      <div class="wtr-note">
+        <span>${pct}%</span>
+        <span>${left ? `${left} oz to go` : 'Goal reached'}</span>
+      </div>
+
+      ${mine ? `
+        <div class="wtr-head">
+          <span class="eyebrow">Add</span>
+          <button class="wtr-edit" id="vEdit">${editing ? 'Done' : 'Edit'}</button>
+        </div>
+        <div class="vessels">
+          ${list.map((v, i) => `
+            <button class="vessel" data-add="${v.oz}" ${editing?'disabled':''}>
+              <span class="nm">${v.nm}</span>
+              <span class="oz num">${v.oz} oz</span>
+              ${editing ? `<span class="del" data-del-v="${i}">${ICON.close}</span>` : ''}
+            </button>`).join('')}
+        </div>
+        ${editing ? `
+          <div class="vnew">
+            <input id="vName" type="text" placeholder="Name" maxlength="14">
+            <input id="vOz" type="number" inputmode="numeric" placeholder="oz" min="1" max="512">
+            <button class="vadd" id="vAdd">Add</button>
+          </div>` : ''}
+        ${log.length ? `<button class="btn" id="wUndo">Undo last — ${log[log.length-1]} oz</button>` : ''}
+        <button class="btn ghost" id="wClear">Reset day</button>
+      ` : `<div class="note">Read only — this is ${nameOf(prof)}'s day</div>`}
+    `;
+  };
+
+  openSheet(`
+    <div data-who="${whoAttr(prof)}">
+      <div class="sheet-head">
+        <div>
+          <div class="t">Water</div>
+          <div class="s">Day ${dayIndex(iso)} — ${mine?'You':nameOf(prof)}</div>
+        </div>
+        <button class="icon-btn" id="x">${ICON.close}</button>
+      </div>
+      <div id="wBody">${body()}</div>
+    </div>`, sheet => {
+
+    const bind = () => {
+      sheet.querySelector('#x').onclick = closeSheet;
+      if(!mine) return;
+
+      sheet.querySelectorAll('[data-add]').forEach(b => {
+        b.onclick = async () => {
+          if(editing) return;
+          await addWater(prof, iso, Number(b.dataset.add));
+          b.classList.add('pulse');
+          setTimeout(() => b.classList.remove('pulse'), 320);
+          repaint();
+        };
+      });
+
+      sheet.querySelectorAll('[data-del-v]').forEach(el => {
+        el.onclick = ev => {
+          ev.stopPropagation();
+          const list = vessels();
+          list.splice(Number(el.dataset.delV), 1);
+          saveVessels(list);
+          repaint();
+        };
+      });
+
+      const eb = sheet.querySelector('#vEdit');
+      if(eb) eb.onclick = () => { editing = !editing; repaint(); };
+
+      const add = sheet.querySelector('#vAdd');
+      if(add) add.onclick = () => {
+        const nm = (sheet.querySelector('#vName').value || '').trim();
+        const oz = Math.round(Number(sheet.querySelector('#vOz').value));
+        if(!nm || !oz || oz < 1 || oz > 512){ toast('Name and size needed'); return; }
+        saveVessels(vessels().concat({ nm, oz }));
+        toast(`${nm} added`);
+        repaint();
+      };
+
+      const un = sheet.querySelector('#wUndo');
+      if(un) un.onclick = async () => { await undoWater(prof, iso); repaint(); };
+
+      const cl = sheet.querySelector('#wClear');
+      if(cl) cl.onclick = async () => {
+        if(!waterOz(prof, iso)) return;
+        if(!confirm('Reset today\'s water to zero?')) return;
+        await setWater(prof, iso, 0, []);
+        repaint();
+      };
+    };
+
+    const repaint = () => {
+      sheet.querySelector('#wBody').innerHTML = body();
+      bind();
+      refreshMeterRow(prof, iso);
+    };
+
+    bind();
+  });
+}
+
+async function setWater(prof, iso, oz, log){
+  const entry = (state.data[prof][iso] ||= {});
+  const was = isComplete(prof, iso);
+  entry.waterOz = Math.max(0, Math.round(oz));
+  entry.waterLog = log;
+  entry.water = entry.waterOz >= WATER_GOAL_OZ;   // keep the boolean derived
+  refreshToday();
+  refreshMeterRow(prof, iso);
+  if(!was && isComplete(prof, iso) && iso === todayISO() && prof === me()) showComplete();
+  try{ await api.saveDay(prof, iso, entry); }
+  catch(_){ toast('Offline — not saved'); }
+}
+
+async function addWater(prof, iso, oz){
+  const before = waterOz(prof, iso);
+  haptic(12);
+  await setWater(prof, iso, before + oz, waterLog(prof, iso).concat(oz));
+  const now = waterOz(prof, iso);
+  if(before < WATER_GOAL_OZ && now >= WATER_GOAL_OZ) toast('Gallon done');
+}
+
+async function undoWater(prof, iso){
+  const log = waterLog(prof, iso).slice();
+  const last = log.pop();
+  if(last === undefined) return;
+  haptic(8);
+  await setWater(prof, iso, waterOz(prof, iso) - last, log);
+}
+
+/* Update a meter row in place wherever it is on screen. */
+function refreshMeterRow(prof, iso){
+  document.querySelectorAll(`.task.meter[data-row="water"]`).forEach(row => {
+    const fill = row.querySelector('.fill');
+    if(fill) fill.style.width = waterPct(prof, iso) + '%';
+    const sub = row.querySelector('.sub');
+    const oz = waterOz(prof, iso);
+    if(sub) sub.textContent = oz ? `${oz} of ${WATER_GOAL_OZ} oz` : `${WATER_GOAL_OZ} oz — tap to log`;
+    row.classList.toggle('on', !!entryOf(prof, iso).water);
+  });
 }
 
 function openSettings(){
