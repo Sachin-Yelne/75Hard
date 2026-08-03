@@ -1,14 +1,24 @@
-const { getSql } = require('./lib/db');
+const { getSql, ensurePhotoSlot } = require('./lib/db');
 
 const PROFILES = ['sachin', 'aarya'];
+// 'day' is the daily progress frame; the rest attach to an individual task.
+const SLOTS = ['day', 'workout1', 'workout2', 'water', 'read', 'diet'];
 
 module.exports = async function handler(req, res) {
   const sql = getSql();
   const profileId = req.query.profile || req.body?.profileId;
   const date = req.query.date || req.body?.date;
+  const slot = req.query.slot || req.body?.slot || 'day';
 
-  if (!PROFILES.includes(profileId) || !date) {
-    return res.status(400).json({ error: 'profile and date are required' });
+  if (!PROFILES.includes(profileId) || !date || !SLOTS.includes(slot)) {
+    return res.status(400).json({ error: 'profile, date and a valid slot are required' });
+  }
+
+  try {
+    await ensurePhotoSlot(sql);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Photo storage unavailable' });
   }
 
   if (req.method === 'GET') {
@@ -16,7 +26,7 @@ module.exports = async function handler(req, res) {
       const rows = await sql`
         SELECT content_type, encode(data, 'base64') AS data_base64
         FROM photos
-        WHERE profile_id = ${profileId} AND day_date = ${date}::date
+        WHERE profile_id = ${profileId} AND day_date = ${date}::date AND slot = ${slot}
       `;
 
       if (!rows.length) {
@@ -25,7 +35,8 @@ module.exports = async function handler(req, res) {
 
       const buffer = Buffer.from(rows[0].data_base64, 'base64');
       res.setHeader('Content-Type', rows[0].content_type || 'image/jpeg');
-      res.setHeader('Cache-Control', 'private, max-age=60');
+      // Immutable: the client busts this with a ?v= stamp whenever it replaces one.
+      res.setHeader('Cache-Control', 'private, max-age=31536000, immutable');
       return res.status(200).send(buffer);
     } catch (err) {
       console.error(err);
@@ -46,9 +57,9 @@ module.exports = async function handler(req, res) {
       }
 
       await sql`
-        INSERT INTO photos (profile_id, day_date, content_type, data, updated_at)
-        VALUES (${profileId}, ${date}::date, ${contentType}, ${bytes}, now())
-        ON CONFLICT (profile_id, day_date)
+        INSERT INTO photos (profile_id, day_date, slot, content_type, data, updated_at)
+        VALUES (${profileId}, ${date}::date, ${slot}, ${contentType}, ${bytes}, now())
+        ON CONFLICT (profile_id, day_date, slot)
         DO UPDATE SET content_type = EXCLUDED.content_type, data = EXCLUDED.data, updated_at = now()
       `;
 
@@ -63,7 +74,7 @@ module.exports = async function handler(req, res) {
     try {
       await sql`
         DELETE FROM photos
-        WHERE profile_id = ${profileId} AND day_date = ${date}::date
+        WHERE profile_id = ${profileId} AND day_date = ${date}::date AND slot = ${slot}
       `;
       return res.status(200).json({ ok: true });
     } catch (err) {
