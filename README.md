@@ -6,10 +6,11 @@ A two-person PWA for the 75 Hard challenge — daily tasks, streaks, head-to-hea
 
 Four tabs, phone-first:
 
-- **Today** — the day number set large, a five-segment rule (one per task), streak, a live countdown to local midnight, and your partner's progress underneath. Completing all five holds a full-screen typographic moment for a second and a half, then returns you to the day.
+- **Today** — the day number set large, a five-segment rule (one per task), streak, a live countdown to local midnight, and your partner's progress underneath. Workout One, Workout Two, Water and Read each carry an optional camera; tap it to attach a photo, or ignore it. Completing all five holds a full-screen typographic moment for a second and a half, then returns you to the day.
+- **Water** is logged incrementally rather than ticked. Tap the row to open the tracker, then tap a vessel — a 16 oz bottle, a 32 oz tumbler, whatever you keep — to pour it toward the gallon. The row's own bottom hairline fills as you go, and the task checks itself at 128 oz. Undo removes the last pour; the checkbox is still there as a shortcut for filling or clearing the day outright.
 - **Wall** — the 75-day grid for both people, with missed days, photo markers, and a milestone list.
-- **Feed** — full-screen, snap-scrolling progress photos from both of you, newest first. Double-tap to give kudos, or use the button.
-- **Rivals** — a side-by-side table: perfect days, current and longest streaks, consistency, per-task completion rates, frames posted, kudos received.
+- **Feed** — full-screen, snap-scrolling photos from both of you, newest first. Scroll vertically through days; if a day carries more than one photo, swipe sideways through them, with a caption naming the task and a segmented bar tracking position. Double-tap to give kudos, or use the button.
+- **Rivals** — a side-by-side table: perfect days, current and longest streaks, consistency, per-task completion rates, photos posted, kudos received.
 
 Pick who you are on first launch (stored locally); you can switch from the settings sheet. Your own progress is always clay, your partner's sage.
 
@@ -61,11 +62,14 @@ Neon project **75Hard** stores:
 
 - `challenge_meta` — challenge start date
 - `day_tasks` — task checkboxes per profile per day
-- `photos` — compressed progress pics (JPEG bytes)
+- `photos` — compressed pics (JPEG bytes), keyed `(profile_id, day_date, slot)`.
+  `slot` is `day` for the daily progress frame, or a task id for an optional
+  per-task photo.
 - `reactions` — kudos between profiles
 
 All four are created on the first request (`CREATE TABLE IF NOT EXISTS`, in
-`api/lib/db.js`), so pointing `DATABASE_URL` at an empty Neon database is
+`api/lib/db.js`), and a `photos` table predating the `slot` column is widened
+in place at the same time. Pointing `DATABASE_URL` at an empty Neon database is
 enough — there is no migration step to run by hand.
 
 ## Troubleshooting
@@ -93,9 +97,11 @@ the specific cause:
 index.html        Frontend PWA (single file, no build step)
 api/              Vercel serverless routes
   state.js        Load/save tasks
-  photos.js       Upload/view/delete pics
+  photos.js       Upload/view/delete pics (per slot)
   reactions.js    Kudos between profiles
   reset.js        Start a new challenge
+  health.js       Config/database diagnostics
+  lib/db.js       Connection, schema bootstrap
 manifest.json     PWA install config
 sw.js             Offline shell cache
 ```
@@ -103,7 +109,10 @@ sw.js             Offline shell cache
 ## Notes
 
 - Photos are resized on-device before upload (max ~1200px, JPEG). Max 4MB after compression.
+- The photo inputs deliberately omit the `capture` attribute. With it, iOS jumps straight to the rear camera and the photo library is unreachable, so a shot taken earlier can never be used. Without it, iOS offers Photo Library / Take Photo / Choose File — live capture is one extra tap, and the library and front camera stay available.
 - All day boundaries use the device's **local** date, so the day rolls over at local midnight rather than UTC.
 - `index.html` is served network-first by the service worker, so a redeploy reaches both phones instead of being pinned to a cached shell.
-- The `reactions` table is created lazily by `api/reactions.js`; if it is unavailable the rest of the app still works, just without kudos. New rows are written with the token `kudos`; emoji tokens from the previous build still validate and still count.
+- Reaction rows are written with the token `kudos`; emoji tokens from the previous build still validate and still count.
+- Water totals live in the existing `day_tasks.tasks` JSONB as `waterOz` and `waterLog`, so no schema change was needed. The `water` boolean stays derived from `waterOz >= 128`, which keeps streaks, the wall and completion logic untouched. Days ticked before the meter existed read as a full gallon.
+- Your vessels are personal kit rather than shared progress, so they live in `localStorage` per profile. They don't follow you to a second device — move them to a table if that becomes annoying.
 - Free Neon + Vercel tiers are enough for two people over 75 days.

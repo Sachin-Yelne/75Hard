@@ -2,6 +2,7 @@ const { neon } = require('@neondatabase/serverless');
 
 let sql;
 let schemaReady = null;
+let slotMigrated = false;
 
 function getSql() {
   if (!process.env.DATABASE_URL) {
@@ -13,11 +14,31 @@ function getSql() {
   return sql;
 }
 
+/*
+ * photos predates per-task photos and was keyed (profile_id, day_date) — one
+ * frame per person per day. Widen an existing table in place; a table created
+ * by createSchema below already has the column. No-op once it exists.
+ */
+async function ensurePhotoSlot(sqlClient) {
+  if (slotMigrated) return;
+  const existing = await sqlClient`
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'photos' AND column_name = 'slot'
+  `;
+  if (!existing.length) {
+    await sqlClient`ALTER TABLE photos ADD COLUMN slot text NOT NULL DEFAULT 'day'`;
+    await sqlClient`ALTER TABLE photos DROP CONSTRAINT IF EXISTS photos_pkey`;
+    await sqlClient`ALTER TABLE photos ADD PRIMARY KEY (profile_id, day_date, slot)`;
+  }
+  slotMigrated = true;
+}
+
 // challenge_meta, day_tasks and photos used to be expected to already exist —
 // only `reactions` created itself. A database that had never been set up by
 // hand therefore failed every request, which the UI reported as the generic
 // "Server unreachable". Create all four on demand instead; IF NOT EXISTS
-// leaves an already-populated database untouched.
+// leaves an already-populated database untouched, and ensurePhotoSlot then
+// brings a pre-slot photos table up to the current shape.
 async function createSchema(s) {
   await s`
     CREATE TABLE IF NOT EXISTS challenge_meta (
@@ -37,10 +58,11 @@ async function createSchema(s) {
     CREATE TABLE IF NOT EXISTS photos (
       profile_id   text NOT NULL,
       day_date     date NOT NULL,
+      slot         text NOT NULL DEFAULT 'day',
       content_type text NOT NULL DEFAULT 'image/jpeg',
       data         bytea NOT NULL,
       updated_at   timestamptz NOT NULL DEFAULT now(),
-      PRIMARY KEY (profile_id, day_date)
+      PRIMARY KEY (profile_id, day_date, slot)
     )
   `;
   await s`
@@ -53,6 +75,7 @@ async function createSchema(s) {
       PRIMARY KEY (from_profile, to_profile, day_date, emoji)
     )
   `;
+  await ensurePhotoSlot(s);
 }
 
 // Memoised per warm instance, but a failure clears the memo so the next
@@ -100,4 +123,4 @@ async function connect(res) {
   return s;
 }
 
-module.exports = { getSql, ensureSchema, connect };
+module.exports = { getSql, ensurePhotoSlot, ensureSchema, connect };

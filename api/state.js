@@ -18,7 +18,7 @@ module.exports = async function handler(req, res) {
       `;
 
       const photoRows = await sql`
-        SELECT profile_id, day_date::text AS day_date
+        SELECT profile_id, day_date::text AS day_date, slot
         FROM photos
         WHERE profile_id = ANY(${PROFILES})
       `;
@@ -28,12 +28,13 @@ module.exports = async function handler(req, res) {
         data[row.profile_id][row.day_date] = row.tasks;
       }
 
-      const photoDays = { sachin: [], aarya: [] };
+      // { sachin: { '2026-08-02': ['day','read'] }, ... }
+      const photos = { sachin: {}, aarya: {} };
       for (const row of photoRows) {
-        photoDays[row.profile_id].push(row.day_date);
+        (photos[row.profile_id][row.day_date] ||= []).push(row.slot);
       }
 
-      return res.status(200).json({ startDate, data, photoDays });
+      return res.status(200).json({ startDate, data, photos });
     } catch (err) {
       console.error(err);
       return res.status(500).json({ error: 'Failed to load state' });

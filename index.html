@@ -140,6 +140,8 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
   padding:16px 0;border-bottom:1px solid var(--rule);
   transition:opacity .2s;
 }
+.task-main{flex:1;min-width:0;display:block;}
+.task-check{flex-shrink:0;display:grid;place-items:center;}
 .task .meta{flex:1;min-width:0;}
 .task .nm{
   display:block;
@@ -157,9 +159,32 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
 .box .ic{width:11px;height:11px;}
 .task.on .box{background:var(--p);border-color:var(--p);color:var(--ink);}
 .task.on .nm{color:var(--p);}
-.task:disabled{cursor:default;}
+.task-main:disabled,.task-check:disabled{cursor:default;}
 @keyframes tick{0%{transform:scale(1)}40%{transform:scale(.86)}100%{transform:scale(1)}}
 .task.just .box{animation:tick .3s ease;}
+
+/* water meter: the row's bottom rule fills as you log */
+.task.meter{position:relative;}
+.task.meter .fill{
+  position:absolute;left:0;bottom:-1px;height:1px;
+  background:var(--p);transition:width .45s cubic-bezier(.3,1,.4,1);
+}
+.task.meter.on .fill{height:2px;}
+
+/* optional per-task photo */
+.shot-btn{
+  width:34px;height:34px;flex-shrink:0;cursor:pointer;
+  border:1px solid var(--rule-2);
+  display:grid;place-items:center;overflow:hidden;
+  color:var(--bone-3);transition:border-color .18s,color .18s;
+}
+.shot-btn .ic{width:14px;height:14px;}
+.shot-btn:active{border-color:var(--bone-2);}
+.shot-btn.filled{border-color:var(--p);padding:0;}
+.shot-btn.filled img{width:100%;height:100%;object-fit:cover;display:block;}
+.shot-btn.empty{border-style:dashed;opacity:.35;cursor:default;}
+@keyframes shotIn{0%{opacity:0;transform:scale(.82)}100%{opacity:1;transform:scale(1)}}
+.shot-btn.fresh{animation:shotIn .32s cubic-bezier(.2,1,.3,1);}
 
 /* ── rival strip ───────────────────────── */
 .rival{padding:20px 0 0;}
@@ -228,7 +253,31 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
   -webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
 .post{height:100%;scroll-snap-align:start;scroll-snap-stop:always;
   position:relative;background:#000;overflow:hidden;}
+/* horizontal reel: one slide per photo logged that day */
+.reel{
+  display:flex;height:100%;width:100%;
+  overflow-x:auto;overflow-y:hidden;
+  scroll-snap-type:x mandatory;overscroll-behavior-x:contain;
+  -webkit-overflow-scrolling:touch;scrollbar-width:none;
+}
+.reel::-webkit-scrollbar{display:none;}
+.reel[data-single]{overflow-x:hidden;}
+.slide{flex:0 0 100%;height:100%;scroll-snap-align:start;scroll-snap-stop:always;}
 .post img{width:100%;height:100%;object-fit:cover;}
+/* segmented bar at the top, out of the way of the caption block */
+.pips{
+  position:absolute;left:var(--pad);right:var(--pad);
+  top:calc(var(--safe-top) + 44px);
+  display:flex;gap:4px;pointer-events:none;
+}
+.pips i{flex:1;height:2px;background:rgba(255,255,255,.26);transition:background .2s;}
+.pips i.on{background:var(--bone);}
+.slot-tag{
+  font-family:var(--cond);font-weight:600;font-size:11px;
+  letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.72);
+  margin-bottom:10px;
+}
+.slot-tag .of{font-family:var(--display);letter-spacing:0;color:rgba(255,255,255,.45);margin-left:4px;}
 .post .shade{position:absolute;inset:0;pointer-events:none;
   background:linear-gradient(180deg,rgba(0,0,0,.55) 0%,transparent 26%,transparent 42%,rgba(0,0,0,.88) 100%);}
 .post-top{position:absolute;top:calc(var(--safe-top) + 16px);left:var(--pad);right:var(--pad);
@@ -312,9 +361,60 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
 .btn.danger{color:var(--you);border-color:var(--miss);}
 .btn.ghost{border-color:transparent;color:var(--bone-3);}
 .shot{width:100%;max-height:320px;object-fit:cover;display:block;margin-bottom:14px;}
+.sheet-shots{
+  display:flex;gap:8px;margin-bottom:14px;overflow-x:auto;
+  scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch;
+}
+.sheet-shots::-webkit-scrollbar{display:none;}
+.sheet-shot{margin:0;flex:0 0 78%;scroll-snap-align:start;position:relative;}
+.sheet-shot img{width:100%;height:220px;object-fit:cover;display:block;}
+.sheet-shot figcaption{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  margin-top:7px;font-family:var(--cond);font-weight:600;font-size:11px;
+  letter-spacing:.18em;text-transform:uppercase;color:var(--bone-3);
+}
+.sheet-shot .rm{width:14px;height:14px;color:var(--bone-3);flex-shrink:0;}
+.sheet-shot .rm:active{color:var(--you);}
 .shot-none{border:1px solid var(--rule);padding:44px 0;text-align:center;margin-bottom:14px;
   font-family:var(--cond);font-weight:500;font-size:12px;letter-spacing:.16em;
   text-transform:uppercase;color:var(--bone-3);}
+/* ── water sheet ── */
+.wtr-read{display:flex;align-items:baseline;gap:10px;padding:6px 0 14px;}
+.wtr-big{font-family:var(--display);font-size:72px;line-height:.8;letter-spacing:-.03em;color:var(--p);}
+.wtr-unit{font-family:var(--cond);font-weight:600;font-size:14px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--bone-3);}
+.wtr-bar{height:3px;background:var(--rule-2);}
+.wtr-bar i{display:block;height:100%;background:var(--p);transition:width .45s cubic-bezier(.3,1,.4,1);}
+.wtr-note{display:flex;justify-content:space-between;margin-top:9px;
+  font-family:var(--cond);font-weight:600;font-size:11px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--bone-3);}
+.wtr-head{display:flex;align-items:center;justify-content:space-between;margin:26px 0 11px;}
+.wtr-edit{font-family:var(--cond);font-weight:600;font-size:11px;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--bone-2);}
+.vessels{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.vessel{
+  border:1px solid var(--rule-2);padding:14px 13px;position:relative;
+  transition:border-color .15s,background .15s;
+}
+.vessel:active{border-color:var(--p);}
+.vessel .nm{display:block;font-family:var(--cond);font-weight:600;font-size:13px;
+  letter-spacing:.14em;text-transform:uppercase;}
+.vessel .oz{display:block;font-family:var(--display);font-size:22px;color:var(--p);margin-top:6px;}
+.vessel .del{position:absolute;top:8px;right:8px;width:11px;height:11px;color:var(--bone-3);}
+@keyframes vpulse{0%{transform:scale(1)}45%{transform:scale(.95)}100%{transform:scale(1)}}
+.vessel.pulse{animation:vpulse .32s ease;}
+.vnew{display:flex;gap:8px;margin-top:8px;}
+.vnew input{
+  flex:1;min-width:0;background:var(--ink-3);border:1px solid var(--rule-2);color:var(--bone);
+  padding:13px 12px;font-family:var(--cond);font-weight:600;font-size:13px;
+  letter-spacing:.1em;text-transform:uppercase;
+}
+.vnew input:focus{outline:none;border-color:var(--p);}
+.vnew input#vOz{flex:0 0 72px;}
+.vnew .vadd{
+  flex:0 0 auto;padding:0 18px;background:var(--bone);color:var(--ink);
+  font-family:var(--cond);font-weight:600;font-size:12px;letter-spacing:.16em;text-transform:uppercase;
+}
 .note{font-family:var(--cond);font-weight:500;font-size:11.5px;letter-spacing:.14em;
   text-transform:uppercase;color:var(--bone-3);text-align:center;margin-top:16px;}
 
@@ -382,13 +482,24 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
 /* ═══════════ config ═══════════ */
 const TOTAL_DAYS = 75;
 
+// `photo:true` gives the task an optional camera slot. Photos never gate
+// completion — a task is done when it's checked, with or without one.
 const TASKS = [
   { id:'diet',     nm:'Diet',        sub:'No cheat meals, no alcohol' },
-  { id:'workout1', nm:'Workout One', sub:'45 minutes' },
-  { id:'workout2', nm:'Workout Two', sub:'45 minutes, outdoors' },
-  { id:'water',    nm:'Water',       sub:'1 gallon' },
-  { id:'read',     nm:'Read',        sub:'10 pages, non-fiction' }
+  { id:'workout1', nm:'Workout One', sub:'45 minutes',            photo:true },
+  { id:'workout2', nm:'Workout Two', sub:'45 minutes, outdoors',  photo:true },
+  { id:'water',    nm:'Water',       sub:'1 gallon',              photo:true, meter:true },
+  { id:'read',     nm:'Read',        sub:'10 pages, non-fiction', photo:true }
 ];
+
+// Photo slots in the order they appear in a feed carousel. 'day' is the daily
+// progress frame; the rest mirror TASKS ids.
+const DAY_SLOT = 'day';
+const SLOT_ORDER = [DAY_SLOT, ...TASKS.filter(t => t.photo).map(t => t.id)];
+const SLOT_LABEL = {
+  day:'Progress frame',
+  ...Object.fromEntries(TASKS.map(t => [t.id, t.nm]))
+};
 
 const PROFILES = [
   { id:'sachin', label:'Sachin' },
@@ -405,6 +516,15 @@ const MILES = [
   { d:45, nm:'Past Halfway' },
   { d:60, nm:'Home Stretch' },
   { d:75, nm:'Seventy Five' }
+];
+
+// Water is logged incrementally rather than ticked. The boolean stays derived
+// from the total so streaks, the wall and completion logic are untouched.
+const WATER_GOAL_OZ = 128;                       // 1 US gallon
+const DEFAULT_VESSELS = [
+  { nm:'Bottle',  oz:16 },
+  { nm:'Glass',   oz:8  },
+  { nm:'Tumbler', oz:32 }
 ];
 
 const KUDOS_TOKEN = 'kudos';
@@ -425,6 +545,9 @@ const ICON = {
 };
 
 /* ═══════════ api ═══════════ */
+const photoQuery = (p, date, slot) =>
+  `/api/photos?profile=${encodeURIComponent(p)}&date=${encodeURIComponent(date)}&slot=${encodeURIComponent(slot)}`;
+
 // A failed load used to surface as a flat "Server unreachable", which covers
 // three very different faults: no network, the /api routes not deployed, and
 // the database being unconfigured or down. Carry the server's own message
@@ -470,20 +593,19 @@ const api = {
     if(!r.ok) throw new Error('react');
     return r.json();
   },
-  async uploadPhoto(profileId, date, contentType, dataBase64){
-    const r = await fetch(`/api/photos?profile=${encodeURIComponent(profileId)}&date=${encodeURIComponent(date)}`,
+  async uploadPhoto(profileId, date, slot, contentType, dataBase64){
+    const r = await fetch(photoQuery(profileId, date, slot),
       { method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ profileId, date, contentType, dataBase64 }) });
+        body: JSON.stringify({ profileId, date, slot, contentType, dataBase64 }) });
     if(!r.ok) throw new Error('upload');
   },
-  async deletePhoto(profileId, date){
-    const r = await fetch(`/api/photos?profile=${encodeURIComponent(profileId)}&date=${encodeURIComponent(date)}`,
-      { method:'DELETE' });
+  async deletePhoto(profileId, date, slot){
+    const r = await fetch(photoQuery(profileId, date, slot), { method:'DELETE' });
     if(!r.ok) throw new Error('delete');
   },
-  photoUrl(profileId, date){
-    const v = state.photoV[`${profileId}|${date}`] || 0;
-    return `/api/photos?profile=${encodeURIComponent(profileId)}&date=${encodeURIComponent(date)}&v=${v}`;
+  photoUrl(profileId, date, slot){
+    const v = state.photoV[`${profileId}|${date}|${slot}`] || 0;
+    return `${photoQuery(profileId, date, slot)}&v=${v}`;
   },
   async reset(startDate){
     const r = await fetch('/api/reset', { method:'POST',
@@ -497,7 +619,8 @@ const api = {
 const state = {
   startDate:null,
   data:{ sachin:{}, aarya:{} },
-  photoDays:{ sachin:[], aarya:[] },
+  // { sachin: { '2026-08-02': ['day','read'] }, aarya: {…} }
+  photos:{ sachin:{}, aarya:{} },
   photoV:{},
   reactions:[],
   me: localStorage.getItem('me') || null,
@@ -538,7 +661,51 @@ function fmtLeft(ms){
 const entryOf = (p, iso) => state.data[p]?.[iso] || {};
 const doneCount = (p, iso) => TASKS.reduce((n,t) => n + (entryOf(p,iso)[t.id] ? 1 : 0), 0);
 const isComplete = (p, iso) => doneCount(p, iso) === TASKS.length;
-const hasPhoto = (p, iso) => state.photoDays[p]?.includes(iso);
+/* ── water ── */
+// Days ticked before the meter existed carry `water:true` and no ounces —
+// read those as a full gallon so the gauge agrees with the checkbox.
+const waterOz = (p, iso) => {
+  const e = entryOf(p, iso);
+  if(e.waterOz != null) return Number(e.waterOz) || 0;
+  return e.water ? WATER_GOAL_OZ : 0;
+};
+const waterLog = (p, iso) => entryOf(p, iso).waterLog || [];
+const waterPct = (p, iso) => Math.min(100, Math.round(waterOz(p, iso) / WATER_GOAL_OZ * 100));
+
+/* Vessels are personal kit, not shared progress, so they live on the device. */
+function vessels(){
+  try{
+    const v = JSON.parse(localStorage.getItem('vessels:' + me()));
+    if(Array.isArray(v) && v.length) return v;
+  }catch(_){}
+  return DEFAULT_VESSELS.map(v => ({ ...v }));
+}
+function saveVessels(list){
+  localStorage.setItem('vessels:' + me(), JSON.stringify(list));
+}
+
+/* Slots for one person on one day, in carousel order. */
+const slotsFor = (p, iso) => {
+  const have = state.photos[p]?.[iso] || [];
+  return SLOT_ORDER.filter(s => have.includes(s));
+};
+const hasPhoto = (p, iso, slot) => (state.photos[p]?.[iso] || []).includes(slot);
+const photoCount = (p, iso) => (state.photos[p]?.[iso] || []).length;
+const totalPhotos = p => Object.values(state.photos[p] || {}).reduce((n, a) => n + a.length, 0);
+
+function addPhotoLocal(p, iso, slot){
+  const byDay = (state.photos[p] ||= {});
+  const list = (byDay[iso] ||= []);
+  if(!list.includes(slot)) list.push(slot);
+  state.photoV[`${p}|${iso}|${slot}`] = Date.now();
+}
+function removePhotoLocal(p, iso, slot){
+  const list = state.photos[p]?.[iso];
+  if(!list) return;
+  const i = list.indexOf(slot);
+  if(i >= 0) list.splice(i, 1);
+  if(!list.length) delete state.photos[p][iso];
+}
 
 function streak(p){
   const ti = Math.min(todayIndex(), TOTAL_DAYS);
@@ -706,14 +873,7 @@ function viewToday(){
     </div>
 
     <div class="tasks" id="tasks">
-      ${TASKS.map(t => `
-        <button class="task ${entryOf(you,iso)[t.id]?'on':''}" data-task="${t.id}">
-          <span class="meta">
-            <span class="nm">${t.nm}</span>
-            <span class="sub">${t.sub}</span>
-          </span>
-          <span class="box"><span class="ic">${ICON.check}</span></span>
-        </button>`).join('')}
+      ${TASKS.map(t => taskRow(you, iso, t, true)).join('')}
     </div>
 
     <div class="rival" data-who="them">
@@ -724,15 +884,22 @@ function viewToday(){
       <div class="seg">${TASKS.map(t => `<i class="${entryOf(rival,iso)[t.id]?'on':''}"></i>`).join('')}</div>
     </div>
 
-    <button class="frame ${hasPhoto(you,iso)?'filled':''}" id="frameBtn">
-      ${hasPhoto(you,iso)
-        ? `<img src="${api.photoUrl(you,iso)}" alt="">`
-        : `<span class="ic">${ICON.camera}</span>`}
-      <span class="meta">
-        <span class="nm">${hasPhoto(you,iso)?'Frame logged':"Today's frame"}</span>
-        <span class="sub">${hasPhoto(you,iso)?'Tap to replace or remove':'Add your progress photo'}</span>
-      </span>
-    </button>
+    ${(() => {
+      const shots = photoCount(you, iso);
+      const dayPic = hasPhoto(you, iso, DAY_SLOT);
+      return `
+      <button class="frame ${dayPic?'filled':''}" id="frameBtn">
+        ${dayPic
+          ? `<img src="${api.photoUrl(you, iso, DAY_SLOT)}" alt="">`
+          : `<span class="ic">${ICON.camera}</span>`}
+        <span class="meta">
+          <span class="nm">${dayPic ? 'Frame logged' : "Today's frame"}</span>
+          <span class="sub">${dayPic
+            ? (shots > 1 ? `${shots} photos today — tap to manage` : 'Tap to replace or remove')
+            : (shots ? `Optional — ${shots} photo${shots>1?'s':''} today` : 'Optional')}</span>
+        </span>
+      </button>`;
+    })()}
   </div>`;
 }
 
@@ -741,6 +908,57 @@ const topbar = () => `
     <span class="mark">75 Hard</span>
     <button class="icon-btn" id="gearBtn">${ICON.gear}</button>
   </div>`;
+
+/*
+ * One task row, shared by Today and the day sheet.
+ * Empty camera opens the picker straight away — that's the common path.
+ * A filled thumbnail opens the day sheet instead, where it can be seen large,
+ * replaced or removed.
+ */
+function taskRow(prof, iso, t, editable){
+  const on = !!entryOf(prof, iso)[t.id];
+  const pic = hasPhoto(prof, iso, t.id);
+  const oz = t.meter ? waterOz(prof, iso) : 0;
+  const sub = t.meter
+    ? (oz ? `${oz} of ${WATER_GOAL_OZ} oz` : `${WATER_GOAL_OZ} oz — tap to log`)
+    : t.sub;
+  let shot = '';
+  if(t.photo){
+    if(pic){
+      shot = `<button class="shot-btn filled" data-open-slot="${t.id}" aria-label="${t.nm} photo">
+                <img src="${api.photoUrl(prof, iso, t.id)}" alt="">
+              </button>`;
+    } else if(editable){
+      shot = `<label class="shot-btn" aria-label="Add ${t.nm} photo">
+                <span class="ic">${ICON.camera}</span>
+                <input type="file" accept="image/*" data-shot="${t.id}" hidden>
+              </label>`;
+    } else {
+      shot = `<span class="shot-btn empty"></span>`;
+    }
+  }
+  // the meter row's own bottom hairline doubles as the gauge
+  const fill = t.meter
+    ? `<i class="fill" style="width:${waterPct(prof, iso)}%"></i>` : '';
+  const mainAttr = t.meter
+    ? `data-meter="${t.id}"`                       // opens the tracker
+    : `data-task="${t.id}" ${editable?'':'disabled'}`;
+
+  return `
+    <div class="task ${on?'on':''}${t.meter?' meter':''}" data-row="${t.id}">
+      <button class="task-main" ${mainAttr}>
+        <span class="meta">
+          <span class="nm">${t.nm}</span>
+          <span class="sub">${sub}</span>
+        </span>
+      </button>
+      ${shot}
+      <button class="task-check" data-task="${t.id}" ${editable?'':'disabled'} aria-label="Toggle ${t.nm}">
+        <span class="box"><span class="ic">${ICON.check}</span></span>
+      </button>
+      ${fill}
+    </div>`;
+}
 
 function viewFinished(){
   return `
@@ -814,7 +1032,7 @@ function cells(p, ti){
     if(d > ti) c += ' future';
     else if(d === ti) c += ' today' + (isComplete(p,iso) ? ' done' : '');
     else c += isComplete(p,iso) ? ' done' : ' miss';
-    if(hasPhoto(p,iso)) c += ' pic';
+    if(photoCount(p,iso)) c += ' pic';
     out += `<button class="${c}" data-day="${d}" data-prof="${p}" aria-label="Day ${d}"></button>`;
   }
   return out;
@@ -824,7 +1042,12 @@ function cells(p, ti){
 function viewFeed(){
   localStorage.setItem('kudosSeen', String(state.reactions.length));
   const posts = [];
-  for(const p of PROFILES) for(const iso of state.photoDays[p.id] || []) posts.push({ p:p.id, iso });
+  for(const p of PROFILES){
+    for(const iso of Object.keys(state.photos[p.id] || {})){
+      const slots = slotsFor(p.id, iso);
+      if(slots.length) posts.push({ p:p.id, iso, slots });
+    }
+  }
   posts.sort((a,b) => a.iso === b.iso ? (a.p === me() ? -1 : 1) : (a.iso < b.iso ? 1 : -1));
 
   if(!posts.length) return `
@@ -842,15 +1065,24 @@ function viewFeed(){
     const c = kudosCount(o.p, o.iso);
     const mine = iGaveKudos(o.p, o.iso);
     const own = o.p === me();
+    const multi = o.slots.length > 1;
     return `
     <div class="post" data-who="${whoAttr(o.p)}" data-post-p="${o.p}" data-post-iso="${o.iso}">
-      <img src="${api.photoUrl(o.p,o.iso)}" alt="Day ${d}" loading="lazy" draggable="false">
+      <div class="reel"${multi ? '' : ' data-single'}>
+        ${o.slots.map(s => `
+          <div class="slide">
+            <img src="${api.photoUrl(o.p, o.iso, s)}" alt="${SLOT_LABEL[s]}" loading="lazy" draggable="false">
+          </div>`).join('')}
+      </div>
       <div class="shade"></div>
       <div class="post-top">
         <span class="who">${own?'You':nameOf(o.p)}</span>
         <span class="dt">${fmtDate(o.iso)}</span>
       </div>
+      ${multi ? `<div class="pips">${o.slots.map((s,i) =>
+        `<i class="${i===0?'on':''}"></i>`).join('')}</div>` : ''}
       <div class="post-bot">
+        <div class="slot-tag">${SLOT_LABEL[o.slots[0]]}${multi ? ` <span class="of">1/${o.slots.length}</span>` : ''}</div>
         <div class="day num">${d}</div>
         <div class="rule"></div>
         <div class="state">${full ? '<b>All five complete</b>' : n + ' of ' + TASKS.length + ' complete'}</div>
@@ -894,7 +1126,7 @@ function viewRivals(){
 
     <div class="sect">
       <span class="eyebrow">Record</span>
-      ${row('Frames posted', (state.photoDays[a]||[]).length, (state.photoDays[b]||[]).length, true)}
+      ${row('Photos posted', totalPhotos(a), totalPhotos(b), true)}
       ${row('Kudos received', state.reactions.filter(r=>r.to===a).length,
                               state.reactions.filter(r=>r.to===b).length, true)}
     </div>
@@ -916,8 +1148,21 @@ function wire(){
     b.onclick = () => { state.tab = b.dataset.goto; render(); };
   });
 
+  // both the label area and the checkbox toggle the same task
   el.querySelectorAll('[data-task]').forEach(b => {
-    b.onclick = () => toggleTask(b.dataset.task, b);
+    b.onclick = () => toggleTask(b.dataset.task, b.closest('.task'));
+  });
+
+  el.querySelectorAll('[data-meter]').forEach(b => {
+    b.onclick = () => openWater(me(), todayISO());
+  });
+
+  // optional per-task photo: empty camera picks a file, filled thumb opens the day
+  el.querySelectorAll('[data-shot]').forEach(input => {
+    input.onchange = () => uploadFrom(input, me(), todayISO(), input.dataset.shot);
+  });
+  el.querySelectorAll('[data-open-slot]').forEach(b => {
+    b.onclick = () => openDay(me(), todayISO());
   });
 
   const frame = el.querySelector('#frameBtn');
@@ -940,6 +1185,7 @@ function wire(){
 
   el.querySelectorAll('.post').forEach(post => {
     const p = post.dataset.postP, iso = post.dataset.postIso;
+    wireReel(post, p, iso);
     if(p === me()) return;
     const btn = post.querySelector('.kudos');
     if(btn) btn.onclick = e => { e.stopPropagation(); sendKudos(p, iso, post, false); };
@@ -954,16 +1200,53 @@ function wire(){
   startCountdown();
 }
 
+/* Keep the slot caption and pips in step with the horizontal swipe. */
+function wireReel(post, p, iso){
+  const reel = post.querySelector('.reel');
+  const slots = slotsFor(p, iso);
+  if(!reel || slots.length < 2) return;
+  const tag = post.querySelector('.slot-tag');
+  const pips = [...post.querySelectorAll('.pips i')];
+  let shown = 0, raf = null;
+
+  const sync = () => {
+    raf = null;
+    const w = reel.clientWidth || 1;
+    const i = Math.max(0, Math.min(slots.length - 1, Math.round(reel.scrollLeft / w)));
+    if(i === shown) return;
+    shown = i;
+    if(tag) tag.innerHTML = `${SLOT_LABEL[slots[i]]} <span class="of">${i+1}/${slots.length}</span>`;
+    pips.forEach((pip, n) => pip.classList.toggle('on', n === i));
+  };
+
+  reel.addEventListener('scroll', () => {
+    if(raf === null) raf = requestAnimationFrame(sync);
+  }, { passive:true });
+  // scrollend lands the final state even if the last scroll frame is coalesced
+  reel.addEventListener('scrollend', sync, { passive:true });
+  reel._syncReel = sync;
+}
+
 /* ═══════════ actions ═══════════ */
-async function toggleTask(taskId, btn){
+async function toggleTask(taskId, row){
   const you = me(), iso = todayISO();
   if(!state.data[you][iso]) state.data[you][iso] = {};
+
+  // ticking the water box is a shortcut for "filled it" / "actually didn't"
+  if(TASKS.find(t => t.id === taskId)?.meter){
+    const done = !!state.data[you][iso][taskId];
+    await setWater(you, iso, done ? 0 : WATER_GOAL_OZ, done ? [] : [WATER_GOAL_OZ]);
+    row.classList.toggle('on', !done);
+    haptic(done ? 6 : 12);
+    return;
+  }
+
   const was = isComplete(you, iso);
   const now = !state.data[you][iso][taskId];
   state.data[you][iso][taskId] = now;
 
-  btn.classList.toggle('on', now);
-  if(now){ btn.classList.add('just'); setTimeout(() => btn.classList.remove('just'), 320); }
+  row.classList.toggle('on', now);
+  if(now){ row.classList.add('just'); setTimeout(() => row.classList.remove('just'), 320); }
   refreshToday();
   haptic(now ? 12 : 6);
 
@@ -971,6 +1254,39 @@ async function toggleTask(taskId, btn){
 
   try{ await api.saveDay(you, iso, state.data[you][iso]); state.online = true; }
   catch(_){ toast('Offline — not saved'); }
+}
+
+/*
+ * Shared upload path for every slot. Swaps the row's camera for the new
+ * thumbnail in place rather than re-rendering, so checking a task off and
+ * adding its photo don't fight over the DOM.
+ */
+async function uploadFrom(input, prof, iso, slot){
+  const file = input.files && input.files[0];
+  input.value = '';
+  if(!file) return;
+  try{
+    toast('Uploading');
+    const blob = await compressImage(file);
+    const b64 = await blobToBase64(blob);
+    await api.uploadPhoto(prof, iso, slot, 'image/jpeg', b64);
+    addPhotoLocal(prof, iso, slot);
+    haptic(16);
+    toast(slot === DAY_SLOT ? 'Frame logged' : `${SLOT_LABEL[slot]} photo added`);
+
+    const row = screen().querySelector(`.task[data-row="${slot}"]`);
+    const label = row && row.querySelector('label.shot-btn');
+    if(label){
+      const btn = document.createElement('button');
+      btn.className = 'shot-btn filled fresh';
+      btn.dataset.openSlot = slot;
+      btn.innerHTML = `<img src="${api.photoUrl(prof, iso, slot)}" alt="">`;
+      btn.onclick = () => openDay(prof, iso);
+      label.replaceWith(btn);
+    } else {
+      render();
+    }
+  }catch(_){ toast('Upload failed'); }
 }
 
 function refreshToday(){
@@ -1080,7 +1396,21 @@ function closeSheet(){
 
 function openDay(prof, iso){
   const d = dayIndex(iso), mine = prof === me();
-  const pic = hasPhoto(prof, iso);
+
+  const gallery = () => {
+    const slots = slotsFor(prof, iso);
+    if(!slots.length){
+      return `<div class="shot-none">${mine ? 'No photos yet — all optional' : 'No photos this day'}</div>`;
+    }
+    return `<div class="sheet-shots">${slots.map(s => `
+      <figure class="sheet-shot" data-slot="${s}">
+        <img src="${api.photoUrl(prof, iso, s)}" alt="${SLOT_LABEL[s]}">
+        <figcaption>
+          <span>${SLOT_LABEL[s]}</span>
+          ${mine ? `<button class="rm" data-del="${s}" aria-label="Remove">${ICON.close}</button>` : ''}
+        </figcaption>
+      </figure>`).join('')}</div>`;
+  };
 
   openSheet(`
     <div data-who="${whoAttr(prof)}">
@@ -1092,38 +1422,77 @@ function openDay(prof, iso){
         <button class="icon-btn" id="x">${ICON.close}</button>
       </div>
 
-      ${pic ? `<img class="shot" src="${api.photoUrl(prof,iso)}" alt="Day ${d}">`
-            : `<div class="shot-none">No frame for this day</div>`}
+      <div id="gallery">${gallery()}</div>
 
       ${mine ? `
-        <label class="btn primary" style="cursor:pointer;margin-top:0">
-          ${pic ? 'Replace frame' : 'Add frame'}
-          <input type="file" accept="image/*" capture="environment" id="picIn" hidden>
-        </label>
-        ${pic ? `<button class="btn danger" id="picDel">Remove frame</button>` : ''}` : ''}
+        <label class="btn primary" id="frameLabel" style="cursor:pointer;margin-top:0">
+          <span class="txt">${hasPhoto(prof, iso, DAY_SLOT) ? 'Replace progress frame' : 'Add progress frame'}</span>
+          <input type="file" accept="image/*" data-sheet-shot="${DAY_SLOT}" hidden>
+        </label>` : ''}
 
       <div class="tasks" style="margin-top:22px;border-top:none">
-        ${TASKS.map(t => `
-          <button class="task ${entryOf(prof,iso)[t.id]?'on':''}" data-sheet-task="${t.id}" ${mine?'':'disabled'}>
-            <span class="meta"><span class="nm">${t.nm}</span><span class="sub">${t.sub}</span></span>
-            <span class="box"><span class="ic">${ICON.check}</span></span>
-          </button>`).join('')}
+        ${TASKS.map(t => taskRow(prof, iso, t, mine)).join('')}
       </div>
 
-      ${mine ? '' : `<div class="note">Read only — only ${nameOf(prof)} can check these</div>`}
+      ${mine
+        ? `<div class="note">Task photos are optional</div>`
+        : `<div class="note">Read only — only ${nameOf(prof)} can check these</div>`}
     </div>`, sheet => {
 
     sheet.querySelector('#x').onclick = closeSheet;
+
+    const repaint = () => {
+      sheet.querySelector('#gallery').innerHTML = gallery();
+      bindGallery();
+      const s = sheet.querySelector('.sheet-head .s');
+      if(s) s.textContent = `${fmtDate(iso)} — ${mine?'You':nameOf(prof)} — ${doneCount(prof,iso)}/${TASKS.length}`;
+      const ft = sheet.querySelector('#frameLabel .txt');
+      if(ft) ft.textContent = hasPhoto(prof, iso, DAY_SLOT) ? 'Replace progress frame' : 'Add progress frame';
+    };
+
+    function bindGallery(){
+      if(!mine) return;
+      sheet.querySelectorAll('[data-del]').forEach(b => {
+        b.onclick = async () => {
+          const slot = b.dataset.del;
+          if(!confirm(`Remove the ${SLOT_LABEL[slot].toLowerCase()} photo?`)) return;
+          try{
+            await api.deletePhoto(prof, iso, slot);
+            removePhotoLocal(prof, iso, slot);
+            toast('Photo removed');
+            repaint();
+            refreshSheetTaskShot(sheet, prof, iso, slot);
+          }catch(_){ toast('Delete failed'); }
+        };
+      });
+    }
+    bindGallery();
+
+    // the water row opens its tracker instead of toggling — readable either way,
+    // so this is bound before the read-only bail-out
+    sheet.querySelectorAll('[data-meter]').forEach(b => {
+      b.onclick = () => { closeSheet(); setTimeout(() => openWater(prof, iso), 340); };
+    });
+
     if(!mine) return;
 
-    sheet.querySelectorAll('[data-sheet-task]').forEach(b => {
+    sheet.querySelectorAll('[data-task]').forEach(b => {
       b.onclick = async () => {
-        const id = b.dataset.sheetTask;
+        const id = b.dataset.task;
+        const row = b.closest('.task');
         if(!state.data[prof][iso]) state.data[prof][iso] = {};
+        if(TASKS.find(t => t.id === id)?.meter){
+          const done = !!state.data[prof][iso][id];
+          await setWater(prof, iso, done ? 0 : WATER_GOAL_OZ, done ? [] : [WATER_GOAL_OZ]);
+          row.classList.toggle('on', !done);
+          const h = sheet.querySelector('.sheet-head .s');
+          if(h) h.textContent = `${fmtDate(iso)} — You — ${doneCount(prof,iso)}/${TASKS.length}`;
+          return;
+        }
         const v = !state.data[prof][iso][id];
         state.data[prof][iso][id] = v;
-        b.classList.toggle('on', v);
-        if(v){ b.classList.add('just'); setTimeout(()=>b.classList.remove('just'),320); }
+        row.classList.toggle('on', v);
+        if(v){ row.classList.add('just'); setTimeout(()=>row.classList.remove('just'),320); }
         haptic(10);
         const s = sheet.querySelector('.sheet-head .s');
         if(s) s.textContent = `${fmtDate(iso)} — You — ${doneCount(prof,iso)}/${TASKS.length}`;
@@ -1132,34 +1501,207 @@ function openDay(prof, iso){
       };
     });
 
-    const input = sheet.querySelector('#picIn');
-    if(input) input.onchange = async () => {
-      const f = input.files && input.files[0];
-      if(!f) return;
-      try{
-        toast('Uploading');
-        const blob = await compressImage(f);
-        const b64 = await blobToBase64(blob);
-        await api.uploadPhoto(prof, iso, 'image/jpeg', b64);
-        if(!state.photoDays[prof].includes(iso)) state.photoDays[prof].push(iso);
-        state.photoV[`${prof}|${iso}`] = Date.now();
-        haptic(16);
-        toast('Frame logged');
-        closeSheet(); render();
-      }catch(_){ toast('Upload failed'); }
-      input.value = '';
+    // any file input in the sheet: the progress frame or a task slot
+    const bindInputs = () => {
+      sheet.querySelectorAll('[data-sheet-shot],[data-shot]').forEach(input => {
+        input.onchange = async () => {
+          const slot = input.dataset.sheetShot || input.dataset.shot;
+          const file = input.files && input.files[0];
+          input.value = '';
+          if(!file) return;
+          try{
+            toast('Uploading');
+            const blob = await compressImage(file);
+            const b64 = await blobToBase64(blob);
+            await api.uploadPhoto(prof, iso, slot, 'image/jpeg', b64);
+            addPhotoLocal(prof, iso, slot);
+            haptic(16);
+            toast(slot === DAY_SLOT ? 'Frame logged' : `${SLOT_LABEL[slot]} photo added`);
+            repaint();
+            refreshSheetTaskShot(sheet, prof, iso, slot);
+            bindInputs();
+          }catch(_){ toast('Upload failed'); }
+        };
+      });
+    };
+    bindInputs();
+
+    // a filled thumbnail inside the sheet just scrolls up to the gallery
+    sheet.querySelectorAll('[data-open-slot]').forEach(b => {
+      b.onclick = () => sheet.scrollTo({ top:0, behavior:'smooth' });
+    });
+  });
+}
+
+/* Swap a sheet task row's camera/thumbnail after its photo changes. */
+function refreshSheetTaskShot(sheet, prof, iso, slot){
+  const row = sheet.querySelector(`.task[data-row="${slot}"]`);
+  if(!row) return;
+  const t = TASKS.find(x => x.id === slot);
+  if(!t || !t.photo) return;
+  const old = row.querySelector('.shot-btn');
+  if(!old) return;
+  const wrap = document.createElement('div');
+  wrap.innerHTML = taskRow(prof, iso, t, prof === me()).trim();
+  const fresh = wrap.firstChild.querySelector('.shot-btn');
+  if(fresh) old.replaceWith(fresh);
+}
+
+/* ── water tracker ── */
+function openWater(prof, iso){
+  const mine = prof === me();
+  let editing = false;
+
+  const body = () => {
+    const oz = waterOz(prof, iso), pct = waterPct(prof, iso);
+    const left = Math.max(0, WATER_GOAL_OZ - oz);
+    const log = waterLog(prof, iso);
+    const list = vessels();
+    return `
+      <div class="wtr-read">
+        <div class="wtr-big num">${oz}</div>
+        <div class="wtr-unit">of ${WATER_GOAL_OZ} oz</div>
+      </div>
+      <div class="wtr-bar"><i style="width:${pct}%"></i></div>
+      <div class="wtr-note">
+        <span>${pct}%</span>
+        <span>${left ? `${left} oz to go` : 'Goal reached'}</span>
+      </div>
+
+      ${mine ? `
+        <div class="wtr-head">
+          <span class="eyebrow">Add</span>
+          <button class="wtr-edit" id="vEdit">${editing ? 'Done' : 'Edit'}</button>
+        </div>
+        <div class="vessels">
+          ${list.map((v, i) => `
+            <button class="vessel" data-add="${v.oz}" ${editing?'disabled':''}>
+              <span class="nm">${v.nm}</span>
+              <span class="oz num">${v.oz} oz</span>
+              ${editing ? `<span class="del" data-del-v="${i}">${ICON.close}</span>` : ''}
+            </button>`).join('')}
+        </div>
+        ${editing ? `
+          <div class="vnew">
+            <input id="vName" type="text" placeholder="Name" maxlength="14">
+            <input id="vOz" type="number" inputmode="numeric" placeholder="oz" min="1" max="512">
+            <button class="vadd" id="vAdd">Add</button>
+          </div>` : ''}
+        ${log.length ? `<button class="btn" id="wUndo">Undo last — ${log[log.length-1]} oz</button>` : ''}
+        <button class="btn ghost" id="wClear">Reset day</button>
+      ` : `<div class="note">Read only — this is ${nameOf(prof)}'s day</div>`}
+    `;
+  };
+
+  openSheet(`
+    <div data-who="${whoAttr(prof)}">
+      <div class="sheet-head">
+        <div>
+          <div class="t">Water</div>
+          <div class="s">Day ${dayIndex(iso)} — ${mine?'You':nameOf(prof)}</div>
+        </div>
+        <button class="icon-btn" id="x">${ICON.close}</button>
+      </div>
+      <div id="wBody">${body()}</div>
+    </div>`, sheet => {
+
+    const bind = () => {
+      sheet.querySelector('#x').onclick = closeSheet;
+      if(!mine) return;
+
+      sheet.querySelectorAll('[data-add]').forEach(b => {
+        b.onclick = async () => {
+          if(editing) return;
+          await addWater(prof, iso, Number(b.dataset.add));
+          b.classList.add('pulse');
+          setTimeout(() => b.classList.remove('pulse'), 320);
+          repaint();
+        };
+      });
+
+      sheet.querySelectorAll('[data-del-v]').forEach(el => {
+        el.onclick = ev => {
+          ev.stopPropagation();
+          const list = vessels();
+          list.splice(Number(el.dataset.delV), 1);
+          saveVessels(list);
+          repaint();
+        };
+      });
+
+      const eb = sheet.querySelector('#vEdit');
+      if(eb) eb.onclick = () => { editing = !editing; repaint(); };
+
+      const add = sheet.querySelector('#vAdd');
+      if(add) add.onclick = () => {
+        const nm = (sheet.querySelector('#vName').value || '').trim();
+        const oz = Math.round(Number(sheet.querySelector('#vOz').value));
+        if(!nm || !oz || oz < 1 || oz > 512){ toast('Name and size needed'); return; }
+        saveVessels(vessels().concat({ nm, oz }));
+        toast(`${nm} added`);
+        repaint();
+      };
+
+      const un = sheet.querySelector('#wUndo');
+      if(un) un.onclick = async () => { await undoWater(prof, iso); repaint(); };
+
+      const cl = sheet.querySelector('#wClear');
+      if(cl) cl.onclick = async () => {
+        if(!waterOz(prof, iso)) return;
+        if(!confirm('Reset today\'s water to zero?')) return;
+        await setWater(prof, iso, 0, []);
+        repaint();
+      };
     };
 
-    const del = sheet.querySelector('#picDel');
-    if(del) del.onclick = async () => {
-      if(!confirm('Remove this frame?')) return;
-      try{
-        await api.deletePhoto(prof, iso);
-        state.photoDays[prof] = state.photoDays[prof].filter(x => x !== iso);
-        toast('Frame removed');
-        closeSheet(); render();
-      }catch(_){ toast('Delete failed'); }
+    const repaint = () => {
+      sheet.querySelector('#wBody').innerHTML = body();
+      bind();
+      refreshMeterRow(prof, iso);
     };
+
+    bind();
+  });
+}
+
+async function setWater(prof, iso, oz, log){
+  const entry = (state.data[prof][iso] ||= {});
+  const was = isComplete(prof, iso);
+  entry.waterOz = Math.max(0, Math.round(oz));
+  entry.waterLog = log;
+  entry.water = entry.waterOz >= WATER_GOAL_OZ;   // keep the boolean derived
+  refreshToday();
+  refreshMeterRow(prof, iso);
+  if(!was && isComplete(prof, iso) && iso === todayISO() && prof === me()) showComplete();
+  try{ await api.saveDay(prof, iso, entry); }
+  catch(_){ toast('Offline — not saved'); }
+}
+
+async function addWater(prof, iso, oz){
+  const before = waterOz(prof, iso);
+  haptic(12);
+  await setWater(prof, iso, before + oz, waterLog(prof, iso).concat(oz));
+  const now = waterOz(prof, iso);
+  if(before < WATER_GOAL_OZ && now >= WATER_GOAL_OZ) toast('Gallon done');
+}
+
+async function undoWater(prof, iso){
+  const log = waterLog(prof, iso).slice();
+  const last = log.pop();
+  if(last === undefined) return;
+  haptic(8);
+  await setWater(prof, iso, waterOz(prof, iso) - last, log);
+}
+
+/* Update a meter row in place wherever it is on screen. */
+function refreshMeterRow(prof, iso){
+  document.querySelectorAll(`.task.meter[data-row="water"]`).forEach(row => {
+    const fill = row.querySelector('.fill');
+    if(fill) fill.style.width = waterPct(prof, iso) + '%';
+    const sub = row.querySelector('.sub');
+    const oz = waterOz(prof, iso);
+    if(sub) sub.textContent = oz ? `${oz} of ${WATER_GOAL_OZ} oz` : `${WATER_GOAL_OZ} oz — tap to log`;
+    row.classList.toggle('on', !!entryOf(prof, iso).water);
   });
 }
 
@@ -1196,7 +1738,7 @@ async function confirmReset(){
     await api.reset(sd);
     state.startDate = sd;
     state.data = { sachin:{}, aarya:{} };
-    state.photoDays = { sachin:[], aarya:[] };
+    state.photos = { sachin:{}, aarya:{} };
     state.reactions = [];
     state.tab = 'today';
     closeSheet(); render();
@@ -1210,7 +1752,7 @@ async function loadState(){
     const r = await api.getState();
     state.startDate = r.startDate;
     state.data = r.data || { sachin:{}, aarya:{} };
-    state.photoDays = r.photoDays || { sachin:[], aarya:[] };
+    state.photos = r.photos || { sachin:{}, aarya:{} };
     state.online = true;
   }catch(err){
     state.online = false;

@@ -32,7 +32,7 @@ if (!DEMO) {
 
 /* ---- demo data: day 22 of 75, both profiles active ---- */
 const TASK_IDS = ['diet', 'workout1', 'workout2', 'water', 'read'];
-const demo = { data: { sachin: {}, aarya: {} }, photoDays: { sachin: [], aarya: [] }, reactions: [] };
+const demo = { data: { sachin: {}, aarya: {} }, photos: { sachin: {}, aarya: {} }, reactions: [] };
 let demoStart;
 {
   const iso = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -50,12 +50,27 @@ let demoStart;
       demo.data.sachin[day][t] = sMiss ? ti < 3 : true;
       demo.data.aarya[day][t]  = aMiss ? ti < 2 : true;
     });
-    if (i % 2 === 0) demo.photoDays.sachin.push(day);
-    if (i % 3 === 0) demo.photoDays.aarya.push(day);
+    // vary how many slots each day carries so the feed carousel gets exercised
+    if (i % 2 === 0) {
+      demo.photos.sachin[day] = ['day'];
+      if (i % 4 === 0) demo.photos.sachin[day].push('workout1', 'read');
+      if (i % 6 === 0) demo.photos.sachin[day].push('water');
+    }
+    if (i % 3 === 0) {
+      demo.photos.aarya[day] = i % 6 === 0 ? ['day', 'workout2'] : ['workout1'];
+    }
+  }
+  // completed past days carry a full log; today is mid-way so the meter shows
+  for (const p of ['sachin', 'aarya']) {
+    for (const [day, e] of Object.entries(demo.data[p])) {
+      if (e.water) { e.waterOz = 128; e.waterLog = [32, 32, 32, 16, 16]; }
+    }
   }
   const t = iso(today);
-  demo.data.sachin[t] = { diet: true, workout1: true, workout2: false, water: false, read: false };
-  demo.data.aarya[t]  = { diet: true, workout1: true, workout2: true, water: true, read: false };
+  demo.data.sachin[t] = { diet: true, workout1: true, workout2: false, water: false, read: false,
+                          waterOz: 48, waterLog: [16, 16, 16] };
+  demo.data.aarya[t]  = { diet: true, workout1: true, workout2: true, water: true, read: false,
+                          waterOz: 128, waterLog: [32, 32, 32, 32] };
   demo.reactions = [
     { from: 'aarya', to: 'sachin', date: at(20), emoji: 'kudos' },
     { from: 'aarya', to: 'sachin', date: at(18), emoji: 'kudos' },
@@ -80,6 +95,7 @@ function chunk(type, data) {
   const crc = Buffer.alloc(4); crc.writeUInt32BE(crc32(td));
   return Buffer.concat([len, td, crc]);
 }
+const demoUploads = new Map();   // prof|date|slot -> { type, buf }
 const pngCache = new Map();
 function demoPng(seed) {
   if (pngCache.has(seed)) return pngCache.get(seed);
@@ -135,7 +151,7 @@ async function demoApi(pathname, req, res, url) {
       demo.data[b.profileId][b.date] = b.tasks;
       return res.status(200).json({ ok: true });
     }
-    return res.status(200).json({ startDate: demoStart, data: demo.data, photoDays: demo.photoDays });
+    return res.status(200).json({ startDate: demoStart, data: demo.data, photos: demo.photos });
   }
   if (pathname === '/api/reactions') {
     if (req.method === 'POST') {
@@ -149,18 +165,34 @@ async function demoApi(pathname, req, res, url) {
   }
   if (pathname === '/api/photos') {
     const prof = url.searchParams.get('profile'), date = url.searchParams.get('date');
+    const slot = url.searchParams.get('slot') || 'day';
     if (req.method === 'POST') {
-      if (!demo.photoDays[prof].includes(date)) demo.photoDays[prof].push(date);
+      const list = (demo.photos[prof][date] ||= []);
+      if (!list.includes(slot)) list.push(slot);
+      // keep the real bytes so what you upload is what you see back
+      const b = await readBody(req);
+      if (b.dataBase64) {
+        demoUploads.set(`${prof}|${date}|${slot}`,
+          { type: b.contentType || 'image/jpeg', buf: Buffer.from(b.dataBase64, 'base64') });
+      }
       return res.status(200).json({ ok: true });
     }
     if (req.method === 'DELETE') {
-      demo.photoDays[prof] = demo.photoDays[prof].filter((d) => d !== date);
+      const list = demo.photos[prof][date] || [];
+      const i = list.indexOf(slot);
+      if (i >= 0) list.splice(i, 1);
+      if (!list.length) delete demo.photos[prof][date];
+      demoUploads.delete(`${prof}|${date}|${slot}`);
       return res.status(200).json({ ok: true });
     }
-    if (!demo.photoDays[prof]?.includes(date)) return res.status(404).json({ error: 'not found' });
-    const buf = demoPng(prof + date);
+    if (!(demo.photos[prof]?.[date] || []).includes(slot)) return res.status(404).json({ error: 'not found' });
+    const up = demoUploads.get(`${prof}|${date}|${slot}`);
+    if (up) {
+      res.setHeader('Content-Type', up.type);
+      return res.status(200).send(up.buf);
+    }
     res.setHeader('Content-Type', 'image/png');
-    return res.status(200).send(buf);
+    return res.status(200).send(demoPng(prof + date + slot));
   }
   if (pathname === '/api/health') {
     return res.status(200).json({
@@ -170,7 +202,7 @@ async function demoApi(pathname, req, res, url) {
   }
   if (pathname === '/api/reset') {
     demo.data = { sachin: {}, aarya: {} };
-    demo.photoDays = { sachin: [], aarya: [] };
+    demo.photos = { sachin: {}, aarya: {} };
     demo.reactions = [];
     demoStart = new Date().toISOString().slice(0, 10);
     return res.status(200).json({ ok: true, startDate: demoStart });
