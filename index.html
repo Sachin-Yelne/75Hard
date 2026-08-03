@@ -193,7 +193,14 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
 .shot-btn.fresh{animation:shotIn .32s cubic-bezier(.2,1,.3,1);}
 
 /* ── rival strip ───────────────────────── */
-.rival{padding:20px 0 0;}
+.rival{padding:20px 0 0;width:100%;display:block;}
+.rival:active{opacity:.62;}
+.rival-more{
+  margin-top:9px;font-family:var(--cond);font-weight:600;font-size:10.5px;
+  letter-spacing:.17em;text-transform:uppercase;color:var(--bone-3);
+}
+/* a meter's box mirrors the pour, so it reads as state rather than a control */
+.task-check.derived .box{opacity:.72;}
 .rival-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:11px;}
 .rival-head .who{font-family:var(--cond);font-weight:600;font-size:15px;letter-spacing:.14em;text-transform:uppercase;}
 .rival-head .sc{font-family:var(--display);font-size:15px;color:var(--bone-2);}
@@ -761,7 +768,10 @@ const waterOz = (p, iso) => {
   return e.water ? WATER_GOAL_OZ : 0;
 };
 const waterLog = (p, iso) => entryOf(p, iso).waterLog || [];
-const waterPct = (p, iso) => Math.min(100, Math.round(waterOz(p, iso) / WATER_GOAL_OZ * 100));
+// the bar can only fill once, but the number should tell the truth
+const waterPct    = (p, iso) => Math.min(100, waterPctRaw(p, iso));
+const waterPctRaw = (p, iso) => Math.round(waterOz(p, iso) / WATER_GOAL_OZ * 100);
+const waterOver   = (p, iso) => Math.max(0, waterOz(p, iso) - WATER_GOAL_OZ);
 
 /* Vessels are personal kit, not shared progress, so they live on the device. */
 function vessels(){
@@ -1013,13 +1023,14 @@ function viewToday(){
            </label>`;
     })()}
 
-    <div class="rival" data-who="them">
+    <button class="rival" data-who="them" id="rivalBtn" aria-label="See ${nameOf(rival)}'s day">
       <div class="rival-head">
         <span class="who">${nameOf(rival)}</span>
         <span class="sc ${rn===TASKS.length?'done':''}">${rn===TASKS.length?'Complete':rn+' / '+TASKS.length}</span>
       </div>
       <div class="seg">${TASKS.map(t => `<i class="${entryOf(rival,iso)[t.id]?'on':''}"></i>`).join('')}</div>
-    </div>
+      <div class="rival-more">${photoCount(rival, iso) ? `${photoCount(rival, iso)} frame${photoCount(rival,iso)>1?'s':''} — ` : ''}tap to see the day</div>
+    </button>
   </div>`;
 }
 
@@ -1074,6 +1085,11 @@ function taskRow(prof, iso, t, editable){
   const mainAttr = t.meter
     ? `data-meter="${t.id}"`                       // opens the tracker
     : `data-task="${t.id}" ${editable?'':'disabled'}`;
+  // A meter's box reports the pour rather than setting it — ticking it directly
+  // would claim a gallon you never logged. Tapping it opens the tracker.
+  const checkAttr = t.meter
+    ? `data-meter="${t.id}" ${editable?'':'disabled'} aria-label="${t.nm} tracker"`
+    : `data-task="${t.id}" ${editable?'':'disabled'} aria-label="Toggle ${t.nm}"`;
 
   return `
     <div class="task ${on?'on':''}${t.meter?' meter':''}" data-row="${t.id}">
@@ -1084,7 +1100,7 @@ function taskRow(prof, iso, t, editable){
         </span>
       </button>
       ${shot}
-      <button class="task-check" data-task="${t.id}" ${editable?'':'disabled'} aria-label="Toggle ${t.nm}">
+      <button class="task-check${t.meter?' derived':''}" ${checkAttr}>
         <span class="box"><span class="ic">${ICON.check}</span></span>
       </button>
       ${fill}
@@ -1313,6 +1329,10 @@ function wire(){
   const frame = el.querySelector('button#frameBtn');
   if(frame) frame.onclick = () => openDay(me(), todayISO());
 
+  // read-only peek at your partner's day, straight off their strip
+  const rb = el.querySelector('#rivalBtn');
+  if(rb) rb.onclick = () => openDay(them(), todayISO());
+
   el.querySelectorAll('#switch button').forEach(b => {
     b.onclick = () => { state.wallView = b.dataset.wv; haptic(6); render(); };
   });
@@ -1373,14 +1393,8 @@ async function toggleTask(taskId, row){
   const you = me(), iso = todayISO();
   seedDay(you, iso);
 
-  // ticking the water box is a shortcut for "filled it" / "actually didn't"
-  if(TASKS.find(t => t.id === taskId)?.meter){
-    const done = !!state.data[you][iso][taskId];
-    await setWater(you, iso, done ? 0 : WATER_GOAL_OZ, done ? [] : [WATER_GOAL_OZ]);
-    row.classList.toggle('on', !done);
-    haptic(done ? 6 : 12);
-    return;
-  }
+  // water is logged pour by pour; it is never ticked directly
+  if(TASKS.find(t => t.id === taskId)?.meter){ openWater(you, iso); return; }
 
   const was = isComplete(you, iso);
   const now = !state.data[you][iso][taskId];
@@ -1678,14 +1692,7 @@ function openDay(prof, iso){
         const id = b.dataset.task;
         const row = b.closest('.task');
         seedDay(prof, iso);
-        if(TASKS.find(t => t.id === id)?.meter){
-          const done = !!state.data[prof][iso][id];
-          await setWater(prof, iso, done ? 0 : WATER_GOAL_OZ, done ? [] : [WATER_GOAL_OZ]);
-          row.classList.toggle('on', !done);
-          const h = sheet.querySelector('.sheet-head .s');
-          if(h) h.textContent = `${fmtDate(iso)} — You — ${doneCount(prof,iso)}/${TASKS.length}`;
-          return;
-        }
+        if(TASKS.find(t => t.id === id)?.meter){ openWater(prof, iso); return; }
         const v = !state.data[prof][iso][id];
         state.data[prof][iso][id] = v;
         row.classList.toggle('on', v);
@@ -1751,6 +1758,7 @@ function openWater(prof, iso){
 
   const body = () => {
     const oz = waterOz(prof, iso), pct = waterPct(prof, iso);
+    const raw = waterPctRaw(prof, iso), over = waterOver(prof, iso);
     const left = Math.max(0, WATER_GOAL_OZ - oz);
     const log = waterLog(prof, iso);
     const list = vessels();
@@ -1761,8 +1769,8 @@ function openWater(prof, iso){
       </div>
       <div class="wtr-bar"><i style="width:${pct}%"></i></div>
       <div class="wtr-note">
-        <span>${pct}%</span>
-        <span>${left ? `${left} oz to go` : 'Goal reached'}</span>
+        <span>${raw}%</span>
+        <span>${left ? `${left} oz to go` : (over ? `${over} oz over` : 'Goal reached')}</span>
       </div>
 
       ${mine ? `
