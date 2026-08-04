@@ -9,7 +9,7 @@ Four tabs, phone-first:
 - **Today** — the day number set large, a five-segment rule (one per task), streak, a live countdown to local midnight, and your partner's progress underneath. Workout One, Workout Two and Read each carry an optional camera; Diet carries one you can use over and over, so snacks and dinner all land on the same day. The two workouts also take a written note, for when you would rather say what you did than photograph it. Diet starts ticked — you only touch it to record a day you didn't keep it. Every diet photo can be named: the moment one lands, a sheet asks what it was and offers a one-tap verdict — loved it, fine, regret it. Skipping is fine, and an unnamed shot just reads as "Diet" as before. Once named, the Diet row says what you last ate rather than the rule you're keeping. Completing all five holds a full-screen typographic moment for a second and a half, then returns you to the day.
 - **Water** is logged incrementally rather than ticked. Tap the row to open the tracker, then tap a vessel — a 16 oz bottle, a 32 oz tumbler, whatever you keep — to pour it toward the gallon. The row's own bottom hairline fills as you go, and the task checks itself at 128 oz. Keep pouring past the gallon if you want — the total and percentage carry on past 100% while the bar stays full. Undo removes the last pour. The checkbox can't be tapped: it mirrors the pour rather than setting it, so tapping it opens the tracker.
 - **Wall** — the 75-day grid for both people, with missed days, photo markers, and a milestone list. Opening a day shows its gallery, and a named meal reads as its own name under the frame; tap it to rename or re-judge, or tap the caption in the full-screen viewer to do the same from the photo itself. Your partner sees the names, read-only.
-- **Feed** — one day per screen, newest first, each rendered as a collage of everything logged that day. A lone frame fills the screen; more than one tiles into a grid, and past six the last tile carries a `+N`. Tap any tile to open the full-screen viewer; inside it a tap steps to the next frame and wraps at the end, and swiping still works. Two actions sit under the day, on the collage and in the viewer alike: a thumb for kudos, and a bubble for comments, each carrying its count. The most recent comment reads as one line above them. Tapping either opens the day's thread, where both of you can write — including on your own frame, so a reply lands where the picture is. A comment written in the viewer is filed against the frame on screen and carries its task as a tag. A day can also carry a song: the sleeve, title and artist read as one line on the post, with three bars that move while it's playing. Tap the line to turn sound on; from then on scrolling from day to day swaps the track, fading between them, and a day without one falls silent.
+- **Feed** — one day per screen, newest first, each rendered as a collage of everything logged that day. A lone frame fills the screen; more than one tiles into a grid, and past six the last tile carries a `+N`. Tap any tile to open the full-screen viewer; inside it a tap steps to the next frame and wraps at the end, and swiping still works. Two actions sit under the day, on the collage and in the viewer alike: a thumb for kudos, and a bubble for comments, each carrying its count. The most recent comment reads as one line above them. Tapping either opens the day's thread, where both of you can write — including on your own frame, so a reply lands where the picture is. A comment written in the viewer is filed against the frame on screen and carries its task as a tag. A day can also carry a song. It plays when you open the Feed, and scrolling from day to day swaps the track, fading between them; a day without one falls silent. The sleeve, title and artist read as one line on the post, and three bars beside the date move while the sound is on — tap them to mute, and the choice is remembered. On your own posts that line is also the way in: **Add music** where there is none, **Change** where there is.
 - **Rivals** — a side-by-side table: perfect days, current and longest streaks, consistency, per-task completion rates, photos posted, kudos received.
 
 Your partner's strip at the foot of Today opens their day read-only — every task and photo visible, nothing tickable. Pick who you are on first launch (stored locally); you can switch from the settings sheet. Your own progress is always clay, your partner's sage.
@@ -125,9 +125,10 @@ whether it works.
 
 ## Music
 
-Open a day, tap **Add music**, search, and tap a result to hear it — choosing
-is by ear, not by title. **Add** attaches whatever is playing. Search runs
-through `/api/music`, which proxies Apple's public iTunes Search API.
+Tap **Add music** — on your own post in the feed, or in the day sheet — then
+search and tap a result to hear it. Choosing is by ear, not by title, and
+**Add** attaches whatever is playing. Search runs through `/api/music`, which
+proxies Apple's public iTunes Search API.
 
 Nothing to configure and nothing to pay for: that endpoint needs no key and no
 account. The proxy exists because it sends no CORS headers, and because one
@@ -144,9 +145,13 @@ Two things to know about playing it:
 
 - **iOS needs a gesture before any audio starts**, and grants it to the element
   the user touched rather than to the page. There is therefore one `<audio>`
-  element for the whole app, unlocked by the first tap on a track line; every
-  later change is a `src` swap on that same element. Sound consequently starts
-  **off** on every load — a freshly loaded page has no gesture to spend.
+  element for the whole app, and every track change is a `src` swap on it.
+  Tapping the **Feed** tab is itself that gesture, so arriving at the feed
+  starts the music: playback begins inside that tap's own handler, which is
+  what makes it legal. Opening the app straight into the feed has no gesture to
+  spend, so the attempt is refused — the app then waits for the next touch
+  anywhere, a scroll of the feed included, and starts there. A refusal never
+  writes the preference; only a deliberate tap on the sound control does.
 - **The ring/silent switch would mute it, so the app opts out.** Safari starts
   a page's audio session as `ambient` — the category the silent switch
   silences, alongside alerts and game effects — and a plain `<audio>` element
@@ -250,7 +255,8 @@ sw.js             Offline shell cache, push handlers
 - Diet carries `auto:true`: opening the app on a day writes the tick into that day's record, so you only untick it to log a failure. It is seeded on check-in rather than defaulted at read time — a read-time default would credit Diet on days nobody opened the app and would rewrite past days' streaks and rates. A day you never open stays at 0/5.
 - Diet also carries `meal:true`: its shots are things you ate, so each one takes a name and a verdict. They live under `meals` in the day's existing `day_tasks.tasks` JSONB, keyed by the photo's own slot (`{ 'diet#1750…': { nm:'Chipotle bowl', v:'loved' } }`) — the same trick `notes` uses, so this needed no schema change and rides the save that was already happening. Deleting a photo takes its label with it rather than leaving an orphan.
 - A day's song lives under `track` in the same JSONB as `meals` and `notes`, so music needed no schema change either. The feed is built from photos, so a day with a song and no photo has no post to play it on — the day sheet says as much rather than letting it look broken.
-- Which post the feed is showing is arithmetic, not an observer: the feed is a snap scroller of full-height posts, so `scrollTop / clientHeight` names the current one exactly.
+- Which post the feed is showing is arithmetic, not an observer: the feed is a snap scroller of full-height posts, so `scrollTop / clientHeight` names the current one exactly. The same sum survives a re-render — adding music from the feed rebuilds it, and without restoring that index you would be thrown back to the newest day.
+- Sound on or off is a setting (`musicOff` in `localStorage`), not a per-visit decision, so muting sticks across loads. It is deliberately separate from the track line: the control sits by the date at the top, where a feed's audio control belongs, which leaves the line below free to be **Add music** / **Change** on your own posts.
 - `node dev.js --demo` serves its own canned catalogue and synthesises a short sine as the preview, so the whole music path — search, audition, attach, play, swap on scroll — works with no network and no Apple.
 - Meal names are free text, so they are escaped wherever they render — captions, the Diet row, image `alt`. The row's note fell under the same interpolation and is now escaped too.
 - Diet takes several photos a day (`multi:true`), capped at 12; every other camera holds one. `slotBase()`/`slotLabel()` read through the `#` suffix, and `isKnownSlot()` accepts a stamped slot only for a multi task, so a stray `read#123` is rejected on both client and server.
