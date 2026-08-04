@@ -64,8 +64,8 @@ module.exports = async function handler(req, res) {
       });
       await notify(sql, {
         to, date, kind: `kudos:${from}`,
-        title: `${NAMES[from] || from} gave you kudos`,
-        body: when
+        title: `${NAMES[from] || from} just sent kudos`,
+        body: `Reaction recorded for ${when}.`
       });
 
       return res.status(200).json({ ok: true, active: true });
