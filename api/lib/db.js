@@ -36,7 +36,7 @@ async function ensurePhotoSlot(sqlClient) {
 // challenge_meta, day_tasks and photos used to be expected to already exist —
 // only `reactions` created itself. A database that had never been set up by
 // hand therefore failed every request, which the UI reported as the generic
-// "Server unreachable". Create all four on demand instead; IF NOT EXISTS
+// "Server unreachable". Create them all on demand instead; IF NOT EXISTS
 // leaves an already-populated database untouched, and ensurePhotoSlot then
 // brings a pre-slot photos table up to the current shape.
 async function createSchema(s) {
@@ -74,6 +74,22 @@ async function createSchema(s) {
       created_at   timestamptz NOT NULL DEFAULT now(),
       PRIMARY KEY (from_profile, to_profile, day_date, emoji)
     )
+  `;
+  // one thread per feed post — the post's owner and day, plus the photo slot
+  // the comment was written under, so a note on one frame can say which
+  await s`
+    CREATE TABLE IF NOT EXISTS comments (
+      id           bigserial PRIMARY KEY,
+      from_profile text NOT NULL,
+      to_profile   text NOT NULL,
+      day_date     date NOT NULL,
+      slot         text NOT NULL DEFAULT 'day',
+      body         text NOT NULL,
+      created_at   timestamptz NOT NULL DEFAULT now()
+    )
+  `;
+  await s`
+    CREATE INDEX IF NOT EXISTS comments_thread_idx ON comments (to_profile, day_date)
   `;
   await s`
     CREATE TABLE IF NOT EXISTS push_subscriptions (

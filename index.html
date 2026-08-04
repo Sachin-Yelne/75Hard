@@ -324,15 +324,28 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
 .post-bot .state{font-family:var(--cond);font-weight:600;font-size:13px;
   letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.72);}
 .post-bot .state b{color:var(--p);font-weight:600;}
-.kudos{
-  display:inline-flex;align-items:center;gap:11px;margin-top:16px;
-  padding:10px 16px;border:1px solid rgba(255,255,255,.32);
-  font-family:var(--cond);font-weight:600;font-size:12px;letter-spacing:.18em;text-transform:uppercase;
+/* kudos and comments read as one pair: a glyph, and the count if there is one */
+.acts{display:flex;align-items:center;gap:8px;margin-top:16px;}
+.kudos,.cmt{
+  display:inline-flex;align-items:center;gap:9px;
+  padding:11px 15px;border:1px solid rgba(255,255,255,.32);
   transition:background .18s,border-color .18s,color .18s;
 }
-.kudos .n{font-family:var(--display);font-size:13px;letter-spacing:0;}
+.kudos .ic,.cmt .ic{width:15px;height:15px;display:block;}
+.kudos .n,.cmt .n{font-family:var(--display);font-size:13px;letter-spacing:0;line-height:1;}
 .kudos.mine{background:var(--you);border-color:var(--you);color:var(--ink);}
 .kudos:disabled{opacity:.55;}
+/* last word on the frame, one line, tap to open the thread */
+.cmt-peek{display:flex;align-items:baseline;gap:9px;width:100%;margin-top:15px;}
+.cmt-peek .who{font-family:var(--cond);font-weight:700;font-size:11px;
+  letter-spacing:.2em;text-transform:uppercase;flex-shrink:0;}
+.cmt-peek .tx{flex:1;min-width:0;font-size:12.5px;line-height:1.3;color:rgba(255,255,255,.84);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.cmt-peek .more{font-family:var(--cond);font-weight:600;font-size:11px;letter-spacing:.12em;
+  text-transform:uppercase;color:rgba(255,255,255,.46);flex-shrink:0;}
+/* commenter's own colour, never the frame owner's */
+.c-a{color:var(--you);}
+.c-b{color:var(--them);}
 @keyframes stamp{
   0%{transform:translate(-50%,-50%) scale(.7);opacity:0}
   22%{transform:translate(-50%,-50%) scale(1);opacity:1}
@@ -387,7 +400,7 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
   width:20px;height:20px;color:var(--bone);}
 .viewer-bot{position:absolute;left:var(--pad);right:var(--pad);
   bottom:calc(var(--safe-bot) + 26px);pointer-events:none;}
-.viewer-bot .kudos{pointer-events:auto;}
+.viewer-bot .acts,.viewer-bot .cmt-peek{pointer-events:auto;}
 .viewer-meta{font-family:var(--cond);font-weight:600;font-size:12px;
   letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.62);}
 
@@ -408,15 +421,20 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
 .sect > .eyebrow{display:block;margin-bottom:14px;}
 
 /* ── sheets ────────────────────────────── */
-#sheets{position:fixed;inset:0;z-index:60;pointer-events:none;}
+/* Above the viewer (60), below the completion moment (70): the comment sheet
+   opens over an open photo, and #viewer comes later in the DOM. */
+#sheets{position:fixed;inset:0;z-index:65;pointer-events:none;}
 .scrim{position:absolute;inset:0;background:rgba(0,0,0,.7);opacity:0;transition:opacity .26s;}
 .sheet{
-  position:absolute;left:0;right:0;bottom:0;
+  position:absolute;left:0;right:0;bottom:var(--kb,0px);
   background:var(--ink-2);border-top:1px solid var(--rule-2);
   padding:20px var(--pad) calc(26px + var(--safe-bot));
-  max-height:88%;overflow-y:auto;
-  transform:translateY(100%);transition:transform .3s cubic-bezier(.3,1,.4,1);
+  max-height:calc(88% - var(--kb,0px));overflow-y:auto;
+  transform:translateY(100%);
+  transition:transform .3s cubic-bezier(.3,1,.4,1),bottom .18s ease,max-height .18s ease;
 }
+/* the on-screen keyboard lifts the sheet instead of burying the composer */
+#sheets.kb .sheet{padding-bottom:20px;}
 #sheets.open{pointer-events:auto;}
 #sheets.open .scrim{opacity:1;}
 #sheets.open .sheet{transform:translateY(0);}
@@ -488,6 +506,36 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
   flex:0 0 auto;padding:0 18px;background:var(--bone);color:var(--ink);
   font-family:var(--cond);font-weight:600;font-size:12px;letter-spacing:.16em;text-transform:uppercase;
 }
+/* ── comments sheet ── */
+.cmt-row{padding:15px 0;border-bottom:1px solid var(--rule);}
+.cmt-row:first-child{padding-top:5px;}
+.cmt-row.pending{opacity:.45;}
+.cmt-head{display:flex;align-items:center;gap:10px;margin-bottom:7px;}
+.cmt-head .who{font-family:var(--cond);font-weight:700;font-size:12px;
+  letter-spacing:.18em;text-transform:uppercase;}
+.cmt-head .when{font-family:var(--cond);font-weight:500;font-size:11px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--bone-3);}
+.cmt-head .on{font-family:var(--cond);font-weight:600;font-size:10px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--bone-3);border:1px solid var(--rule-2);padding:2px 6px;}
+.cmt-head .rm{width:12px;height:12px;color:var(--bone-3);margin-left:auto;flex-shrink:0;}
+.cmt-head .rm:active{color:var(--you);}
+.cmt-body{margin:0;font-size:13.5px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;}
+.cmt-none{border:1px solid var(--rule);padding:34px 0;text-align:center;
+  font-family:var(--cond);font-weight:500;font-size:12px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--bone-3);}
+.cmt-form{display:flex;align-items:flex-end;gap:8px;margin-top:18px;}
+.cmt-form textarea{
+  flex:1;min-width:0;resize:none;overflow-y:auto;max-height:116px;
+  background:var(--ink-3);border:1px solid var(--rule-2);color:var(--bone);
+  padding:13px 12px;font-family:var(--body);font-size:13.5px;line-height:1.45;
+}
+.cmt-form textarea:focus{outline:none;border-color:var(--p);}
+.cmt-form textarea::placeholder{color:var(--bone-3);}
+.cmt-send{
+  flex:0 0 auto;height:46px;padding:0 18px;background:var(--bone);color:var(--ink);
+  font-family:var(--cond);font-weight:600;font-size:12px;letter-spacing:.16em;text-transform:uppercase;
+}
+.cmt-send:disabled{opacity:.35;}
 .note{font-family:var(--cond);font-weight:500;font-size:11.5px;letter-spacing:.14em;
   text-transform:uppercase;color:var(--bone-3);text-align:center;margin-top:16px;}
 
@@ -628,7 +676,13 @@ const WORDS = ['Zero','One','Two','Three','Four','Five','Six','Seven','Eight','N
   'Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen','Twenty'];
 const word = n => (WORDS[n] || String(n)).toUpperCase();
 
-/* Font Awesome Pro (sharp-light), inlined — only the eight actually used. */
+/*
+ * Font Awesome Pro (sharp-light), inlined — only the ones actually used.
+ * `thumb` and `comment` are the exceptions: they are drawn here to the same
+ * spec (512 box, 32 stroke, square corners, no joins) because the Pro library
+ * isn't in the repo. Drop the real `thumbs-up` / `comment` paths in over them
+ * if you have `svgs/` to hand.
+ */
 const ICON = {
   today:'<svg viewBox="0 0 448 512" aria-hidden="true"><path d="M303.5 184.4L338.9 49.8 352 0 310.8 30.9 32 240l0 48 88.3 5.9 32.5 2.2-8.3 31.5L109.1 462.2 96 512l41.2-30.9L416 272l0-48-88.3-5.9-32.5-2.2 8.3-31.5zM154.6 415.1l19.7-74.7 15.4-58.4-60.2-4L74.7 274l204.7-153.5-4.1 15.4-19.7 74.7-15.4 58.4 60.2 4 54.9 3.7L150.5 430.6l4.1-15.4z"/></svg>',
   wall:'<svg viewBox="0 0 512 512" aria-hidden="true"><path d="M64 64l0 128 128 0 0-128L64 64zM32 32l32 0 128 0 32 0 0 32 0 128 0 32-32 0L64 224l-32 0 0-32L32 64l0-32zM64 320l0 128 128 0 0-128L64 320zM32 288l32 0 128 0 32 0 0 32 0 128 0 32-32 0L64 480l-32 0 0-32 0-128 0-32zM448 64L320 64l0 128 128 0 0-128zM320 32l128 0 32 0 0 32 0 128 0 32-32 0-128 0-32 0 0-32 0-128 0-32 32 0zm0 288l0 128 128 0 0-128-128 0zm-32-32l32 0 128 0 32 0 0 32 0 128 0 32-32 0-128 0-32 0 0-32 0-128 0-32z"/></svg>',
@@ -638,7 +692,9 @@ const ICON = {
   check:'<svg viewBox="0 0 448 512" aria-hidden="true"><path d="M448.1 118.2L437 129.7 173.6 404l-11.5 12-11.5-12L11.1 258.8 0 247.2l23.1-22.2 11.1 11.5L162.1 369.8 414 107.5 425 96l23.1 22.2z"/></svg>',
   camera:'<svg viewBox="0 0 512 512" aria-hidden="true"><path d="M160 32l192 0 21.3 64L480 96l32 0 0 32 0 320 0 32-32 0L32 480 0 480l0-32L0 128 0 96l32 0 106.7 0L160 32zm213.3 96l-23.1 0L343 106.1 328.9 64 183.1 64l-14 42.1L161.7 128l-23.1 0L32 128l0 320 448 0 0-320-106.7 0zM256 176a112 112 0 1 1 0 224 112 112 0 1 1 0-224zm80 112a80 80 0 1 0 -160 0 80 80 0 1 0 160 0z"/></svg>',
   note:'<svg viewBox="0 0 448 512" aria-hidden="true"><path d="M0 96l448 0 0 32L0 128l0-32zm0 144l448 0 0 32L0 272l0-32zM0 384l288 0 0 32L0 416l0-32z"/></svg>',
-  close:'<svg viewBox="0 0 384 512" aria-hidden="true"><path d="M192 233.4L59.5 100.9 36.9 123.5 169.4 256 36.9 388.5l22.6 22.6L192 278.6 324.5 411.1l22.6-22.6L214.6 256 347.1 123.5l-22.6-22.6L192 233.4z"/></svg>'
+  close:'<svg viewBox="0 0 384 512" aria-hidden="true"><path d="M192 233.4L59.5 100.9 36.9 123.5 169.4 256 36.9 388.5l22.6 22.6L192 278.6 324.5 411.1l22.6-22.6L214.6 256 347.1 123.5l-22.6-22.6L192 233.4z"/></svg>',
+  thumb:'<svg viewBox="0 0 512 512" aria-hidden="true"><path d="M208 48L256 48L256 208L464 208L464 432L432 464L176 464L176 80ZM208 93L208 432L419 432L432 419L432 240L224 240L224 80ZM32 240L144 240L144 464L32 464ZM64 272L64 432L112 432L112 272Z"/></svg>',
+  comment:'<svg viewBox="0 0 512 512" aria-hidden="true"><path d="M16 64L496 64L496 384L128 384L16 464L16 64ZM48 96L48 402L118 352L464 352L464 96L48 96Z"/></svg>'
 };
 
 /* ═══════════ api ═══════════ */
@@ -690,6 +746,23 @@ const api = {
     if(!r.ok) throw new Error('react');
     return r.json();
   },
+  async getComments(){
+    const r = await fetch('/api/comments');
+    if(!r.ok) throw new Error('comments');
+    return r.json();
+  },
+  async addComment(from, to, date, slot, body){
+    const r = await fetch('/api/comments', { method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ from, to, date, slot, body }) });
+    if(!r.ok) throw new Error('comment');
+    return r.json();
+  },
+  async deleteComment(id, from){
+    const r = await fetch(`/api/comments?id=${encodeURIComponent(id)}&from=${encodeURIComponent(from)}`,
+      { method:'DELETE' });
+    if(!r.ok) throw new Error('uncomment');
+  },
   async uploadPhoto(profileId, date, slot, contentType, dataBase64){
     const r = await fetch(photoQuery(profileId, date, slot),
       { method:'POST', headers:{'Content-Type':'application/json'},
@@ -714,6 +787,8 @@ const state = {
   photos:{ sachin:{}, aarya:{} },
   photoV:{},
   reactions:[],
+  // [{ id, from, to, date, slot, body, at }] — one thread per feed post
+  comments:[],
   me: localStorage.getItem('me') || null,
   tab:'today',
   wallView:'both',
@@ -747,6 +822,21 @@ function fmtLeft(ms){
   const h = Math.floor(t/3600), m = Math.floor((t%3600)/60), s = t%60;
   return h > 0 ? `${h}h ${String(m).padStart(2,'0')}m` : `${m}m ${String(s).padStart(2,'0')}s`;
 }
+/* Compact age for a comment: Now, 12m, 5h, 3d, then a plain date. */
+function fmtAgo(ts){
+  const t = new Date(ts).getTime();
+  if(!t) return '';
+  const s = Math.max(0, (Date.now() - t)/1000);
+  if(s < 90) return 'Now';
+  if(s < 3600) return `${Math.floor(s/60)}m`;
+  if(s < 86400) return `${Math.floor(s/3600)}h`;
+  if(s < 604800) return `${Math.floor(s/86400)}d`;
+  return new Date(t).toLocaleDateString(undefined,{ month:'short', day:'numeric' });
+}
+
+/* Comments are the only free text in the app — never interpolate one raw. */
+const esc = s => String(s).replace(/[&<>"']/g,
+  c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 
 /* ═══════════ selectors ═══════════ */
 const entryOf = (p, iso) => state.data[p]?.[iso] || {};
@@ -882,9 +972,24 @@ function taskRate(p, taskId){
 }
 const kudosCount = (to, date) => state.reactions.filter(r => r.to === to && r.date === date).length;
 const iGaveKudos = (to, date) => state.reactions.some(r => r.to === to && r.date === date && r.from === me());
-function unseenKudos(){
-  const seen = Number(localStorage.getItem('kudosSeen') || 0);
-  return state.reactions.filter(r => r.to === me()).length > seen;
+
+/* ── comments ── */
+// A thread belongs to a post — one person's photos on one day. Either of you can
+// write in it, so replies on your own frame land in the same place.
+const commentsOn = (to, date) => state.comments.filter(c => c.to === to && c.date === date);
+const commentCount = (to, date) => commentsOn(to, date).length;
+const lastCommentOn = (to, date) => commentsOn(to, date).slice(-1)[0] || null;
+
+/* The feed dot: kudos landed on you, or anything the other person has said. */
+const kudosToMe = () => state.reactions.filter(r => r.to === me() && r.from !== me()).length;
+const commentsFromThem = () => state.comments.filter(c => c.from !== me()).length;
+const seenCount = k => Number(localStorage.getItem(k) || 0);
+function feedBadge(){
+  return kudosToMe() > seenCount('kudosSeen') || commentsFromThem() > seenCount('cmtSeen');
+}
+function markFeedSeen(){
+  localStorage.setItem('kudosSeen', String(kudosToMe()));
+  localStorage.setItem('cmtSeen', String(commentsFromThem()));
 }
 
 /* ═══════════ fx ═══════════ */
@@ -939,7 +1044,7 @@ function render(){
 
 function renderNav(){
   const tabs = [['today','Today'],['wall','Wall'],['feed','Feed'],['rivals','Rivals']];
-  const badge = unseenKudos();
+  const badge = feedBadge();
   document.getElementById('nav').innerHTML = tabs.map(([id,label]) => `
     <button class="tab ${state.tab===id?'on':''}" data-tab="${id}">
       <span class="ic">${ICON[id]}</span><span>${label}</span>
@@ -1222,7 +1327,7 @@ const collageCols = n => n === 1 ? 1 : n <= 4 ? 2 : 3;
 const TILE_CAP = 6;
 
 function viewFeed(){
-  localStorage.setItem('kudosSeen', String(state.reactions.length));
+  markFeedSeen();
   const posts = [];
   for(const p of PROFILES){
     for(const iso of Object.keys(state.photos[p.id] || {})){
@@ -1244,8 +1349,6 @@ function viewFeed(){
     const d = dayIndex(o.iso);
     const n = doneCount(o.p, o.iso);
     const full = n === TASKS.length;
-    const c = kudosCount(o.p, o.iso);
-    const mine = iGaveKudos(o.p, o.iso);
     const own = o.p === me();
     const n2 = o.slots.length;
     const multi = n2 > 1;
@@ -1274,13 +1377,45 @@ function viewFeed(){
         <div class="day num">${d}</div>
         <div class="rule"></div>
         <div class="state">${full ? '<b>All five complete</b>' : n + ' of ' + TASKS.length + ' complete'}</div>
-        <button class="kudos ${mine?'mine':''}" ${own?'disabled':''}>
-          ${own ? 'Kudos' : (mine ? 'Kudos given' : 'Give kudos')}
-          ${c ? `<span class="n">${c}</span>` : ''}
-        </button>
+        <div class="cmt-slot">${peekHTML(o.p, o.iso)}</div>
+        <div class="acts">
+          ${kudosHTML(o.p, o.iso, own)}
+          ${cmtHTML(o.p, o.iso)}
+        </div>
       </div>
     </div>`;
   }).join('')}</div>`;
+}
+
+/*
+ * The two feed actions: a glyph, and the count when there is one. Kudos is a
+ * thumb, comments a bubble — the words were doing no work a symbol can't.
+ */
+function kudosHTML(prof, iso, own){
+  const c = kudosCount(prof, iso), mine = iGaveKudos(prof, iso);
+  return `<button class="kudos ${mine?'mine':''}" ${own?'disabled':''}
+    aria-label="${own ? 'Kudos on your frame' : mine ? 'Kudos given' : 'Give kudos'}">
+    <span class="ic">${ICON.thumb}</span>${c ? `<span class="n">${c}</span>` : ''}
+  </button>`;
+}
+function cmtHTML(prof, iso){
+  const n = commentCount(prof, iso);
+  return `<button class="cmt" aria-label="${n ? `Comments (${n})` : 'Add a comment'}">
+    <span class="ic">${ICON.comment}</span>${n ? `<span class="n">${n}</span>` : ''}
+  </button>`;
+}
+
+/* The latest word on a frame — one line, on the photo, tap for the thread. */
+function peekHTML(prof, iso){
+  const last = lastCommentOn(prof, iso);
+  if(!last) return '';
+  const extra = commentCount(prof, iso) - 1;
+  return `
+    <button class="cmt-peek">
+      <span class="who ${last.from === me() ? 'c-a' : 'c-b'}">${last.from === me() ? 'You' : nameOf(last.from)}</span>
+      <span class="tx">${esc(last.body)}</span>
+      ${extra > 0 ? `<span class="more">+${extra}</span>` : ''}
+    </button>`;
 }
 
 /* ── rivals ── */
@@ -1382,12 +1517,28 @@ function wire(){
     post.querySelectorAll('[data-tile]').forEach(tile => {
       tile.onclick = e => { e.stopPropagation(); openViewer(p, iso, Number(tile.dataset.tile)); };
     });
+    // your own frames included — a reply to their comment belongs there too
+    bindComments(post, p, iso, DAY_SLOT);
     if(p === me()) return;
     const btn = post.querySelector('.kudos');
     if(btn) btn.onclick = e => { e.stopPropagation(); sendKudos(p, iso, post, false); };
   });
 
   startCountdown();
+}
+
+/*
+ * Both the button and the peek line open the same thread. `slot` is what a new
+ * comment gets filed against: the day itself from the collage, or the frame you
+ * are looking at in the viewer.
+ */
+function bindComments(host, prof, iso, slot){
+  host.querySelectorAll('.cmt, .cmt-peek').forEach(b => {
+    b.onclick = e => {
+      e.stopPropagation();
+      openComments(prof, iso, typeof slot === 'function' ? slot() : slot);
+    };
+  });
 }
 
 /* Keep the slot caption and pips in step with the horizontal swipe. */
@@ -1550,8 +1701,20 @@ function paintKudos(postEl, to, iso){
   if(!btn) return;
   const c = kudosCount(to, iso), mine = iGaveKudos(to, iso);
   btn.classList.toggle('mine', mine);
-  btn.innerHTML = `${mine ? 'Kudos given' : 'Give kudos'}${c ? `<span class="n">${c}</span>` : ''}`;
+  btn.setAttribute('aria-label', mine ? 'Kudos given' : 'Give kudos');
+  btn.innerHTML = `<span class="ic">${ICON.thumb}</span>${c ? `<span class="n">${c}</span>` : ''}`;
   btn.onclick = e => { e.stopPropagation(); sendKudos(to, iso, postEl, false); };
+}
+
+/* Bring a post's peek line and comment count back in step, wherever it lives. */
+function paintComments(prof, iso){
+  document.querySelectorAll(`[data-post-p="${prof}"][data-post-iso="${iso}"]`).forEach(host => {
+    const slot = host.querySelector('.cmt-slot');
+    if(slot) slot.innerHTML = peekHTML(prof, iso);
+    const btn = host.querySelector('.cmt');
+    if(btn) btn.outerHTML = cmtHTML(prof, iso);
+    bindComments(host, prof, iso, host._cmtSlot || DAY_SLOT);
+  });
 }
 
 let cdT;
@@ -1583,7 +1746,7 @@ function openViewer(p, iso, index){
   const root = document.getElementById('viewer');
 
   root.innerHTML = `
-    <div class="viewer" data-who="${whoAttr(p)}">
+    <div class="viewer" data-who="${whoAttr(p)}" data-post-p="${p}" data-post-iso="${iso}">
       <div class="reel"${multi ? '' : ' data-single'}>
         ${slots.map(sl => `
           <div class="slide"><img src="${api.photoUrl(p, iso, sl)}" alt="${slotLabel(sl)}"></div>`).join('')}
@@ -1596,8 +1759,11 @@ function openViewer(p, iso, index){
         <div class="slot-tag">${slotLabel(slots[start])}${
           multi ? ` <span class="of">${start+1}/${slots.length}</span>` : ''}</div>
         <div class="viewer-meta">${own ? 'You' : nameOf(p)} — ${fmtDate(iso)}</div>
-        ${own ? '' : `<button class="kudos" id="vKudos">${
-          iGaveKudos(p, iso) ? 'Kudos given' : 'Give kudos'}</button>`}
+        <div class="cmt-slot">${peekHTML(p, iso)}</div>
+        <div class="acts">
+          ${own ? '' : kudosHTML(p, iso, false)}
+          ${cmtHTML(p, iso)}
+        </div>
       </div>
     </div>`;
 
@@ -1622,13 +1788,21 @@ function openViewer(p, iso, index){
     });
   }
 
-  const vk = view.querySelector('#vKudos');
+  const vk = view.querySelector('.kudos');
   if(vk) vk.onclick = (e) => {
     e.stopPropagation();
     sendKudos(p, iso, view, true);
-    vk.textContent = 'Kudos given';
-    vk.classList.add('mine');
   };
+
+  // A comment written in here is about the frame on screen, not the whole day.
+  const shownSlot = () => {
+    if(!multi) return slots[0] || DAY_SLOT;
+    const w = reel.clientWidth || 1;
+    const i = Math.max(0, Math.min(slots.length - 1, Math.round(reel.scrollLeft / w)));
+    return slots[i];
+  };
+  view._cmtSlot = shownSlot;
+  bindComments(view, p, iso, shownSlot);
 }
 function closeViewer(){
   const root = document.getElementById('viewer');
@@ -1638,6 +1812,7 @@ function closeViewer(){
 
 function openSheet(html, onMount){
   const root = document.getElementById('sheets');
+  if(unwatchKeyboard) unwatchKeyboard();
   root.innerHTML = `<div class="scrim"></div><div class="sheet">${html}</div>`;
   requestAnimationFrame(() => root.classList.add('open'));
   root.querySelector('.scrim').onclick = closeSheet;
@@ -1645,6 +1820,7 @@ function openSheet(html, onMount){
 }
 function closeSheet(){
   const root = document.getElementById('sheets');
+  if(unwatchKeyboard) unwatchKeyboard();
   root.classList.remove('open');
   setTimeout(() => { if(!root.classList.contains('open')) root.innerHTML = ''; }, 320);
 }
@@ -1845,6 +2021,150 @@ async function saveNote(prof, iso, taskId, text){
   closeSheet(); render();
   try{ await api.saveDay(prof, iso, entry); state.online = true; toast(clean ? 'Note saved' : 'Note removed'); }
   catch(_){ toast('Offline — not saved'); }
+}
+
+/* ── comments ── */
+function openComments(prof, iso, slot = DAY_SLOT){
+  const own = prof === me();
+  const slots = slotsFor(prof, iso);
+  // On a single-frame day there is nothing to disambiguate, so no slot tags.
+  const tagged = s => slots.length > 1 && s && s !== DAY_SLOT && slots.includes(s);
+
+  const thread = () => {
+    const list = commentsOn(prof, iso);
+    if(!list.length){
+      return `<div class="cmt-none">${own ? 'Nothing said yet' : 'Say the first thing'}</div>`;
+    }
+    return list.map(c => `
+      <div class="cmt-row ${c.pending ? 'pending' : ''}">
+        <div class="cmt-head">
+          <span class="who ${c.from === me() ? 'c-a' : 'c-b'}">${c.from === me() ? 'You' : nameOf(c.from)}</span>
+          <span class="when">${fmtAgo(c.at)}</span>
+          ${tagged(c.slot) ? `<span class="on">${slotLabel(c.slot)}</span>` : ''}
+          ${c.from === me() && !c.pending
+            ? `<button class="rm" data-rm="${c.id}" aria-label="Delete comment">${ICON.close}</button>` : ''}
+        </div>
+        <p class="cmt-body">${esc(c.body)}</p>
+      </div>`).join('');
+  };
+
+  openSheet(`
+    <div data-who="${whoAttr(prof)}">
+      <div class="sheet-head">
+        <div>
+          <div class="t">Comments</div>
+          <div class="s">Day ${dayIndex(iso)} — ${own ? 'Your frame' : nameOf(prof) + "'s frame"}</div>
+        </div>
+        <button class="icon-btn" id="x">${ICON.close}</button>
+      </div>
+
+      <div id="thread">${thread()}</div>
+
+      <form class="cmt-form" id="cForm">
+        <textarea id="cInput" rows="1" maxlength="280" enterkeyhint="enter"
+          placeholder="${own ? 'Add a note to this frame' : `Say something to ${nameOf(prof)}`}"></textarea>
+        <button class="cmt-send" id="cSend" type="submit">Post</button>
+      </form>
+    </div>`, sheet => {
+
+    const box = sheet.querySelector('#thread');
+    const ta  = sheet.querySelector('#cInput');
+    const send = sheet.querySelector('#cSend');
+
+    const bindRows = () => {
+      sheet.querySelectorAll('[data-rm]').forEach(b => {
+        b.onclick = async () => {
+          const id = Number(b.dataset.rm);
+          if(!confirm('Delete this comment?')) return;
+          const i = state.comments.findIndex(c => c.id === id);
+          if(i < 0) return;
+          const [gone] = state.comments.splice(i, 1);
+          repaint();
+          try{
+            await api.deleteComment(id, me());
+            toast('Comment removed');
+          }catch(_){
+            state.comments.splice(i, 0, gone);
+            repaint();
+            toast('Delete failed');
+          }
+        };
+      });
+    };
+
+    const repaint = () => {
+      box.innerHTML = thread();
+      bindRows();
+      paintComments(prof, iso);   // the feed and viewer are live behind the sheet
+    };
+
+    const grow = () => {
+      ta.style.height = 'auto';
+      ta.style.height = Math.min(ta.scrollHeight, 116) + 'px';
+    };
+
+    sheet.querySelector('#x').onclick = closeSheet;
+    bindRows();
+    grow();
+    send.disabled = true;
+    ta.addEventListener('input', () => { grow(); send.disabled = !ta.value.trim(); });
+    watchKeyboard();
+
+    sheet.querySelector('#cForm').onsubmit = async e => {
+      e.preventDefault();
+      const body = ta.value.trim();
+      if(!body) return;
+      ta.value = ''; grow(); send.disabled = true;
+      haptic(10);
+
+      // optimistic: the line appears now, the id arrives with the response
+      const pending = { id:`t${Date.now()}`, from:me(), to:prof, date:iso, slot,
+                        body, at:new Date().toISOString(), pending:true };
+      state.comments.push(pending);
+      repaint();
+      sheet.scrollTo({ top:sheet.scrollHeight, behavior:'smooth' });
+
+      try{
+        const r = await api.addComment(me(), prof, iso, slot, body);
+        const i = state.comments.indexOf(pending);
+        if(i >= 0) state.comments.splice(i, 1, r.comment || { ...pending, pending:false });
+        markFeedSeen();
+        repaint();
+      }catch(_){
+        const i = state.comments.indexOf(pending);
+        if(i >= 0) state.comments.splice(i, 1);
+        repaint();
+        ta.value = body; grow(); send.disabled = false;
+        toast('Comment failed');
+      }
+    };
+  });
+}
+
+/*
+ * iOS floats the keyboard over the page rather than resizing it, so a sheet
+ * pinned to the bottom would sit underneath. Lift it by the covered height.
+ */
+let unwatchKeyboard = null;
+function watchKeyboard(){
+  const vv = window.visualViewport;
+  if(!vv || unwatchKeyboard) return;
+  const root = document.getElementById('sheets');
+  const sync = () => {
+    const gap = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+    root.style.setProperty('--kb', gap + 'px');
+    root.classList.toggle('kb', gap > 40);
+  };
+  vv.addEventListener('resize', sync);
+  vv.addEventListener('scroll', sync);
+  unwatchKeyboard = () => {
+    vv.removeEventListener('resize', sync);
+    vv.removeEventListener('scroll', sync);
+    root.style.removeProperty('--kb');
+    root.classList.remove('kb');
+    unwatchKeyboard = null;
+  };
+  sync();
 }
 
 /* ── water tracker ── */
@@ -2136,6 +2456,10 @@ async function loadState(){
     const r = await api.getReactions();
     state.reactions = r.reactions || [];
   }catch(_){ state.reactions = []; }
+  try{
+    const r = await api.getComments();
+    state.comments = r.comments || [];
+  }catch(_){ state.comments = []; }
 }
 
 /*
