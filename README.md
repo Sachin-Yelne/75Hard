@@ -1,4 +1,4 @@
-# Lemi
+# Project 75
 
 A two-person PWA for the 75 Hard challenge — daily tasks, streaks, head-to-head rivalry, and a shared progress-photo feed, all synced through Neon Postgres.
 
@@ -40,12 +40,27 @@ thing counts. Swap `FIELD, MARK` in `scripts/make-icons.py` to flip it back.
 
 Regenerate all sizes with `scripts/make-icons.py` after editing it — it needs
 Pillow and the Anton TTF (`ANTON_TTF=…`, fetch line in the script's header).
-Three things govern how iOS treats the result: it reads `apple-touch-icon.png`
-rather than the manifest icons, it fills any transparency with black, and it
-caches the icon hard — changing the file does **not** update an app already on
-the Home Screen, so it has to be removed and re-added. The separate
-`icon-maskable-512.png` pulls the mark into the inner safe area, since Android
-crops maskable icons to the launcher's shape.
+The separate `icon-maskable-512.png` pulls the mark into the inner safe area,
+since Android crops maskable icons to the launcher's shape.
+
+## Names, and why there are two
+
+The app calls itself **Project 75** — the top bar, the identity picker, the
+boot screen, the page title. The **Home Screen** label is **Lemi**, set by
+`apple-mobile-web-app-title` on iOS and by the manifest's `name`/`short_name`
+elsewhere. They are deliberately different: one is the app's own voice, the
+other is what you want to read on a phone full of other people's icons.
+
+**iOS freezes both the icon and the label when the app is added to the Home
+Screen, and never revisits them.** A deploy cannot change an installed icon —
+not with a reload, not with a service-worker update, not with time. Changing
+either means removing the app from the Home Screen and adding it again from
+Safari. (An install left over from an older build will happily keep showing a
+name and a mark that no longer exist anywhere in this repo.)
+
+The icon URLs carry a `?v=` so that a *fresh* add fetches the current file
+rather than whatever Safari cached last time; bump it whenever the mark is
+redrawn, in `index.html`, `manifest.json` and `sw.js` together.
 
 ## Run locally
 
