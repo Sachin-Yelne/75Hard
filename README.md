@@ -9,7 +9,7 @@ Four tabs, phone-first:
 - **Today** — the day number set large, a five-segment rule (one per task), streak, a live countdown to local midnight, and your partner's progress underneath. Workout One, Workout Two and Read each carry an optional camera; Diet carries one you can use over and over, so snacks and dinner all land on the same day. The two workouts also take a written note, for when you would rather say what you did than photograph it. Diet starts ticked — you only touch it to record a day you didn't keep it. Every diet photo can be named: the moment one lands, a sheet asks what it was and offers a one-tap verdict — loved it, fine, regret it. Skipping is fine, and an unnamed shot just reads as "Diet" as before. Once named, the Diet row says what you last ate rather than the rule you're keeping. Completing all five holds a full-screen typographic moment for a second and a half, then returns you to the day.
 - **Water** is logged incrementally rather than ticked. Tap the row to open the tracker, then tap a vessel — a 16 oz bottle, a 32 oz tumbler, whatever you keep — to pour it toward the gallon. The row's own bottom hairline fills as you go, and the task checks itself at 128 oz. Keep pouring past the gallon if you want — the total and percentage carry on past 100% while the bar stays full. Undo removes the last pour. The checkbox can't be tapped: it mirrors the pour rather than setting it, so tapping it opens the tracker.
 - **Wall** — the 75-day grid for both people, with missed days, photo markers, and a milestone list. Opening a day shows its gallery, and a named meal reads as its own name under the frame; tap it to rename or re-judge, or tap the caption in the full-screen viewer to do the same from the photo itself. Your partner sees the names, read-only.
-- **Feed** — one day per screen, newest first, each rendered as a collage of everything logged that day. A lone frame fills the screen; more than one tiles into a grid, and past six the last tile carries a `+N`. Tap any tile to open the full-screen viewer; inside it a tap steps to the next frame and wraps at the end, and swiping still works. Two actions sit under the day, on the collage and in the viewer alike: a thumb for kudos, and a bubble for comments, each carrying its count. The most recent comment reads as one line above them. Tapping either opens the day's thread, where both of you can write — including on your own frame, so a reply lands where the picture is. A comment written in the viewer is filed against the frame on screen and carries its task as a tag.
+- **Feed** — one day per screen, newest first, each rendered as a collage of everything logged that day. A lone frame fills the screen; more than one tiles into a grid, and past six the last tile carries a `+N`. Tap any tile to open the full-screen viewer; inside it a tap steps to the next frame and wraps at the end, and swiping still works. Two actions sit under the day, on the collage and in the viewer alike: a thumb for kudos, and a bubble for comments, each carrying its count. The most recent comment reads as one line above them. Tapping either opens the day's thread, where both of you can write — including on your own frame, so a reply lands where the picture is. A comment written in the viewer is filed against the frame on screen and carries its task as a tag. A day can also carry a song: the sleeve, title and artist read as one line on the post, with three bars that move while it's playing. Tap the line to turn sound on; from then on scrolling from day to day swaps the track, fading between them, and a day without one falls silent.
 - **Rivals** — a side-by-side table: perfect days, current and longest streaks, consistency, per-task completion rates, photos posted, kudos received.
 
 Your partner's strip at the foot of Today opens their day read-only — every task and photo visible, nothing tickable. Pick who you are on first launch (stored locally); you can switch from the settings sheet. Your own progress is always clay, your partner's sage.
@@ -123,6 +123,38 @@ notifications are opt-in, and an unconfigured feature shouldn't mail you a
 red X every morning. A manual run does fail, since that one is you asking
 whether it works.
 
+## Music
+
+Open a day, tap **Add music**, search, and tap a result to hear it — choosing
+is by ear, not by title. **Add** attaches whatever is playing. Search runs
+through `/api/music`, which proxies Apple's public iTunes Search API.
+
+Nothing to configure and nothing to pay for: that endpoint needs no key and no
+account. The proxy exists because it sends no CORS headers, and because one
+warm instance can answer a repeated search from memory instead of calling Apple
+once per keystroke per phone.
+
+The audio never touches this app's infrastructure. Apple serves the 30-second
+preview straight to the phone from their CDN; what reaches Postgres is five
+fields — id, title, artist, artwork URL, preview URL — about 100 bytes, stored
+in the day's existing `tasks` JSONB. Even if all 150 person-days carried a
+song that is well under a tenth of a megabyte.
+
+Two things to know about playing it:
+
+- **iOS needs a gesture before any audio starts**, and grants it to the element
+  the user touched rather than to the page. There is therefore one `<audio>`
+  element for the whole app, unlocked by the first tap on a track line; every
+  later change is a `src` swap on that same element. Sound consequently starts
+  **off** on every load — a freshly loaded page has no gesture to spend.
+- **The ring/silent switch mutes it.** An `<audio>` element obeys the hardware
+  switch, so a phone on silent plays nothing. That is iOS policy, not a bug
+  here.
+
+Preview URLs rotate occasionally, so the track's id is stored alongside its
+URL — `/api/music?id=…` re-resolves a stale one without needing the search
+again.
+
 ## Install on iPhone
 
 1. Open your deployed HTTPS URL in **Safari**.
@@ -182,6 +214,7 @@ api/              Vercel serverless routes
   photos.js       Upload/view/delete pics (per slot)
   reactions.js    Kudos between profiles
   comments.js     Feed comments, one thread per post
+  music.js        Track search, proxied to the iTunes catalogue (no database)
   health.js       Config/database diagnostics
   push.js         Register/unregister a device for notifications
   notify.js       Evening nudge, called by the scheduled workflow
@@ -204,6 +237,9 @@ sw.js             Offline shell cache, push handlers
 - `#sheets` sits at `z-index:65`, above the photo viewer and below the completion moment. The comment sheet is the first sheet that opens on top of an open photo, and `#viewer` comes later in the DOM.
 - Diet carries `auto:true`: opening the app on a day writes the tick into that day's record, so you only untick it to log a failure. It is seeded on check-in rather than defaulted at read time — a read-time default would credit Diet on days nobody opened the app and would rewrite past days' streaks and rates. A day you never open stays at 0/5.
 - Diet also carries `meal:true`: its shots are things you ate, so each one takes a name and a verdict. They live under `meals` in the day's existing `day_tasks.tasks` JSONB, keyed by the photo's own slot (`{ 'diet#1750…': { nm:'Chipotle bowl', v:'loved' } }`) — the same trick `notes` uses, so this needed no schema change and rides the save that was already happening. Deleting a photo takes its label with it rather than leaving an orphan.
+- A day's song lives under `track` in the same JSONB as `meals` and `notes`, so music needed no schema change either. The feed is built from photos, so a day with a song and no photo has no post to play it on — the day sheet says as much rather than letting it look broken.
+- Which post the feed is showing is arithmetic, not an observer: the feed is a snap scroller of full-height posts, so `scrollTop / clientHeight` names the current one exactly.
+- `node dev.js --demo` serves its own canned catalogue and synthesises a short sine as the preview, so the whole music path — search, audition, attach, play, swap on scroll — works with no network and no Apple.
 - Meal names are free text, so they are escaped wherever they render — captions, the Diet row, image `alt`. The row's note fell under the same interpolation and is now escaped too.
 - Diet takes several photos a day (`multi:true`), capped at 12; every other camera holds one. `slotBase()`/`slotLabel()` read through the `#` suffix, and `isKnownSlot()` accepts a stamped slot only for a multi task, so a stray `read#123` is rejected on both client and server.
 - Water had a camera and no longer does. `knownPhotos()` filters the photos map on load to slots in `SLOT_ORDER`, so rows left behind by a retired slot are ignored by the feed, the Wall markers and the Rivals tally alike — without it they would be invisible yet still counted. `api/photos.js` still accepts the `water` slot so any stray rows can be deleted later.
