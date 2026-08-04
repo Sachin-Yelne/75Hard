@@ -1,4 +1,7 @@
-const CACHE = '75hard-v5';
+// Bumped when a cached asset's *content* changes under the same name: the
+// icons and manifest are served cache-first, so a rename or a redrawn mark
+// reaches nobody until the old cache is dropped.
+const CACHE = '75hard-v6';
 const ASSETS = [
   '/',
   '/index.html',

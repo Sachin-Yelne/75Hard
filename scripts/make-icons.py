@@ -1,8 +1,12 @@
 """
-Generate the app icons: a large Anton "75" in bone on the app's near-black.
+Generate the app icons: a large Anton "75" in the app's near-black on bone.
 
 Anton is the display face index.html already uses for figures, so the icon and
 the day number on Today are the same letterforms.
+
+The mark runs dark-on-light while the app itself is light-on-dark. That is
+deliberate: a near-black icon sinks into a dark wallpaper, and a Home Screen is
+mostly other people's colour. Bone is the brightest thing you can put there.
 
 Two variants:
   any       — the numerals cropped confidently, near the edges (iOS masks
@@ -15,6 +19,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 INK = (10, 10, 11)        # --ink   #0A0A0B
 BONE = (242, 241, 237)    # --bone  #F2F1ED
+FIELD, MARK = BONE, INK   # swap these two to flip the icon back
 # Anton, the same face index.html loads for figures. Fetch it once with:
 #   curl -sL -o anton.ttf \
 #     "$(curl -s 'https://fonts.googleapis.com/css2?family=Anton' \
@@ -28,7 +33,7 @@ def render(size, coverage):
     # Oversample, then downsample — Anton's flat terminals alias badly otherwise.
     ss = 4
     W = size * ss
-    img = Image.new('RGB', (W, W), INK)
+    img = Image.new('RGB', (W, W), FIELD)
     draw = ImageDraw.Draw(img)
 
     # Find the point size whose *ink* (not font metrics) hits the target width.
@@ -48,7 +53,7 @@ def render(size, coverage):
     # centre on the ink box, so ascender/descender padding doesn't push it off
     x = (W - (r - l)) / 2 - l
     y = (W - (b - t)) / 2 - t
-    draw.text((x, y), TEXT, font=font, fill=BONE)
+    draw.text((x, y), TEXT, font=font, fill=MARK)
 
     return img.resize((size, size), Image.LANCZOS)
 

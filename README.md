@@ -1,4 +1,4 @@
-# Project 75
+# Lemi
 
 A two-person PWA for the 75 Hard challenge — daily tasks, streaks, head-to-head rivalry, and a shared progress-photo feed, all synced through Neon Postgres.
 
@@ -31,14 +31,21 @@ repo. They follow the same spec as the rest (512 box, 32 stroke, square
 corners) and sit at the same weight; paste the real `thumbs-up` and `comment`
 paths over them if you have `svgs/` to hand.
 
-The app icon is a large Anton `75` in bone on the app's near-black — the same
-face the day number uses. Regenerate all sizes with
-`scripts/make-icons.py` after editing it. Three things govern how iOS treats
-it: it reads `apple-touch-icon.png` rather than the manifest icons, it fills
-any transparency with black, and it caches the icon hard — changing the file
-does not update an app already on the Home Screen, so it has to be removed and
-re-added. The separate `icon-maskable-512.png` pulls the mark into the inner
-safe area, since Android crops maskable icons to the launcher's shape.
+The app icon is a large Anton `75` in the app's near-black on bone — the same
+face the day number uses, run dark-on-light while the app itself is
+light-on-dark. That inversion is the point: a near-black icon sinks into a dark
+wallpaper, and bone is the brightest thing you can put on a Home Screen. The
+label under it reads **Lemi**; the mark stays `75` because that is what the
+thing counts. Swap `FIELD, MARK` in `scripts/make-icons.py` to flip it back.
+
+Regenerate all sizes with `scripts/make-icons.py` after editing it — it needs
+Pillow and the Anton TTF (`ANTON_TTF=…`, fetch line in the script's header).
+Three things govern how iOS treats the result: it reads `apple-touch-icon.png`
+rather than the manifest icons, it fills any transparency with black, and it
+caches the icon hard — changing the file does **not** update an app already on
+the Home Screen, so it has to be removed and re-added. The separate
+`icon-maskable-512.png` pulls the mark into the inner safe area, since Android
+crops maskable icons to the launcher's shape.
 
 ## Run locally
 
