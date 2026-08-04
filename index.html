@@ -1185,6 +1185,22 @@ function toast(msg){
 /* ═══════════ music ═══════════ */
 function musicEl(){
   if(music.el) return music.el;
+
+  /*
+   * Safari starts a page's audio session as "ambient", which is the category
+   * the ring/silent switch silences — the same bucket as alerts and game
+   * effects. A song on a feed is media playback, so say so, and the switch
+   * stops muting it. Safari-only and still a draft, hence the guard; where it
+   * doesn't exist nothing changes and a silenced phone stays silent.
+   *
+   * Set here rather than on load: the session only becomes ours once there is
+   * actually something to play, so an app that never plays music never claims
+   * to be a media app.
+   */
+  try{
+    if('audioSession' in navigator) navigator.audioSession.type = 'playback';
+  }catch(_){}
+
   const a = document.createElement('audio');
   a.loop = true;              // a 30s clip should outlast looking at the day
   a.preload = 'none';

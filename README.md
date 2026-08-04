@@ -147,9 +147,21 @@ Two things to know about playing it:
   element for the whole app, unlocked by the first tap on a track line; every
   later change is a `src` swap on that same element. Sound consequently starts
   **off** on every load — a freshly loaded page has no gesture to spend.
-- **The ring/silent switch mutes it.** An `<audio>` element obeys the hardware
-  switch, so a phone on silent plays nothing. That is iOS policy, not a bug
-  here.
+- **The ring/silent switch would mute it, so the app opts out.** Safari starts
+  a page's audio session as `ambient` — the category the silent switch
+  silences, alongside alerts and game effects — and a plain `<audio>` element
+  inherits it. Music on a feed is media playback, so the app says so:
+
+  ```js
+  if ('audioSession' in navigator) navigator.audioSession.type = 'playback';
+  ```
+
+  That is the [Audio Session API](https://github.com/w3c/audio-session), which
+  only Safari implements and which is still a draft, so it sits behind a
+  feature check — where it doesn't exist nothing changes. The session is
+  claimed at the moment the first track loads rather than on page load, so an
+  app that never plays music never presents itself as a media app. Like any
+  media playback, it interrupts whatever else the phone was playing.
 
 Preview URLs rotate occasionally, so the track's id is stored alongside its
 URL — `/api/music?id=…` re-resolves a stale one without needing the search
