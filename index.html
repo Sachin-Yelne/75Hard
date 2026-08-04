@@ -330,6 +330,78 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
 .post-bot .state{font-family:var(--cond);font-weight:600;font-size:13px;
   letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.72);}
 .post-bot .state b{color:var(--p);font-weight:600;}
+/* ── music ─────────────────────────────── */
+/* One line on the frame: the sleeve, what's playing, and whether it's audible.
+   The whole row is the sound toggle — no separate control to find. */
+.trk{
+  display:flex;align-items:center;gap:10px;width:100%;margin-top:15px;
+  transition:opacity .18s;
+}
+.trk.off{opacity:.62;}
+.trk .art{
+  width:26px;height:26px;flex-shrink:0;object-fit:cover;display:block;
+  background:var(--rule-2);
+}
+.trk .txt{
+  flex:1;min-width:0;display:flex;align-items:baseline;gap:7px;
+  font-family:var(--cond);font-weight:600;font-size:11.5px;
+  letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.9);
+  overflow:hidden;white-space:nowrap;
+}
+.trk .txt .nm{overflow:hidden;text-overflow:ellipsis;}
+.trk .txt .ar{color:rgba(255,255,255,.55);flex-shrink:0;max-width:40%;
+  overflow:hidden;text-overflow:ellipsis;}
+
+/* three bars that move while the sound is on, flat while it isn't */
+.eq{display:flex;align-items:flex-end;gap:2px;height:13px;flex-shrink:0;}
+.eq i{width:2px;height:3px;background:var(--bone);transform-origin:bottom;}
+.eq.on i{animation:eqbar .9s ease-in-out infinite;}
+.eq.on i:nth-child(2){animation-delay:.18s;animation-duration:1.05s;}
+.eq.on i:nth-child(3){animation-delay:.36s;animation-duration:.78s;}
+@keyframes eqbar{
+  0%,100%{height:3px}
+  35%{height:13px}
+  70%{height:7px}
+}
+
+/* ── music picker ── */
+.mus-search{
+  width:100%;background:var(--ink-3);border:1px solid var(--rule-2);color:var(--bone);
+  padding:14px 12px;font-family:var(--body);font-size:15px;
+}
+.mus-search:focus{outline:none;border-color:var(--p);}
+.mus-search::placeholder{color:var(--bone-3);}
+/* the native clear button is a blue cross that belongs to no palette here */
+.mus-search::-webkit-search-cancel-button{-webkit-appearance:none;appearance:none;}
+.mus-list{margin-top:6px;}
+.mus-row{
+  display:flex;align-items:center;gap:12px;width:100%;
+  padding:11px 0;border-bottom:1px solid var(--rule);text-align:left;
+}
+.mus-row .art{width:42px;height:42px;flex-shrink:0;object-fit:cover;display:block;
+  background:var(--rule-2);}
+.mus-row .meta{flex:1;min-width:0;}
+.mus-row .nm{display:block;font-size:13.5px;color:var(--bone);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.mus-row .ar{display:block;font-family:var(--cond);font-weight:500;font-size:11px;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--bone-3);margin-top:4px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.mus-row.on .nm{color:var(--p);}
+.mus-row .eq{height:14px;}
+.mus-row .eq i{background:var(--p);}
+.mus-note{font-family:var(--cond);font-weight:500;font-size:11.5px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--bone-3);text-align:center;padding:26px 0;}
+/* the day sheet's current pick */
+.mus-cur{display:flex;align-items:center;gap:11px;border:1px solid var(--rule-2);
+  padding:11px;margin-top:10px;width:100%;text-align:left;}
+.mus-cur .art{width:36px;height:36px;flex-shrink:0;object-fit:cover;background:var(--rule-2);}
+.mus-cur .meta{flex:1;min-width:0;}
+.mus-cur .nm{display:block;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.mus-cur .ar{display:block;font-family:var(--cond);font-weight:500;font-size:10.5px;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--bone-3);margin-top:3px;}
+.mus-cur .go{font-family:var(--cond);font-weight:600;font-size:11px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--bone-2);flex-shrink:0;}
+
 /* kudos and comments read as one pair: a glyph, and the count if there is one */
 .acts{display:flex;align-items:center;gap:8px;margin-top:16px;}
 .kudos,.cmt{
@@ -795,6 +867,16 @@ const api = {
     if(!r.ok) throw new Error('react');
     return r.json();
   },
+  async searchMusic(q){
+    const r = await fetch(`/api/music?q=${encodeURIComponent(q)}`);
+    if(!r.ok) throw new Error('music');
+    return r.json();
+  },
+  async lookupTrack(id){
+    const r = await fetch(`/api/music?id=${encodeURIComponent(id)}`);
+    if(!r.ok) throw new Error('music');
+    return r.json();
+  },
   async getComments(){
     const r = await fetch('/api/comments');
     if(!r.ok) throw new Error('comments');
@@ -842,6 +924,26 @@ const state = {
   tab:'today',
   wallView:'both',
   online:true
+};
+
+/*
+ * One <audio> element for the whole app.
+ *
+ * iOS grants permission to play to an *element* the user has interacted with,
+ * not to the page, so there is exactly one and every track change is a src swap
+ * on it. The first tap on a track row spends the gesture; everything after —
+ * scrolling to the next day, coming back to the tab — rides that unlock.
+ *
+ * Sound starts off on every load, which is both unavoidable (a fresh page has
+ * no gesture to spend) and what anyone who has used a feed expects.
+ */
+const music = {
+  el:null,
+  on:false,       // does the listener want sound
+  at:null,        // 'profile|iso' of the post on screen
+  loaded:null,    // src currently in the element
+  fade:null,
+  hinted:false
 };
 
 const me   = () => state.me;
@@ -936,6 +1038,14 @@ const mealName = (p, iso, slot) => (mealOf(p, iso, slot)?.nm || '').trim();
 const mealsOf = (p, iso) => MEAL_SLOTS.flatMap(id => photosOf(p, iso, id))
   .map(slot => ({ slot, ...(mealOf(p, iso, slot) || {}) }))
   .filter(m => m.nm);
+
+/* The track attached to a post — one per person per day, in the same JSONB.
+   `{ id, nm, ar, art, url }`: enough to render the row and stream the preview,
+   and the id re-resolves the URL if Apple rotates it. */
+const trackOf = (p, iso) => {
+  const t = entryOf(p, iso).track;
+  return t && t.url && t.nm ? t : null;
+};
 
 /* What a frame is called: the meal's own name once it has one, else the task.
    `frameTitle` is plain text for alt/aria; `frameCaption` is markup. */
@@ -1070,6 +1180,149 @@ function toast(msg){
   el.classList.add('on');
   clearTimeout(toastT);
   toastT = setTimeout(() => el.classList.remove('on'), 1900);
+}
+
+/* ═══════════ music ═══════════ */
+function musicEl(){
+  if(music.el) return music.el;
+
+  /*
+   * Safari starts a page's audio session as "ambient", which is the category
+   * the ring/silent switch silences — the same bucket as alerts and game
+   * effects. A song on a feed is media playback, so say so, and the switch
+   * stops muting it. Safari-only and still a draft, hence the guard; where it
+   * doesn't exist nothing changes and a silenced phone stays silent.
+   *
+   * Set here rather than on load: the session only becomes ours once there is
+   * actually something to play, so an app that never plays music never claims
+   * to be a media app.
+   */
+  try{
+    if('audioSession' in navigator) navigator.audioSession.type = 'playback';
+  }catch(_){}
+
+  const a = document.createElement('audio');
+  a.loop = true;              // a 30s clip should outlast looking at the day
+  a.preload = 'none';
+  a.setAttribute('playsinline', '');
+  a.volume = 0;
+  music.el = a;
+  return a;
+}
+
+/* Ramping rather than cutting: a hard start on a 30s clip sounds like a mistake. */
+function fadeTo(target, ms = 260){
+  const a = musicEl();
+  clearInterval(music.fade);
+  const from = a.volume;
+  const steps = Math.max(1, Math.round(ms / 40));
+  let i = 0;
+  music.fade = setInterval(() => {
+    i++;
+    a.volume = Math.min(1, Math.max(0, from + (target - from) * (i / steps)));
+    if(i >= steps){ clearInterval(music.fade); music.fade = null; }
+  }, 40);
+}
+
+/* Bring the element in line with "what's on screen" and "do they want sound". */
+function musicApply(){
+  const a = musicEl();
+  const t = music.at && music.on
+    ? trackOf(music.at.split('|')[0], music.at.split('|')[1]) : null;
+
+  if(!t){
+    if(!a.paused){ fadeTo(0, 180); setTimeout(() => { if(!music.on || music.loaded) a.pause(); }, 200); }
+    paintTrackRows();
+    return;
+  }
+
+  if(music.loaded !== t.url){
+    a.src = t.url;
+    music.loaded = t.url;
+    a.currentTime = 0;
+    a.volume = 0;
+  }
+  // play() stays synchronous with the tap that called it — that's the unlock
+  const started = a.play();
+  if(started && started.catch) started.then(() => fadeTo(1)).catch(() => {
+    // refused: no gesture has been spent yet, so fall back to silent
+    music.on = false;
+    paintTrackRows();
+  });
+  paintTrackRows();
+}
+
+/* Tapping a track row is both "this post" and "sound on/off". */
+function musicToggle(prof, iso){
+  music.at = `${prof}|${iso}`;
+  music.on = !music.on;
+  haptic(8);
+  musicApply();
+}
+
+function musicLeave(){
+  const a = music.el;
+  if(!a) return;
+  clearInterval(music.fade); music.fade = null;
+  a.pause();
+  a.volume = 0;
+  music.at = null;
+}
+
+/* Repaint every track row in place — cheaper and calmer than a re-render. */
+function paintTrackRows(){
+  document.querySelectorAll('[data-post-p][data-post-iso]').forEach(host => {
+    const row = host.querySelector('.trk');
+    if(!row) return;
+    const p = host.dataset.postP, iso = host.dataset.postIso;
+    const wrap = document.createElement('div');
+    wrap.innerHTML = trackHTML(p, iso).trim();
+    const fresh = wrap.firstElementChild;
+    if(!fresh) return;
+    row.replaceWith(fresh);
+    fresh.onclick = e => { e.stopPropagation(); musicToggle(p, iso); };
+  });
+}
+
+/*
+ * The feed is a snap scroller of full-height posts, so which one is showing is
+ * arithmetic rather than a guess — no observer needed.
+ */
+function wireFeedMusic(feed){
+  let raf = null;
+  const sync = () => {
+    raf = null;
+    const i = Math.round(feed.scrollTop / (feed.clientHeight || 1));
+    const post = feed.children[i];
+    if(!post || !post.dataset.postP) return;
+    const key = `${post.dataset.postP}|${post.dataset.postIso}`;
+    if(key === music.at) return;
+    music.at = key;
+    if(music.on) musicApply();
+  };
+  feed.addEventListener('scroll', () => {
+    if(raf === null) raf = requestAnimationFrame(sync);
+  }, { passive:true });
+  feed.addEventListener('scrollend', sync, { passive:true });
+  sync();
+
+  // said once, only while there is something to hear and nothing playing
+  if(!music.hinted && !music.on && feed.querySelector('.trk')){
+    music.hinted = true;
+    setTimeout(() => { if(!music.on) toast('Tap the track for sound'); }, 700);
+  }
+}
+
+/* The picker borrows the same element, so the unlock carries into it. */
+function auditionTrack(url){
+  const a = musicEl();
+  clearInterval(music.fade); music.fade = null;
+  a.src = url;
+  music.loaded = null;          // the feed reloads its own when it takes over
+  a.currentTime = 0;
+  a.volume = 1;
+  const started = a.play();
+  if(started && started.catch) started.catch(() => toast('Could not play preview'));
 }
 
 /* ═══════════ images ═══════════ */
@@ -1451,6 +1704,7 @@ function viewFeed(){
         <div class="day num">${d}</div>
         <div class="rule"></div>
         <div class="state">${full ? '<b>All five complete</b>' : n + ' of ' + TASKS.length + ' complete'}</div>
+        ${trackHTML(o.p, o.iso)}
         <div class="cmt-slot">${peekHTML(o.p, o.iso)}</div>
         <div class="acts">
           ${kudosHTML(o.p, o.iso, own)}
@@ -1477,6 +1731,23 @@ function cmtHTML(prof, iso){
   return `<button class="cmt" aria-label="${n ? `Comments (${n})` : 'Add a comment'}">
     <span class="ic">${ICON.comment}</span>${n ? `<span class="n">${n}</span>` : ''}
   </button>`;
+}
+
+/* The track line on a post. Tapping it is how sound gets turned on and off,
+   so the hint only shows while it's off and there's nothing to hear. */
+function trackHTML(prof, iso){
+  const t = trackOf(prof, iso);
+  if(!t) return '';
+  const on = music.on;
+  return `
+    <button class="trk ${on ? '' : 'off'}" aria-label="${on ? 'Mute' : 'Play'} ${esc(t.nm)}">
+      <img class="art" src="${esc(t.art || '')}" alt="" loading="lazy">
+      <span class="txt">
+        <span class="nm">${esc(t.nm)}</span>
+        <span class="ar">${esc(t.ar || '')}</span>
+      </span>
+      <span class="eq ${on ? 'on' : ''}"><i></i><i></i><i></i></span>
+    </button>`;
 }
 
 /* The latest word on a frame — one line, on the photo, tap for the thread. */
@@ -1593,10 +1864,17 @@ function wire(){
     });
     // your own frames included — a reply to their comment belongs there too
     bindComments(post, p, iso, DAY_SLOT);
+    const trk = post.querySelector('.trk');
+    if(trk) trk.onclick = e => { e.stopPropagation(); musicToggle(p, iso); };
     if(p === me()) return;
     const btn = post.querySelector('.kudos');
     if(btn) btn.onclick = e => { e.stopPropagation(); sendKudos(p, iso, post, false); };
   });
+
+  // music belongs to the feed; anywhere else it stops rather than follows you
+  const feed = el.querySelector('#feed');
+  if(feed) wireFeedMusic(feed);
+  else musicLeave();
 
   startCountdown();
 }
@@ -1975,6 +2253,8 @@ function openDay(prof, iso){
           <input type="file" accept="image/*" data-sheet-shot="${DAY_SLOT}" hidden>
         </label>` : ''}
 
+      <div id="musSlot">${musicRowHTML(prof, iso, mine)}</div>
+
       <div class="tasks" style="margin-top:22px;border-top:none">
         ${TASKS.map(t => taskRow(prof, iso, t, mine)).join('')}
       </div>
@@ -1985,6 +2265,9 @@ function openDay(prof, iso){
     </div>`, sheet => {
 
     sheet.querySelector('#x').onclick = closeSheet;
+
+    const musBtn = sheet.querySelector('#musBtn');
+    if(musBtn) musBtn.onclick = () => openMusic(prof, iso);
 
     const repaint = () => {
       sheet.querySelector('#gallery').innerHTML = gallery();
@@ -2087,6 +2370,31 @@ function openDay(prof, iso){
   });
 }
 
+/* The day sheet's music line: what's on the day, and the way to change it. */
+function musicRowHTML(prof, iso, mine){
+  const t = trackOf(prof, iso);
+  if(!t && !mine) return '';
+  const inner = t
+    ? `<img class="art" src="${esc(t.art || '')}" alt="" loading="lazy">
+       <span class="meta">
+         <span class="nm">${esc(t.nm)}</span>
+         <span class="ar">${esc(t.ar || '')}</span>
+       </span>
+       ${mine ? '<span class="go">Change</span>' : ''}`
+    : `<span class="meta">
+         <span class="nm">Add music</span>
+         <span class="ar">30 seconds on the post</span>
+       </span>
+       <span class="go">Pick</span>`;
+  // a post is made of photos, so music on a dayless-of-photos day has nowhere
+  // to show yet — say so rather than let it look broken
+  const pending = t && !slotsFor(prof, iso).length
+    ? `<div class="note" style="margin-top:9px">Plays on the feed once the day has a photo</div>` : '';
+  return (mine
+    ? `<button class="mus-cur" id="musBtn">${inner}</button>`
+    : `<div class="mus-cur">${inner}</div>`) + pending;
+}
+
 /* Swap a sheet task row's camera/thumbnail after its photo changes. */
 function refreshSheetTaskShot(sheet, prof, iso, slot){
   const row = sheet.querySelector(`.task[data-row="${slot}"]`);
@@ -2147,6 +2455,121 @@ async function saveNote(prof, iso, taskId, text){
   closeSheet(); render();
   try{ await api.saveDay(prof, iso, entry); state.online = true; toast(clean ? 'Note saved' : 'Note removed'); }
   catch(_){ toast('Offline — not saved'); }
+}
+
+/* ── music ── */
+/*
+ * Pick a song for the day. Search proxies through /api/music to Apple's
+ * catalogue; tapping a result plays its 30-second preview straight away, so
+ * choosing is by ear rather than by title. Add attaches the one you're hearing.
+ */
+function openMusic(prof, iso){
+  const current = trackOf(prof, iso);
+  let results = [], picked = null, busy = false, typed = false, timer = null;
+
+  const list = () => {
+    if(busy) return `<div class="mus-note">Searching…</div>`;
+    if(!results.length){
+      return `<div class="mus-note">${typed ? 'Nothing found' : 'Search for a song'}</div>`;
+    }
+    return `<div class="mus-list">${results.map((t, i) => `
+      <button class="mus-row ${picked && picked.id === t.id ? 'on' : ''}" data-i="${i}">
+        <img class="art" src="${esc(t.art || '')}" alt="" loading="lazy">
+        <span class="meta">
+          <span class="nm">${esc(t.nm)}</span>
+          <span class="ar">${esc(t.ar || '')}</span>
+        </span>
+        ${picked && picked.id === t.id
+          ? '<span class="eq on"><i></i><i></i><i></i></span>' : ''}
+      </button>`).join('')}</div>`;
+  };
+
+  openSheet(`
+    <div data-who="${whoAttr(prof)}">
+      <div class="sheet-head">
+        <div>
+          <div class="t">Music</div>
+          <div class="s">Day ${dayIndex(iso)} — 30 seconds on the post</div>
+        </div>
+        <button class="icon-btn" id="x">${ICON.close}</button>
+      </div>
+
+      <input id="mq" class="mus-search" type="search" enterkeyhint="search"
+             placeholder="Song or artist" value="">
+      <div id="mList">${list()}</div>
+
+      <button class="btn primary" id="mAdd" disabled>Add to this day</button>
+      ${current ? `<button class="btn ghost" id="mDrop">Remove music</button>` : ''}
+    </div>`, sheet => {
+
+    const box = sheet.querySelector('#mList');
+    const q = sheet.querySelector('#mq');
+    const add = sheet.querySelector('#mAdd');
+
+    const repaint = () => {
+      box.innerHTML = list();
+      box.querySelectorAll('[data-i]').forEach(b => {
+        b.onclick = () => {
+          picked = results[Number(b.dataset.i)];
+          add.disabled = false;
+          add.textContent = `Add ${picked.nm.length > 22 ? 'this song' : picked.nm}`;
+          auditionTrack(picked.url);
+          haptic(8);
+          repaint();
+        };
+      });
+    };
+
+    const run = async () => {
+      const term = q.value.trim();
+      if(term.length < 2){ results = []; typed = false; repaint(); return; }
+      typed = true; busy = true; repaint();
+      try{
+        const r = await api.searchMusic(term);
+        results = r.tracks || [];
+      }catch(_){
+        results = [];
+        toast('Music search failed');
+      }
+      busy = false;
+      repaint();
+    };
+
+    sheet.querySelector('#x').onclick = () => { closeSheet(); musicResume(); };
+    q.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(run, 350); });
+    add.onclick = () => { if(picked) saveTrack(prof, iso, picked); };
+    const drop = sheet.querySelector('#mDrop');
+    if(drop) drop.onclick = () => saveTrack(prof, iso, null);
+
+    watchKeyboard();
+    q.focus();
+    repaint();
+  });
+}
+
+/* Whatever the picker was auditioning stops; the feed takes its track back. */
+function musicResume(){
+  const a = music.el;
+  if(!a) return;
+  if(music.on && music.at) musicApply();
+  else { a.pause(); music.loaded = null; }
+}
+
+async function saveTrack(prof, iso, t){
+  seedDay(prof, iso);
+  const entry = state.data[prof][iso];
+  if(t) entry.track = { id:t.id, nm:t.nm, ar:t.ar, art:t.art, url:t.url };
+  else delete entry.track;
+
+  closeSheet();
+  music.loaded = null;          // the post's own track reloads on next apply
+  render();
+  musicResume();
+  try{
+    await api.saveDay(prof, iso, entry);
+    state.online = true;
+    toast(t ? 'Music added' : 'Music removed');
+  }catch(_){ toast('Offline — not saved'); }
 }
 
 /* ── meals ── */
@@ -2718,7 +3141,8 @@ async function checkIn(){
 
 let lastDay = null;
 document.addEventListener('visibilitychange', async () => {
-  if(document.hidden) return;
+  // pocketed phone, backgrounded tab: nothing should still be singing
+  if(document.hidden){ musicLeave(); music.on = false; return; }
   await loadState();
   await checkIn();
   if(lastDay !== todayISO()){ lastDay = todayISO(); state.tab = 'today'; }

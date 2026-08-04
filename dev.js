@@ -90,6 +90,17 @@ let demoStart;
     { from: 'aarya', to: 'sachin', date: at(18), emoji: 'kudos' },
     { from: 'sachin', to: 'aarya', date: at(18), emoji: 'kudos' }
   ];
+  // a couple of days carry a track, so the feed has something to play
+  demo.data.sachin[at(20)].track =
+    { id: 9001, nm: 'Delilah (pull me out of this)', ar: 'Fred again..',
+      art: '/api/music?art=9001', url: '/api/music?tone=330' };
+  demo.data.aarya[at(18)].track =
+    { id: 9002, nm: 'Nightcall', ar: 'Kavinsky',
+      art: '/api/music?art=9002', url: '/api/music?tone=262' };
+  demo.data.sachin[at(16)].track =
+    { id: 9006, nm: 'Sun Models', ar: 'ODESZA',
+      art: '/api/music?art=9006', url: '/api/music?tone=349' };
+
   const ago = (mins) => new Date(Date.now() - mins * 60000).toISOString();
   demo.comments = [
     { id: demoCommentId++, from: 'aarya', to: 'sachin', date: at(20), slot: 'day',
@@ -99,6 +110,39 @@ let demoStart;
     { id: demoCommentId++, from: 'sachin', to: 'aarya', date: at(18), slot: 'workout1',
       body: 'That hill again? Respect.', at: ago(96) }
   ];
+}
+
+/* ---- demo music: canned catalogue + a synthesised preview to play ---- */
+const DEMO_TRACKS = [
+  { id: 9001, nm: 'Delilah (pull me out of this)', ar: 'Fred again..', hz: 330 },
+  { id: 9002, nm: 'Nightcall', ar: 'Kavinsky', hz: 262 },
+  { id: 9003, nm: 'Weightless', ar: 'Marconi Union', hz: 220 },
+  { id: 9004, nm: 'Alright', ar: 'Kendrick Lamar', hz: 392 },
+  { id: 9005, nm: 'Teardrop', ar: 'Massive Attack', hz: 294 },
+  { id: 9006, nm: 'Sun Models', ar: 'ODESZA', hz: 349 }
+];
+const demoTrack = (t) => ({
+  id: t.id, nm: t.nm, ar: t.ar,
+  art: `/api/music?art=${t.id}`,
+  url: `/api/music?tone=${t.hz}`
+});
+
+/* A few seconds of a quiet sine, so the feed's audio path is real in demo. */
+function toneWav(seconds, freq) {
+  const rate = 8000;
+  const n = rate * seconds;
+  const data = Buffer.alloc(n);
+  for (let i = 0; i < n; i++) {
+    // fade the ends so looping doesn't click
+    const env = Math.min(1, i / 400, (n - i) / 400);
+    data[i] = 128 + Math.round(45 * env * Math.sin((2 * Math.PI * freq * i) / rate));
+  }
+  const h = Buffer.alloc(44);
+  h.write('RIFF', 0); h.writeUInt32LE(36 + n, 4); h.write('WAVE', 8);
+  h.write('fmt ', 12); h.writeUInt32LE(16, 16); h.writeUInt16LE(1, 20); h.writeUInt16LE(1, 22);
+  h.writeUInt32LE(rate, 24); h.writeUInt32LE(rate, 28); h.writeUInt16LE(1, 32); h.writeUInt16LE(8, 34);
+  h.write('data', 36); h.writeUInt32LE(n, 40);
+  return Buffer.concat([h, data]);
 }
 
 /* ---- generated placeholder photos for demo mode ---- */
@@ -216,6 +260,27 @@ async function demoApi(pathname, req, res, url) {
     }
     res.setHeader('Content-Type', 'image/png');
     return res.status(200).send(demoPng(prof + date + slot));
+  }
+  if (pathname === '/api/music') {
+    const tone = url.searchParams.get('tone');
+    if (tone) {
+      res.setHeader('Content-Type', 'audio/wav');
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+      return res.status(200).send(toneWav(6, Number(tone) || 330));
+    }
+    const art = url.searchParams.get('art');
+    if (art) {
+      res.setHeader('Content-Type', 'image/png');
+      return res.status(200).send(demoPng('art' + art));
+    }
+    const q = (url.searchParams.get('q') || '').toLowerCase();
+    const id = url.searchParams.get('id');
+    if (id) return res.status(200).json({
+      tracks: DEMO_TRACKS.filter((t) => String(t.id) === id).map(demoTrack) });
+    const hits = q
+      ? DEMO_TRACKS.filter((t) => (t.nm + ' ' + t.ar).toLowerCase().includes(q))
+      : [];
+    return res.status(200).json({ tracks: (hits.length ? hits : DEMO_TRACKS).map(demoTrack) });
   }
   if (pathname === '/api/comments') {
     if (req.method === 'POST') {
