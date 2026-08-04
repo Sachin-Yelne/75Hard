@@ -81,11 +81,11 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
 #nav{
   position:fixed;left:0;right:0;bottom:0;z-index:40;
   height:var(--nav);
-  /* Sit lower into the home-indicator strip. The tab row is centred in what
-     is left after this padding, so the labels drop by half of whatever comes
-     off here — 16px less padding moves them down 8px, leaving ~18px of
-     clearance under them on a phone with a 34px inset. */
-  padding-bottom:max(0px, calc(var(--safe-bot) - 16px));
+  /* The tab row is bottom-aligned rather than centred (see .tab), so this
+     padding is the whole gap under the labels — no halving. 12px off a 34px
+     inset leaves 22px, which clears the home indicator without the labels
+     floating in the middle of the bar. */
+  padding-bottom:max(8px, calc(var(--safe-bot) - 12px));
   display:grid;grid-template-columns:repeat(4,1fr);
   background:rgba(10,10,11,.94);
   backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
@@ -95,7 +95,9 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
 }
 #nav[hidden]{display:none;}
 .tab{
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+  /* bottom-aligned, so the gap under the labels is exactly #nav's padding
+     rather than half of whatever centring leaves over */
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;
   color:var(--bone-3);transition:color .18s;position:relative;
 }
 .tab .ic{width:15px;height:15px;}
@@ -108,7 +110,10 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
   content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);
   width:22px;height:1px;background:var(--bone);
 }
-.tab .dot{position:absolute;top:9px;right:calc(50% - 15px);width:4px;height:4px;background:var(--you);}
+/* Anchored from the bottom, because the tab's contents are bottom-aligned —
+   a top offset would leave the dot floating where the icon used to be.
+   26px clears the 10px label, the 6px gap and most of the 15px icon. */
+.tab .dot{position:absolute;bottom:26px;right:calc(50% - 15px);width:4px;height:4px;background:var(--you);}
 
 /* ── topbar ────────────────────────────── */
 .top{display:flex;align-items:center;justify-content:space-between;padding:4px 0 14px;}
