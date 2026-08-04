@@ -56,11 +56,16 @@ module.exports = async function handler(req, res) {
         ON CONFLICT DO NOTHING
       `;
 
-      // kudos are otherwise invisible until they next open the app
+      // kudos are otherwise invisible until they next open the app.
+      // iOS already stamps the app name on every notification, so the title
+      // carries the news rather than repeating the word "Kudos" under it.
+      const when = new Date(`${date}T12:00:00Z`).toLocaleDateString('en-US', {
+        month: 'short', day: 'numeric', timeZone: 'UTC'
+      });
       await notify(sql, {
         to, date, kind: `kudos:${from}`,
-        title: 'Kudos',
-        body: `${NAMES[from] || from} gave you kudos.`
+        title: `${NAMES[from] || from} just sent kudos`,
+        body: `Reaction recorded for ${when}.`
       });
 
       return res.status(200).json({ ok: true, active: true });

@@ -1,4 +1,4 @@
-# 75 Hard
+# Project 75
 
 A two-person PWA for the 75 Hard challenge — daily tasks, streaks, head-to-head rivalry, and a shared progress-photo feed, all synced through Neon Postgres.
 
@@ -18,7 +18,16 @@ Your partner's strip at the foot of Today opens their day read-only — every ta
 
 Editorial and deliberately restrained — near-black, hairline rules, Anton for figures and Barlow Condensed for labels. Two muted accents (clay `#C8613A` for you, sage `#6E7F6A` for your partner) carry all state; there are no gradients, glows, emoji, or confetti anywhere.
 
-Icons come from Font Awesome Pro (`sharp-light`). The full library lives in `svgs/` locally and is **gitignored** — it's ~132MB across 35k files. Only the eight icons actually used are inlined as paths in `index.html`, totalling about 3KB. To swap one in, copy the `d` attribute out of the relevant `svgs/sharp-light/*.svg` and add it to the `ICON` map.
+Icons come from Font Awesome Pro (`sharp-light`). The full library lives in `svgs/` locally and is **gitignored** — it's ~132MB across 35k files. Only the icons actually used are inlined as paths in `index.html`, totalling about 3KB. To swap one in, copy the `d` attribute out of the relevant `svgs/sharp-light/*.svg` and add it to the `ICON` map.
+
+The app icon is a large Anton `75` in bone on the app's near-black — the same
+face the day number uses. Regenerate all sizes with
+`scripts/make-icons.py` after editing it. Three things govern how iOS treats
+it: it reads `apple-touch-icon.png` rather than the manifest icons, it fills
+any transparency with black, and it caches the icon hard — changing the file
+does not update an app already on the Home Screen, so it has to be removed and
+re-added. The separate `icon-maskable-512.png` pulls the mark into the inner
+safe area, since Android crops maskable icons to the launcher's shape.
 
 ## Run locally
 
@@ -178,6 +187,7 @@ sw.js             Offline shell cache, push handlers
 - There is no reset. Wiping the challenge was one unauthenticated request away from erasing 75 days for both people, and `/api/reset` was removed along with the button. Starting over means clearing the tables in the Neon console by hand.
 - Water totals live in the existing `day_tasks.tasks` JSONB as `waterOz` and `waterLog`, so no schema change was needed. The `water` boolean stays derived from `waterOz >= 128`, which keeps streaks, the wall and completion logic untouched. Days ticked before the meter existed read as a full gallon.
 - Your vessels are personal kit rather than shared progress, so they live in `localStorage` per profile. They don't follow you to a second device — move them to a table if that becomes annoying.
+- iOS stamps the app name on every notification and there is no way to suppress it — it is an anti-spoofing guarantee, not a setting. The copy is written around that: the title carries the news and the body adds the day, so nothing is repeated under the app name.
 - Notifications fail silently by design: `notify()` swallows everything, so a push problem can never turn a successful save into an error for the person saving. With no VAPID keys set, every send is a no-op.
 - A push endpoint belongs to whoever last claimed it, so switching profile on a phone moves that phone's alerts. Deleting and re-adding the app strands the old endpoint; the server drops it on the first 404/410.
 - Free Neon + Vercel tiers are enough for two people over 75 days.

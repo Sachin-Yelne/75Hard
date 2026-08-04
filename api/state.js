@@ -63,8 +63,8 @@ module.exports = async function handler(req, res) {
         const other = PROFILES.find((p) => p !== profileId);
         await notify(sql, {
           to: other, date, kind: `complete:${profileId}`,
-          title: `${NAMES[profileId] || profileId} finished the day`,
-          body: `All ${TASK_IDS.length} done. Your turn.`
+          title: `${NAMES[profileId] || profileId} sealed the day`,
+          body: `All ${TASK_IDS.length} done. Your move.`
         });
       }
 

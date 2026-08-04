@@ -77,8 +77,8 @@ module.exports = async function handler(req, res) {
       const other = PROFILES.find((p) => p !== profileId);
       await notify(sql, {
         to: other, date, kind: `photo:${profileId}`,
-        title: `${NAMES[profileId] || profileId} posted`,
-        body: 'New frames on the feed.',
+        title: `${NAMES[profileId] || profileId} posted fresh shots`,
+        body: 'Tap to view the latest frames.',
         url: '/'
       });
 

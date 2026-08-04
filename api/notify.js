@@ -60,10 +60,10 @@ module.exports = async function handler(req, res) {
 
       const left = TASK_IDS.length - done;
       const out = await sendTo(sql, profileId, {
-        title: `${left} task${left === 1 ? '' : 's'} left today`,
+        title: `${left} task${left === 1 ? '' : 's'} left — finish strong`,
         body: done
-          ? `You're ${done} of ${TASK_IDS.length} through. Finish before midnight.`
-          : 'Nothing logged yet today. There is still time.',
+          ? `You’ve completed ${done} of ${TASK_IDS.length}. Close the day with some rest!`
+          : 'No tasks logged yet. There’s still time to make this day count!',
         url: '/',
         tag: `nudge-${today}`
       });
