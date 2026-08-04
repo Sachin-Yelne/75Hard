@@ -57,10 +57,18 @@ let demoStart;
       demo.photos.sachin[day] = ['day'];
       if (i % 4 === 0) demo.photos.sachin[day].push('workout1', 'read');
       // several diet shots on some days, as snacks and dinner would land
-      if (i % 6 === 0) demo.photos.sachin[day].push(
-        `diet#${1750000000000 + i * 86400000 + 3600000}`,
-        `diet#${1750000000000 + i * 86400000 + 7200000}`,
-        `diet#${1750000000000 + i * 86400000 + 9000000}`);
+      if (i % 6 === 0) {
+        const meals = [3600000, 7200000, 9000000]
+          .map((o) => `diet#${1750000000000 + i * 86400000 + o}`);
+        demo.photos.sachin[day].push(...meals);
+        // a couple named and judged, one left blank — all three states show
+        demo.data.sachin[day].meals = {
+          [meals[0]]: { nm: 'Eggs, two slices sourdough', v: 'fine' },
+          [meals[1]]: { nm: 'Chipotle bowl, double chicken', v: 'loved' }
+        };
+        if (i % 12 === 0) demo.data.sachin[day].meals[meals[2]] =
+          { nm: 'Gas station protein bar', v: 'regret' };
+      }
     }
     if (i % 3 === 0) {
       demo.photos.aarya[day] = i % 6 === 0 ? ['day', 'workout2'] : ['workout1'];
