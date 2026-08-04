@@ -159,7 +159,9 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
   letter-spacing:.09em;text-transform:uppercase;line-height:1.05;
   transition:color .2s;
 }
-.task .sub{display:block;font-size:11.5px;color:var(--bone-3);margin-top:5px;letter-spacing:.01em;}
+.task .sub{display:block;font-size:11.5px;color:var(--bone-3);margin-top:5px;letter-spacing:.01em;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.task .sub .vd{margin-right:7px;position:relative;top:1px;}
 .box{
   width:22px;height:22px;flex-shrink:0;
   border:1px solid var(--rule-2);
@@ -311,6 +313,10 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
   margin-bottom:10px;
 }
 .slot-tag .of{font-family:var(--display);letter-spacing:0;color:rgba(255,255,255,.45);margin-left:4px;}
+.slot-tag .vd{margin-right:7px;position:relative;top:1px;}
+/* your own meal: the caption is the way in to naming it */
+.viewer-bot .slot-tag.edit{pointer-events:auto;}
+.slot-tag.edit .tx{border-bottom:1px solid rgba(255,255,255,.28);padding-bottom:3px;}
 .post .shade{position:absolute;inset:0;pointer-events:none;
   background:linear-gradient(180deg,rgba(0,0,0,.55) 0%,transparent 26%,transparent 42%,rgba(0,0,0,.88) 100%);}
 .post-top{position:absolute;top:calc(var(--safe-top) + 16px);left:var(--pad);right:var(--pad);
@@ -451,7 +457,9 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
 .btn.primary{background:var(--bone);color:var(--ink);border-color:var(--bone);}
 .btn.danger{color:var(--you);border-color:var(--miss);}
 .btn.ghost{border-color:transparent;color:var(--bone-3);}
-.shot{width:100%;max-height:320px;object-fit:cover;display:block;margin-bottom:14px;}
+/* the meal sheet's reminder of what it was — enough to recognise, not so much
+   that the name field falls below the fold */
+.shot{width:100%;height:168px;object-fit:cover;display:block;margin-bottom:14px;}
 .sheet-shots{
   display:flex;gap:8px;margin-bottom:14px;overflow-x:auto;
   scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch;
@@ -466,6 +474,37 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
 }
 .sheet-shot .rm{width:14px;height:14px;color:var(--bone-3);flex-shrink:0;}
 .sheet-shot .rm:active{color:var(--you);}
+/* a named meal reads as itself; the task name is the fallback */
+.sheet-shot .cap{display:flex;align-items:center;gap:8px;flex:1;min-width:0;
+  font:inherit;letter-spacing:inherit;text-transform:inherit;color:inherit;}
+.sheet-shot .cap .tx{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.sheet-shot .cap.named .tx{color:var(--bone);}
+
+/* ── meals ─────────────────────────────── */
+/* The verdict is a mark, not a hue: person colour already means something. */
+.vd{display:inline-block;width:8px;height:8px;flex-shrink:0;
+  border:1px solid var(--bone-3);background:transparent;}
+.vd.loved{background:var(--bone);border-color:var(--bone);}
+.vd.fine{background:transparent;border-color:var(--bone-2);}
+.vd.regret{background:var(--miss);border-color:var(--miss);}
+.meal-name{
+  width:100%;background:var(--ink-3);border:1px solid var(--rule-2);color:var(--bone);
+  padding:14px 12px;font-family:var(--body);font-size:15px;
+}
+.meal-name:focus{outline:none;border-color:var(--p);}
+.meal-name::placeholder{color:var(--bone-3);}
+.verdicts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px;}
+.verdict{
+  display:flex;flex-direction:column;align-items:center;gap:9px;
+  border:1px solid var(--rule-2);padding:14px 8px;
+  font-family:var(--cond);font-weight:600;font-size:11px;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--bone-3);text-align:center;
+  transition:border-color .15s,color .15s;
+}
+.verdict .vd{width:10px;height:10px;}
+.verdict.on{border-color:var(--bone);color:var(--bone);background:var(--ink-3);}
+.meal-when{font-family:var(--cond);font-weight:500;font-size:11px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--bone-3);margin-top:16px;text-align:center;}
 .shot-none{border:1px solid var(--rule);padding:44px 0;text-align:center;margin-bottom:14px;
   font-family:var(--cond);font-weight:500;font-size:12px;letter-spacing:.16em;
   text-transform:uppercase;color:var(--bone-3);}
@@ -611,7 +650,7 @@ const TOTAL_DAYS = 75;
 // to record a failure. See seedDay(): days you never open stay blank, so a
 // skipped day is never credited as a success you didn't report.
 const TASKS = [
-  { id:'diet',     nm:'Diet',        sub:'No cheat meals, no alcohol',        auto:true, photo:true, multi:true },
+  { id:'diet',     nm:'Diet',        sub:'No cheat meals, no alcohol',        auto:true, photo:true, multi:true, meal:true },
   { id:'workout1', nm:'Workout One', sub:'45 minutes',            photo:true, note:true },
   { id:'workout2', nm:'Workout Two', sub:'45 minutes, outdoors',  photo:true, note:true },
   { id:'water',    nm:'Water',       sub:'1 gallon',              meter:true },
@@ -629,6 +668,16 @@ const TASKS = [
 const DAY_SLOT = 'day';
 const SLOT_ORDER = [DAY_SLOT, ...TASKS.filter(t => t.photo).map(t => t.id)];
 const MULTI_SLOTS = TASKS.filter(t => t.multi).map(t => t.id);
+// A `meal` task's shots are things you ate, so each one can carry a name and a
+// verdict rather than just the task's label.
+const MEAL_SLOTS = TASKS.filter(t => t.meal).map(t => t.id);
+const MEAL_NAME_MAX = 60;
+const VERDICTS = [
+  { id:'loved',  nm:'Loved it' },
+  { id:'fine',   nm:'Fine' },
+  { id:'regret', nm:'Regret it' }
+];
+const verdictNm = v => (VERDICTS.find(x => x.id === v) || {}).nm || '';
 const MAX_PER_SLOT = 12;          // keeps one runaway day off the free tier
 const SLOT_LABEL = {
   day:'Progress frame',
@@ -877,6 +926,26 @@ const waterLog = (p, iso) => entryOf(p, iso).waterLog || [];
 /* A written note is the alternative to a photo — say what you did instead of
    showing it. Lives in the existing tasks JSONB, so no schema change. */
 const noteOf = (p, iso, id) => ((entryOf(p, iso).notes || {})[id] || '').trim();
+
+/* What you ate, keyed by the photo's own slot. Rides the same JSONB as notes —
+   `{ 'diet#1750…': { nm:'Chipotle bowl', v:'loved' } }`. */
+const isMealSlot = s => MEAL_SLOTS.includes(slotBase(s));
+const mealOf = (p, iso, slot) => (entryOf(p, iso).meals || {})[slot] || null;
+const mealName = (p, iso, slot) => (mealOf(p, iso, slot)?.nm || '').trim();
+// every labelled meal of a day, oldest first, for the row summary
+const mealsOf = (p, iso) => MEAL_SLOTS.flatMap(id => photosOf(p, iso, id))
+  .map(slot => ({ slot, ...(mealOf(p, iso, slot) || {}) }))
+  .filter(m => m.nm);
+
+/* What a frame is called: the meal's own name once it has one, else the task.
+   `frameTitle` is plain text for alt/aria; `frameCaption` is markup. */
+const frameTitle = (p, iso, slot) => mealName(p, iso, slot) || slotLabel(slot);
+const verdictDot = v => v ? `<i class="vd ${v}" aria-hidden="true"></i>` : '';
+const frameCaption = (p, iso, slot) => {
+  const m = isMealSlot(slot) ? mealOf(p, iso, slot) : null;
+  const nm = (m?.nm || '').trim();
+  return `${nm ? verdictDot(m.v) : ''}<span class="tx">${esc(nm || slotLabel(slot))}</span>`;
+};
 // the bar can only fill once, but the number should tell the truth
 const waterPct    = (p, iso) => Math.min(100, waterPctRaw(p, iso));
 const waterPctRaw = (p, iso) => Math.round(waterOz(p, iso) / WATER_GOAL_OZ * 100);
@@ -1177,9 +1246,14 @@ function taskRow(prof, iso, t, editable){
   const pic = shots.length > 0;
   const oz = t.meter ? waterOz(prof, iso) : 0;
   const note = t.note ? noteOf(prof, iso, t.id) : '';
+  // the row says what you last ate rather than the rule you're keeping
+  const meals = t.meal ? mealsOf(prof, iso) : [];
+  const last = meals[meals.length - 1];
   const sub = t.meter
     ? (oz ? `${oz} of ${WATER_GOAL_OZ} oz` : `${WATER_GOAL_OZ} oz — tap to log`)
-    : (note || t.sub);
+    : last
+      ? `${verdictDot(last.v)}${esc(last.nm)}${meals.length > 1 ? ` +${meals.length - 1}` : ''}`
+      : esc(note || t.sub);
   let shot = '';
   if(t.photo){
     // newest shot is the thumbnail; the count says how many the day holds
@@ -1556,7 +1630,12 @@ function wireReel(host, p, iso){
     const i = Math.max(0, Math.min(slots.length - 1, Math.round(reel.scrollLeft / w)));
     if(i === shown) return;
     shown = i;
-    if(tag) tag.innerHTML = `${slotLabel(slots[i])} <span class="of">${i+1}/${slots.length}</span>`;
+    if(tag){
+      tag.innerHTML = `${frameCaption(p, iso, slots[i])} <span class="of">${i+1}/${slots.length}</span>`;
+      // the caption only opens the meal editor on your own food
+      tag.classList.toggle('edit', p === me() && isMealSlot(slots[i]));
+      tag.dataset.slot = slots[i];
+    }
     pips.forEach((pip, n) => pip.classList.toggle('on', n === i));
   };
 
@@ -1623,6 +1702,8 @@ async function uploadFrom(input, prof, iso, slot){
     } else {
       render();
     }
+    // straight into naming it, while you still remember what it was
+    if(isMealSlot(slot)) openMeal(prof, iso, slot, { fresh:true });
   }catch(_){ toast('Upload failed'); }
 }
 
@@ -1749,14 +1830,16 @@ function openViewer(p, iso, index){
     <div class="viewer" data-who="${whoAttr(p)}" data-post-p="${p}" data-post-iso="${iso}">
       <div class="reel"${multi ? '' : ' data-single'}>
         ${slots.map(sl => `
-          <div class="slide"><img src="${api.photoUrl(p, iso, sl)}" alt="${slotLabel(sl)}"></div>`).join('')}
+          <div class="slide"><img src="${api.photoUrl(p, iso, sl)}"
+            alt="${esc(frameTitle(p, iso, sl))}"></div>`).join('')}
       </div>
       <div class="viewer-shade"></div>
       <button class="icon-btn viewer-x" aria-label="Close">${ICON.close}</button>
       ${multi ? `<div class="pips">${slots.map((sl, i) =>
         `<i class="${i===start?'on':''}"></i>`).join('')}</div>` : ''}
       <div class="viewer-bot">
-        <div class="slot-tag">${slotLabel(slots[start])}${
+        <div class="slot-tag${own && isMealSlot(slots[start]) ? ' edit' : ''}"
+             data-slot="${slots[start]}">${frameCaption(p, iso, slots[start])}${
           multi ? ` <span class="of">${start+1}/${slots.length}</span>` : ''}</div>
         <div class="viewer-meta">${own ? 'You' : nameOf(p)} — ${fmtDate(iso)}</div>
         <div class="cmt-slot">${peekHTML(p, iso)}</div>
@@ -1775,6 +1858,16 @@ function openViewer(p, iso, index){
   wireReel(view, p, iso);
 
   view.querySelector('.viewer-x').onclick = closeViewer;
+
+  // Naming a meal from the photo itself: the caption is the handle, and only
+  // on your own food. The viewer stays open underneath.
+  const tag = view.querySelector('.slot-tag');
+  if(own && tag) tag.onclick = e => {
+    const sl = tag.dataset.slot;
+    if(!isMealSlot(sl)) return;
+    e.stopPropagation();
+    openMeal(p, iso, sl, { after:() => repaintViewerTag(p, iso) });
+  };
 
   // Tapping the photo steps to the next one and wraps at the end — swiping
   // still works, this just saves the gesture. Kudos moved to its own button
@@ -1804,6 +1897,20 @@ function openViewer(p, iso, index){
   view._cmtSlot = shownSlot;
   bindComments(view, p, iso, shownSlot);
 }
+/* The viewer outlives the meal sheet opened on top of it, so its caption has to
+   catch up once that sheet is done. */
+function repaintViewerTag(p, iso){
+  const tag = document.querySelector('#viewer .viewer .slot-tag');
+  if(!tag) return;
+  const slots = slotsFor(p, iso);
+  const sl = tag.dataset.slot;
+  const i = slots.indexOf(sl);
+  const of = slots.length > 1 && i >= 0
+    ? ` <span class="of">${i+1}/${slots.length}</span>` : '';
+  tag.innerHTML = frameCaption(p, iso, sl) + of;
+  tag.classList.toggle('edit', p === me() && isMealSlot(sl));
+}
+
 function closeViewer(){
   const root = document.getElementById('viewer');
   root.classList.remove('open');
@@ -1833,14 +1940,21 @@ function openDay(prof, iso){
     if(!slots.length){
       return `<div class="shot-none">${mine ? 'No photos yet — all optional' : 'No photos this day'}</div>`;
     }
-    return `<div class="sheet-shots">${slots.map(s => `
+    return `<div class="sheet-shots">${slots.map(s => {
+      const named = isMealSlot(s) && mealName(prof, iso, s);
+      const cap = `class="cap${named ? ' named' : ''}"`;
+      return `
       <figure class="sheet-shot" data-slot="${s}">
-        <img src="${api.photoUrl(prof, iso, s)}" alt="${slotLabel(s)}">
+        <img src="${api.photoUrl(prof, iso, s)}" alt="${esc(frameTitle(prof, iso, s))}">
         <figcaption>
-          <span>${slotLabel(s)}</span>
+          ${mine && isMealSlot(s)
+            ? `<button ${cap} data-meal="${s}"
+                 aria-label="${named ? 'Edit meal' : 'Name this meal'}">${frameCaption(prof, iso, s)}</button>`
+            : `<span ${cap}>${frameCaption(prof, iso, s)}</span>`}
           ${mine ? `<button class="rm" data-del="${s}" aria-label="Remove">${ICON.close}</button>` : ''}
         </figcaption>
-      </figure>`).join('')}</div>`;
+      </figure>`;
+    }).join('')}</div>`;
   };
 
   openSheet(`
@@ -1883,14 +1997,22 @@ function openDay(prof, iso){
 
     function bindGallery(){
       if(!mine) return;
+      sheet.querySelectorAll('[data-meal]').forEach(b => {
+        b.onclick = () => openMeal(prof, iso, b.dataset.meal, { after:() => openDay(prof, iso) });
+      });
       sheet.querySelectorAll('[data-del]').forEach(b => {
         b.onclick = async () => {
           const slot = b.dataset.del;
-          if(!confirm(`Remove the ${slotLabel(slot).toLowerCase()} photo?`)) return;
+          if(!confirm(`Remove the ${frameTitle(prof, iso, slot).toLowerCase()} photo?`)) return;
           try{
             await api.deletePhoto(prof, iso, slot);
             removePhotoLocal(prof, iso, slot);
             toast('Photo removed');
+            // the label goes with the photo rather than outliving it
+            if(dropMeal(prof, iso, slot)){
+              try{ await api.saveDay(prof, iso, state.data[prof][iso]); }
+              catch(_){ toast('Offline — label not cleared'); }
+            }
             repaint();
             refreshSheetTaskShot(sheet, prof, iso, slot);
           }catch(_){ toast('Delete failed'); }
@@ -1948,6 +2070,10 @@ function openDay(prof, iso){
             repaint();
             refreshSheetTaskShot(sheet, prof, iso, slot);
             bindInputs();
+            // name it now, then hand the day sheet back
+            if(isMealSlot(slot)){
+              openMeal(prof, iso, slot, { fresh:true, after:() => openDay(prof, iso) });
+            }
           }catch(_){ toast('Upload failed'); }
         };
       });
@@ -2021,6 +2147,117 @@ async function saveNote(prof, iso, taskId, text){
   closeSheet(); render();
   try{ await api.saveDay(prof, iso, entry); state.online = true; toast(clean ? 'Note saved' : 'Note removed'); }
   catch(_){ toast('Offline — not saved'); }
+}
+
+/* ── meals ── */
+/*
+ * Name what you ate, and say how it went. Opens by itself the moment a diet
+ * photo lands — that's when you remember what it was — and can be reopened
+ * from the day sheet's gallery afterwards. Skipping is fine: an unnamed shot
+ * just falls back to reading as "Diet", exactly as it did before.
+ *
+ * Stored under `meals` in the day's tasks JSONB, keyed by the photo's own slot,
+ * so it rides the save that was already happening and needs no schema change.
+ */
+function openMeal(prof, iso, slot, opts = {}){
+  const { fresh = false, after = null } = opts;
+  const existing = mealOf(prof, iso, slot) || {};
+  let verdict = existing.v || '';
+  // opened from a sheet, so hand that sheet back once this one is done with
+  const andThen = () => { if(after) setTimeout(after, 340); };
+
+  const shot = () => hasPhoto(prof, iso, slot)
+    ? `<img class="shot" src="${api.photoUrl(prof, iso, slot)}" alt="">` : '';
+
+  const stamp = slotStamp(slot);
+  const when = stamp
+    ? new Date(stamp).toLocaleTimeString(undefined, { hour:'numeric', minute:'2-digit' })
+    : '';
+
+  openSheet(`
+    <div data-who="${whoAttr(prof)}">
+      <div class="sheet-head">
+        <div>
+          <div class="t">${fresh ? 'What was it?' : 'Edit meal'}</div>
+          <div class="s">Day ${dayIndex(iso)}${when ? ` — ${when}` : ''}</div>
+        </div>
+        <button class="icon-btn" id="x">${ICON.close}</button>
+      </div>
+
+      ${shot()}
+      <input id="mName" class="meal-name" type="text" maxlength="${MEAL_NAME_MAX}"
+             placeholder="Chipotle bowl, double chicken"
+             value="${esc(existing.nm || '')}">
+      <div class="verdicts">
+        ${VERDICTS.map(v => `
+          <button class="verdict ${verdict === v.id ? 'on' : ''}" data-v="${v.id}">
+            <i class="vd ${v.id}"></i><span>${v.nm}</span>
+          </button>`).join('')}
+      </div>
+
+      <button class="btn primary" id="mSave">Save</button>
+      ${fresh
+        ? `<button class="btn ghost" id="mSkip">Skip</button>`
+        : (existing.nm || existing.v)
+          ? `<button class="btn ghost" id="mClear">Remove label</button>` : ''}
+      ${fresh ? `<div class="meal-when">You can name it later from the day</div>` : ''}
+    </div>`, sheet => {
+
+    const name = sheet.querySelector('#mName');
+    sheet.querySelector('#x').onclick = () => { closeSheet(); andThen(); };
+
+    sheet.querySelectorAll('[data-v]').forEach(b => {
+      b.onclick = () => {
+        // tapping the chosen verdict again clears it — a meal can just be a meal
+        verdict = verdict === b.dataset.v ? '' : b.dataset.v;
+        sheet.querySelectorAll('[data-v]').forEach(x =>
+          x.classList.toggle('on', x.dataset.v === verdict));
+        haptic(8);
+      };
+    });
+
+    // saveMeal closes the sheet synchronously, so the handback can follow it
+    sheet.querySelector('#mSave').onclick = () => {
+      saveMeal(prof, iso, slot, name.value, verdict); andThen();
+    };
+    const skip = sheet.querySelector('#mSkip');
+    if(skip) skip.onclick = () => { closeSheet(); andThen(); };
+    const clear = sheet.querySelector('#mClear');
+    if(clear) clear.onclick = () => { saveMeal(prof, iso, slot, '', ''); andThen(); };
+
+    // a fresh meal wants the keyboard; an edit wants the caret at the end
+    watchKeyboard();
+    name.focus();
+    name.setSelectionRange(name.value.length, name.value.length);
+  });
+}
+
+async function saveMeal(prof, iso, slot, nm, v){
+  seedDay(prof, iso);
+  const entry = state.data[prof][iso];
+  const meals = (entry.meals ||= {});
+  const clean = String(nm || '').trim().slice(0, MEAL_NAME_MAX);
+
+  if(clean || v) meals[slot] = v ? { nm:clean, v } : { nm:clean };
+  else delete meals[slot];
+  if(!Object.keys(meals).length) delete entry.meals;
+
+  closeSheet(); render();
+  try{
+    await api.saveDay(prof, iso, entry);
+    state.online = true;
+    // the caption already says the name; the toast only confirms the save
+    toast(clean || v ? 'Meal saved' : 'Label removed');
+  }catch(_){ toast('Offline — not saved'); }
+}
+
+/* A deleted photo takes its label with it, rather than leaving an orphan. */
+function dropMeal(prof, iso, slot){
+  const entry = state.data[prof]?.[iso];
+  if(!entry?.meals?.[slot]) return false;
+  delete entry.meals[slot];
+  if(!Object.keys(entry.meals).length) delete entry.meals;
+  return true;
 }
 
 /* ── comments ── */
