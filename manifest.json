@@ -1,6 +1,6 @@
 {
-  "name": "Project 75",
-  "short_name": "Project 75",
+  "name": "Lemi",
+  "short_name": "Lemi",
   "description": "Track the 75 Hard challenge day by day — streaks, head-to-head, and a shared progress-photo feed.",
   "start_url": "/",
   "display": "standalone",
