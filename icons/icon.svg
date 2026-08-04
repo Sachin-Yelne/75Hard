@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="48" fill="#23262B"/>
-  <rect x="64" y="180" width="384" height="72" rx="8" fill="#B5533C" stroke="#8C3F2D" stroke-width="6"/>
-  <rect x="64" y="268" width="180" height="72" rx="8" fill="#C9694F" stroke="#8C3F2D" stroke-width="6"/>
-  <rect x="268" y="268" width="180" height="72" rx="8" fill="#B5533C" stroke="#8C3F2D" stroke-width="6"/>
-  <text x="256" y="130" text-anchor="middle" font-family="Arial Black, sans-serif" font-size="88" font-weight="900" fill="#E8B330">75</text>
-  <text x="256" y="420" text-anchor="middle" font-family="Arial, sans-serif" font-size="52" font-weight="700" letter-spacing="8" fill="#F1EDE4">HARD</text>
-</svg>

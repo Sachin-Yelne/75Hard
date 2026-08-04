@@ -7,14 +7,14 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="75 HARD">
+<meta name="apple-mobile-web-app-title" content="Project 75">
 <link rel="manifest" href="/manifest.json">
 <link rel="icon" href="/icons/icon-192.png" type="image/png">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
-<title>75 HARD</title>
+<title>Project 75</title>
 <style>
 :root{
   --ink:#0A0A0B;
@@ -545,7 +545,7 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
 </head>
 <body>
 
-<div id="screen"><div class="boot"><span>75 Hard</span></div></div>
+<div id="screen"><div class="boot"><span>Project 75</span></div></div>
 <nav id="nav" hidden></nav>
 <div id="sheets"></div>
 <div id="viewer"></div>
@@ -952,7 +952,7 @@ function renderPicker(){
   document.getElementById('nav').hidden = true;
   screen().innerHTML = `
     <div class="pick">
-      <div class="mark">75 Hard</div>
+      <div class="mark">Project 75</div>
       <h2>Who's<br>checking in</h2>
       ${PROFILES.map((p,i) => `
         <button class="pick-btn" data-pick="${p.id}">
@@ -1055,7 +1055,7 @@ function viewToday(){
 
 const topbar = () => `
   <div class="top">
-    <span class="mark">75 Hard</span>
+    <span class="mark">Project 75</span>
     <button class="icon-btn" id="gearBtn">${ICON.gear}</button>
   </div>`;
 
