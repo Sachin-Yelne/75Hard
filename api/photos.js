@@ -1,24 +1,33 @@
-const { getSql, ensurePhotoSlot } = require('./lib/db');
+const { connect } = require('./lib/db');
+const { notify } = require('./lib/push');
 
 const PROFILES = ['sachin', 'aarya'];
+const NAMES = { sachin: 'Sachin', aarya: 'Aarya' };
 // 'day' is the daily progress frame; the rest attach to an individual task.
+// 'water' has no camera any more but stays accepted so frames posted when it
+// did can still be deleted.
 const SLOTS = ['day', 'workout1', 'workout2', 'water', 'read', 'diet'];
 
+// A task that takes several shots a day stores each under `id#<epoch ms>`,
+// since the table is keyed (profile_id, day_date, slot). Accept that shape as
+// well as the bare id.
+const MULTI = ['diet'];
+const validSlot = (slot) => {
+  if (SLOTS.includes(slot)) return true;
+  const [base, stamp, ...rest] = String(slot).split('#');
+  return !rest.length && MULTI.includes(base) && /^\d{1,15}$/.test(stamp || '');
+};
+
 module.exports = async function handler(req, res) {
-  const sql = getSql();
+  const sql = await connect(res);
+  if (!sql) return;
+
   const profileId = req.query.profile || req.body?.profileId;
   const date = req.query.date || req.body?.date;
   const slot = req.query.slot || req.body?.slot || 'day';
 
-  if (!PROFILES.includes(profileId) || !date || !SLOTS.includes(slot)) {
+  if (!PROFILES.includes(profileId) || !date || !validSlot(slot)) {
     return res.status(400).json({ error: 'profile, date and a valid slot are required' });
-  }
-
-  try {
-    await ensurePhotoSlot(sql);
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: 'Photo storage unavailable' });
   }
 
   if (req.method === 'GET') {
@@ -62,6 +71,16 @@ module.exports = async function handler(req, res) {
         ON CONFLICT (profile_id, day_date, slot)
         DO UPDATE SET content_type = EXCLUDED.content_type, data = EXCLUDED.data, updated_at = now()
       `;
+
+      // Diet alone can be a dozen shots a day, so this is deliberately once
+      // per person per day — the notification says "look", not "count".
+      const other = PROFILES.find((p) => p !== profileId);
+      await notify(sql, {
+        to: other, date, kind: `photo:${profileId}`,
+        title: `${NAMES[profileId] || profileId} posted fresh shots`,
+        body: 'Tap to view the latest frames.',
+        url: '/'
+      });
 
       return res.status(200).json({ ok: true });
     } catch (err) {

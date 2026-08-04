@@ -1,36 +1,16 @@
-const { getSql } = require('./lib/db');
+const { connect } = require('./lib/db');
+const { notify } = require('./lib/push');
 
 const PROFILES = ['sachin', 'aarya'];
+const NAMES = { sachin: 'Sachin', aarya: 'Aarya' };
 // 'kudos' is what the current UI sends; the emoji are kept so rows written by
 // the previous build still validate and still count.
 const TOKENS = ['kudos', '🔥', '💪', '👏', '🫡', '❤️'];
 
-let tableReady = false;
-
-async function ensureTable(sql) {
-  if (tableReady) return;
-  await sql`
-    CREATE TABLE IF NOT EXISTS reactions (
-      from_profile text NOT NULL,
-      to_profile   text NOT NULL,
-      day_date     date NOT NULL,
-      emoji        text NOT NULL,
-      created_at   timestamptz NOT NULL DEFAULT now(),
-      PRIMARY KEY (from_profile, to_profile, day_date, emoji)
-    )
-  `;
-  tableReady = true;
-}
-
 module.exports = async function handler(req, res) {
-  const sql = getSql();
-
-  try {
-    await ensureTable(sql);
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: 'Reactions unavailable' });
-  }
+  // The reactions table is part of the shared schema connect() ensures.
+  const sql = await connect(res);
+  if (!sql) return;
 
   if (req.method === 'GET') {
     try {
@@ -75,6 +55,19 @@ module.exports = async function handler(req, res) {
         VALUES (${from}, ${to}, ${date}::date, ${emoji})
         ON CONFLICT DO NOTHING
       `;
+
+      // kudos are otherwise invisible until they next open the app.
+      // iOS already stamps the app name on every notification, so the title
+      // carries the news rather than repeating the word "Kudos" under it.
+      const when = new Date(`${date}T12:00:00Z`).toLocaleDateString('en-US', {
+        month: 'short', day: 'numeric', timeZone: 'UTC'
+      });
+      await notify(sql, {
+        to, date, kind: `kudos:${from}`,
+        title: `${NAMES[from] || from} just sent kudos`,
+        body: `Reaction recorded for ${when}.`
+      });
+
       return res.status(200).json({ ok: true, active: true });
     } catch (err) {
       console.error(err);

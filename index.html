@@ -7,14 +7,14 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="75 HARD">
+<meta name="apple-mobile-web-app-title" content="Project 75">
 <link rel="manifest" href="/manifest.json">
 <link rel="icon" href="/icons/icon-192.png" type="image/png">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
-<title>75 HARD</title>
+<title>Project 75</title>
 <style>
 :root{
   --ink:#0A0A0B;
@@ -80,7 +80,12 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
 /* ── nav ───────────────────────────────── */
 #nav{
   position:fixed;left:0;right:0;bottom:0;z-index:40;
-  height:var(--nav);padding-bottom:var(--safe-bot);
+  height:var(--nav);
+  /* The tab row is bottom-aligned rather than centred (see .tab), so this
+     padding is the whole gap under the labels — no halving. 12px off a 34px
+     inset leaves 22px, which clears the home indicator without the labels
+     floating in the middle of the bar. */
+  padding-bottom:max(8px, calc(var(--safe-bot) - 12px));
   display:grid;grid-template-columns:repeat(4,1fr);
   background:rgba(10,10,11,.94);
   backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
@@ -90,7 +95,9 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
 }
 #nav[hidden]{display:none;}
 .tab{
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+  /* bottom-aligned, so the gap under the labels is exactly #nav's padding
+     rather than half of whatever centring leaves over */
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;
   color:var(--bone-3);transition:color .18s;position:relative;
 }
 .tab .ic{width:15px;height:15px;}
@@ -103,7 +110,10 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
   content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);
   width:22px;height:1px;background:var(--bone);
 }
-.tab .dot{position:absolute;top:9px;right:calc(50% - 15px);width:4px;height:4px;background:var(--you);}
+/* Anchored from the bottom, because the tab's contents are bottom-aligned —
+   a top offset would leave the dot floating where the icon used to be.
+   26px clears the 10px label, the 6px gap and most of the 15px icon. */
+.tab .dot{position:absolute;bottom:26px;right:calc(50% - 15px);width:4px;height:4px;background:var(--you);}
 
 /* ── topbar ────────────────────────────── */
 .top{display:flex;align-items:center;justify-content:space-between;padding:4px 0 14px;}
@@ -183,11 +193,33 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
 .shot-btn.filled{border-color:var(--p);padding:0;}
 .shot-btn.filled img{width:100%;height:100%;object-fit:cover;display:block;}
 .shot-btn.empty{border-style:dashed;opacity:.35;cursor:default;}
+.note-btn.filled{border-color:var(--p);color:var(--p);}
+.note-btn[disabled]{opacity:.4;}
+.note-sheet textarea{
+  width:100%;min-height:96px;resize:none;margin-top:12px;padding:12px;
+  background:var(--ink-3);border:1px solid var(--rule-2);color:var(--bone);
+  font-family:var(--body);font-size:14px;line-height:1.5;letter-spacing:0;
+  text-transform:none;
+}
+.note-sheet textarea:focus{outline:none;border-color:var(--p);}
+.shot-btn.filled{position:relative;}
+.shot-btn .n{
+  position:absolute;right:0;bottom:0;min-width:13px;height:13px;padding:0 2px;
+  background:var(--p);color:var(--ink);
+  font-family:var(--display);font-size:10px;line-height:13px;text-align:center;
+}
 @keyframes shotIn{0%{opacity:0;transform:scale(.82)}100%{opacity:1;transform:scale(1)}}
 .shot-btn.fresh{animation:shotIn .32s cubic-bezier(.2,1,.3,1);}
 
 /* ── rival strip ───────────────────────── */
-.rival{padding:20px 0 0;}
+.rival{padding:20px 0 0;width:100%;display:block;}
+.rival:active{opacity:.62;}
+.rival-more{
+  margin-top:9px;font-family:var(--cond);font-weight:600;font-size:10.5px;
+  letter-spacing:.17em;text-transform:uppercase;color:var(--bone-3);
+}
+/* a meter's box mirrors the pour, so it reads as state rather than a control */
+.task-check.derived .box{opacity:.72;}
 .rival-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:11px;}
 .rival-head .who{font-family:var(--cond);font-weight:600;font-size:15px;letter-spacing:.14em;text-transform:uppercase;}
 .rival-head .sc{font-family:var(--display);font-size:15px;color:var(--bone-2);}
@@ -198,6 +230,7 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
   display:flex;align-items:center;gap:13px;width:100%;
   margin-top:26px;padding:16px 16px;
   border:1px solid var(--rule-2);
+  cursor:pointer;                 /* empty state is a <label>, not a button */
 }
 .frame .ic{width:17px;height:17px;color:var(--bone-2);flex-shrink:0;}
 .frame .meta{flex:1;min-width:0;}
@@ -317,6 +350,46 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
 .feed-empty .ic{width:26px;height:26px;color:var(--bone-3);}
 .feed-empty h3{font-family:var(--display);font-size:26px;letter-spacing:-.01em;margin:0;}
 .feed-empty p{font-size:12.5px;color:var(--bone-3);line-height:1.6;margin:0;}
+
+/* collage: the whole day at once, one tile per frame.
+   Square tiles centred in the post — stretching them to fill a phone-shaped
+   post turns a six-up into six tall slivers. */
+.collage{
+  position:absolute;inset:0;display:grid;gap:2px;align-content:center;
+  /* centre in the space the caption block leaves, not the whole post */
+  padding:calc(var(--safe-top) + 46px) 0 calc(var(--nav) + 150px);
+}
+.tile{position:relative;overflow:hidden;background:#000;padding:0;aspect-ratio:1;}
+.tile img{width:100%;height:100%;object-fit:cover;display:block;}
+.tile:active{opacity:.72;}
+/* a lone frame still fills the screen, as it always did */
+.collage.single{align-content:stretch;}
+.collage.single .tile{aspect-ratio:auto;height:100%;}
+/* three reads better as one wide frame over a pair than as an orphan row */
+.collage.three .tile:first-child{grid-column:span 2;aspect-ratio:2.02;}
+.tile .more{
+  position:absolute;inset:0;display:grid;place-items:center;
+  background:rgba(0,0,0,.58);
+  font-family:var(--display);font-size:26px;letter-spacing:-.01em;color:var(--bone);
+}
+
+/* full-screen viewer */
+#viewer:empty{display:none;}
+#viewer .viewer{
+  position:fixed;inset:0;z-index:60;background:#000;
+  opacity:0;transition:opacity .22s ease;
+}
+#viewer.open .viewer{opacity:1;}
+.viewer-shade{position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(180deg,rgba(0,0,0,.5) 0%,transparent 22%,transparent 58%,rgba(0,0,0,.82) 100%);}
+.viewer .slide img{width:100%;height:100%;object-fit:contain;}
+.viewer-x{position:absolute;top:calc(var(--safe-top) + 12px);right:var(--pad);z-index:2;
+  width:20px;height:20px;color:var(--bone);}
+.viewer-bot{position:absolute;left:var(--pad);right:var(--pad);
+  bottom:calc(var(--safe-bot) + 26px);pointer-events:none;}
+.viewer-bot .kudos{pointer-events:auto;}
+.viewer-meta{font-family:var(--cond);font-weight:600;font-size:12px;
+  letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.62);}
 
 /* ── rivals ────────────────────────────── */
 .rv-head{display:grid;grid-template-columns:1fr auto auto;gap:20px;
@@ -472,9 +545,10 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
 </head>
 <body>
 
-<div id="screen"><div class="boot"><span>75 Hard</span></div></div>
+<div id="screen"><div class="boot"><span>Project 75</span></div></div>
 <nav id="nav" hidden></nav>
 <div id="sheets"></div>
+<div id="viewer"></div>
 <div id="done"></div>
 <div id="toast"></div>
 
@@ -484,22 +558,44 @@ const TOTAL_DAYS = 75;
 
 // `photo:true` gives the task an optional camera slot. Photos never gate
 // completion — a task is done when it's checked, with or without one.
+// `auto:true` starts the task ticked on any day you check in — it's the one
+// you're assumed to be keeping unless you say otherwise, so you only touch it
+// to record a failure. See seedDay(): days you never open stay blank, so a
+// skipped day is never credited as a success you didn't report.
 const TASKS = [
-  { id:'diet',     nm:'Diet',        sub:'No cheat meals, no alcohol' },
-  { id:'workout1', nm:'Workout One', sub:'45 minutes',            photo:true },
-  { id:'workout2', nm:'Workout Two', sub:'45 minutes, outdoors',  photo:true },
-  { id:'water',    nm:'Water',       sub:'1 gallon',              photo:true, meter:true },
+  { id:'diet',     nm:'Diet',        sub:'No cheat meals, no alcohol',        auto:true, photo:true, multi:true },
+  { id:'workout1', nm:'Workout One', sub:'45 minutes',            photo:true, note:true },
+  { id:'workout2', nm:'Workout Two', sub:'45 minutes, outdoors',  photo:true, note:true },
+  { id:'water',    nm:'Water',       sub:'1 gallon',              meter:true },
   { id:'read',     nm:'Read',        sub:'10 pages, non-fiction', photo:true }
 ];
 
-// Photo slots in the order they appear in a feed carousel. 'day' is the daily
-// progress frame; the rest mirror TASKS ids.
+// Base slots, in the order a day reads. 'day' is the daily progress frame;
+// the rest mirror the TASKS ids that carry a camera.
+//
+// The photos table is keyed (profile_id, day_date, slot), so a task that takes
+// several shots a day can't reuse one slot — the second upload would overwrite
+// the first. A `multi` task therefore stores each shot under `id#<epoch ms>`.
+// slot is a text column, so this needs no migration, and the stamp sorts a
+// day's meals into the order you ate them.
 const DAY_SLOT = 'day';
 const SLOT_ORDER = [DAY_SLOT, ...TASKS.filter(t => t.photo).map(t => t.id)];
+const MULTI_SLOTS = TASKS.filter(t => t.multi).map(t => t.id);
+const MAX_PER_SLOT = 12;          // keeps one runaway day off the free tier
 const SLOT_LABEL = {
   day:'Progress frame',
   ...Object.fromEntries(TASKS.map(t => [t.id, t.nm]))
 };
+
+const slotBase  = s => String(s).split('#')[0];
+const slotStamp = s => Number(String(s).split('#')[1]) || 0;
+const slotLabel = s => SLOT_LABEL[slotBase(s)] || 'Photo';
+const isKnownSlot = s => {
+  const base = slotBase(s);
+  if(!SLOT_ORDER.includes(base)) return false;
+  return String(s) === base || MULTI_SLOTS.includes(base);
+};
+const newSlot = id => MULTI_SLOTS.includes(id) ? `${id}#${Date.now()}` : id;
 
 const PROFILES = [
   { id:'sachin', label:'Sachin' },
@@ -541,6 +637,7 @@ const ICON = {
   gear:'<svg viewBox="0 0 512 512" aria-hidden="true"><path d="M195 108c-13.2 5.4-25.5 12.6-36.7 21.2l-13.3 10.2-16-5.1-52-16.6L46.9 170.2l40.3 36.7 12.4 11.3-2.2 16.6c-.9 6.9-1.4 14-1.4 21.2s.5 14.3 1.4 21.2l2.2 16.6L87.2 305.1 46.9 341.8l30.2 52.4 52-16.6 16-5.1 13.3 10.2c11.2 8.6 23.5 15.8 36.7 21.2l15.5 6.4 3.6 16.4L225.8 480l60.5 0 11.7-53.3 3.6-16.4L317 404c13.2-5.4 25.5-12.6 36.7-21.2l13.3-10.2 16 5.1 52 16.6 30.2-52.4-40.3-36.7-12.4-11.3 2.2-16.6c.9-6.9 1.4-14 1.4-21.2s-.5-14.3-1.4-21.2l-2.2-16.6 12.4-11.3 40.3-36.7-30.2-52.4-52 16.6-16 5.1-13.3-10.2c-11.2-8.6-23.5-15.8-36.7-21.2l-15.5-6.4-3.6-16.4L286.2 32l-60.5 0L214.1 85.3l-3.6 16.4L195 108zM200 0L312 0l17.2 78.4c15.8 6.5 30.6 15.1 44 25.4l76.5-24.4 56 97-59.4 54.1c1.1 8.3 1.7 16.8 1.7 25.4s-.6 17.1-1.7 25.4l59.4 54.1-56 97-76.5-24.4c-13.4 10.3-28.2 18.9-44 25.4L312 512l-112 0-17.2-78.4c-15.8-6.5-30.6-15.1-44-25.4L62.3 432.5l-56-97 59.4-54.1C64.6 273.1 64 264.6 64 256s.6-17.1 1.7-25.4L6.3 176.5l56-97 76.5 24.4c13.4-10.3 28.2-18.9 44-25.4L200 0zM312 256a56 56 0 1 0 -112 0 56 56 0 1 0 112 0zm-144 0a88 88 0 1 1 176 0 88 88 0 1 1 -176 0z"/></svg>',
   check:'<svg viewBox="0 0 448 512" aria-hidden="true"><path d="M448.1 118.2L437 129.7 173.6 404l-11.5 12-11.5-12L11.1 258.8 0 247.2l23.1-22.2 11.1 11.5L162.1 369.8 414 107.5 425 96l23.1 22.2z"/></svg>',
   camera:'<svg viewBox="0 0 512 512" aria-hidden="true"><path d="M160 32l192 0 21.3 64L480 96l32 0 0 32 0 320 0 32-32 0L32 480 0 480l0-32L0 128 0 96l32 0 106.7 0L160 32zm213.3 96l-23.1 0L343 106.1 328.9 64 183.1 64l-14 42.1L161.7 128l-23.1 0L32 128l0 320 448 0 0-320-106.7 0zM256 176a112 112 0 1 1 0 224 112 112 0 1 1 0-224zm80 112a80 80 0 1 0 -160 0 80 80 0 1 0 160 0z"/></svg>',
+  note:'<svg viewBox="0 0 448 512" aria-hidden="true"><path d="M0 96l448 0 0 32L0 128l0-32zm0 144l448 0 0 32L0 272l0-32zM0 384l288 0 0 32L0 416l0-32z"/></svg>',
   close:'<svg viewBox="0 0 384 512" aria-hidden="true"><path d="M192 233.4L59.5 100.9 36.9 123.5 169.4 256 36.9 388.5l22.6 22.6L192 278.6 324.5 411.1l22.6-22.6L214.6 256 347.1 123.5l-22.6-22.6L192 233.4z"/></svg>'
 };
 
@@ -548,10 +645,31 @@ const ICON = {
 const photoQuery = (p, date, slot) =>
   `/api/photos?profile=${encodeURIComponent(p)}&date=${encodeURIComponent(date)}&slot=${encodeURIComponent(slot)}`;
 
+// A failed load used to surface as a flat "Server unreachable", which covers
+// three very different faults: no network, the /api routes not deployed, and
+// the database being unconfigured or down. Carry the server's own message
+// through so the toast says which one it is. /api/health has the full detail.
+async function reason(r, fallback){
+  try{
+    const j = await r.json();
+    return j.error || fallback;
+  }catch(_){ return fallback; }
+}
+
 const api = {
   async getState(){
-    const r = await fetch('/api/state');
-    if(!r.ok) throw new Error('load');
+    let r;
+    try{
+      r = await fetch('/api/state');
+    }catch(_){ throw new Error('No connection'); }
+
+    if(!r.ok) throw new Error(await reason(r, `Server error ${r.status}`));
+
+    // A deploy without the serverless functions answers /api/state with the
+    // HTML shell, which would otherwise fail as an opaque JSON parse error.
+    if(!(r.headers.get('content-type') || '').includes('json'))
+      throw new Error('API routes not deployed');
+
     return r.json();
   },
   async saveDay(profileId, date, tasks){
@@ -585,12 +703,6 @@ const api = {
   photoUrl(profileId, date, slot){
     const v = state.photoV[`${profileId}|${date}|${slot}`] || 0;
     return `${photoQuery(profileId, date, slot)}&v=${v}`;
-  },
-  async reset(startDate){
-    const r = await fetch('/api/reset', { method:'POST',
-      headers:{'Content-Type':'application/json'}, body: JSON.stringify({ startDate }) });
-    if(!r.ok) throw new Error('reset');
-    return r.json();
   }
 };
 
@@ -638,6 +750,28 @@ function fmtLeft(ms){
 
 /* ═══════════ selectors ═══════════ */
 const entryOf = (p, iso) => state.data[p]?.[iso] || {};
+
+const AUTO_TASKS = TASKS.filter(t => t.auto).map(t => t.id);
+
+/*
+ * Create a day's record pre-ticked for the auto tasks, if it doesn't exist yet.
+ * Returns true when it actually created one, so callers know to persist it.
+ *
+ * Deliberately not a read-time default: deriving "blank means done" would
+ * retroactively credit every untouched day in the challenge, including days
+ * nobody opened the app. Seeding on check-in keeps a skipped day honestly at
+ * 0/5 and leaves history alone.
+ */
+function seedDay(p, iso){
+  const days = (state.data[p] ||= {});
+  const entry = (days[iso] ||= {});
+  let changed = false;
+  for(const id of AUTO_TASKS){
+    // only an absent key seeds — an explicit false is you recording a failure
+    if(entry[id] === undefined){ entry[id] = true; changed = true; }
+  }
+  return changed;
+}
 const doneCount = (p, iso) => TASKS.reduce((n,t) => n + (entryOf(p,iso)[t.id] ? 1 : 0), 0);
 const isComplete = (p, iso) => doneCount(p, iso) === TASKS.length;
 /* ── water ── */
@@ -649,7 +783,14 @@ const waterOz = (p, iso) => {
   return e.water ? WATER_GOAL_OZ : 0;
 };
 const waterLog = (p, iso) => entryOf(p, iso).waterLog || [];
-const waterPct = (p, iso) => Math.min(100, Math.round(waterOz(p, iso) / WATER_GOAL_OZ * 100));
+
+/* A written note is the alternative to a photo — say what you did instead of
+   showing it. Lives in the existing tasks JSONB, so no schema change. */
+const noteOf = (p, iso, id) => ((entryOf(p, iso).notes || {})[id] || '').trim();
+// the bar can only fill once, but the number should tell the truth
+const waterPct    = (p, iso) => Math.min(100, waterPctRaw(p, iso));
+const waterPctRaw = (p, iso) => Math.round(waterOz(p, iso) / WATER_GOAL_OZ * 100);
+const waterOver   = (p, iso) => Math.max(0, waterOz(p, iso) - WATER_GOAL_OZ);
 
 /* Vessels are personal kit, not shared progress, so they live on the device. */
 function vessels(){
@@ -664,10 +805,32 @@ function saveVessels(list){
 }
 
 /* Slots for one person on one day, in carousel order. */
-const slotsFor = (p, iso) => {
-  const have = state.photos[p]?.[iso] || [];
-  return SLOT_ORDER.filter(s => have.includes(s));
-};
+const slotsFor = (p, iso) => (state.photos[p]?.[iso] || [])
+  .filter(isKnownSlot)
+  .sort((a, b) =>
+    SLOT_ORDER.indexOf(slotBase(a)) - SLOT_ORDER.indexOf(slotBase(b)) ||
+    slotStamp(a) - slotStamp(b));
+
+// every shot a task holds that day, oldest first
+const photosOf = (p, iso, taskId) =>
+  slotsFor(p, iso).filter(s => slotBase(s) === taskId);
+/*
+ * Keep only slots the app still knows about. Retiring a slot (water carried a
+ * camera once) leaves its rows in the database; unfiltered they would be
+ * invisible in the feed while photoCount and the Rivals tally kept counting
+ * them — a photo marker on the Wall pointing at something you can't open.
+ */
+function knownPhotos(byProfile){
+  const out = { sachin:{}, aarya:{} };
+  for(const p of Object.keys(out)){
+    for(const [iso, slots] of Object.entries(byProfile?.[p] || {})){
+      const keep = (slots || []).filter(isKnownSlot);
+      if(keep.length) out[p][iso] = keep;
+    }
+  }
+  return out;
+}
+
 const hasPhoto = (p, iso, slot) => (state.photos[p]?.[iso] || []).includes(slot);
 const photoCount = (p, iso) => (state.photos[p]?.[iso] || []).length;
 const totalPhotos = p => Object.values(state.photos[p] || {}).reduce((n, a) => n + a.length, 0);
@@ -789,7 +952,7 @@ function renderPicker(){
   document.getElementById('nav').hidden = true;
   screen().innerHTML = `
     <div class="pick">
-      <div class="mark">75 Hard</div>
+      <div class="mark">Project 75</div>
       <h2>Who's<br>checking in</h2>
       ${PROFILES.map((p,i) => `
         <button class="pick-btn" data-pick="${p.id}">
@@ -803,7 +966,7 @@ function renderPicker(){
       state.me = b.dataset.pick;
       localStorage.setItem('me', state.me);
       haptic(14);
-      render();
+      checkIn().finally(render);
     };
   });
 }
@@ -855,36 +1018,44 @@ function viewToday(){
       ${TASKS.map(t => taskRow(you, iso, t, true)).join('')}
     </div>
 
-    <div class="rival" data-who="them">
-      <div class="rival-head">
-        <span class="who">${nameOf(rival)}</span>
-        <span class="sc ${rn===TASKS.length?'done':''}">${rn===TASKS.length?'Complete':rn+' / '+TASKS.length}</span>
-      </div>
-      <div class="seg">${TASKS.map(t => `<i class="${entryOf(rival,iso)[t.id]?'on':''}"></i>`).join('')}</div>
-    </div>
-
     ${(() => {
       const shots = photoCount(you, iso);
       const dayPic = hasPhoto(you, iso, DAY_SLOT);
-      return `
-      <button class="frame ${dayPic?'filled':''}" id="frameBtn">
-        ${dayPic
-          ? `<img src="${api.photoUrl(you, iso, DAY_SLOT)}" alt="">`
-          : `<span class="ic">${ICON.camera}</span>`}
+      const label = `
         <span class="meta">
           <span class="nm">${dayPic ? 'Frame logged' : "Today's frame"}</span>
           <span class="sub">${dayPic
             ? (shots > 1 ? `${shots} photos today — tap to manage` : 'Tap to replace or remove')
             : (shots ? `Optional — ${shots} photo${shots>1?'s':''} today` : 'Optional')}</span>
-        </span>
-      </button>`;
+        </span>`;
+      // Same rule as the per-task cameras: empty goes straight to the picker,
+      // filled opens the day sheet to view, replace or remove.
+      return dayPic
+        ? `<button class="frame filled" id="frameBtn">
+             <img src="${api.photoUrl(you, iso, DAY_SLOT)}" alt="">
+             ${label}
+           </button>`
+        : `<label class="frame" id="frameBtn">
+             <span class="ic">${ICON.camera}</span>
+             ${label}
+             <input type="file" accept="image/*" data-shot="${DAY_SLOT}" hidden>
+           </label>`;
     })()}
+
+    <button class="rival" data-who="them" id="rivalBtn" aria-label="See ${nameOf(rival)}'s day">
+      <div class="rival-head">
+        <span class="who">${nameOf(rival)}</span>
+        <span class="sc ${rn===TASKS.length?'done':''}">${rn===TASKS.length?'Complete':rn+' / '+TASKS.length}</span>
+      </div>
+      <div class="seg">${TASKS.map(t => `<i class="${entryOf(rival,iso)[t.id]?'on':''}"></i>`).join('')}</div>
+      <div class="rival-more">${photoCount(rival, iso) ? `${photoCount(rival, iso)} frame${photoCount(rival,iso)>1?'s':''} — ` : ''}tap to see the day</div>
+    </button>
   </div>`;
 }
 
 const topbar = () => `
   <div class="top">
-    <span class="mark">75 Hard</span>
+    <span class="mark">Project 75</span>
     <button class="icon-btn" id="gearBtn">${ICON.gear}</button>
   </div>`;
 
@@ -896,32 +1067,59 @@ const topbar = () => `
  */
 function taskRow(prof, iso, t, editable){
   const on = !!entryOf(prof, iso)[t.id];
-  const pic = hasPhoto(prof, iso, t.id);
+  const shots = t.multi ? photosOf(prof, iso, t.id)
+                        : (hasPhoto(prof, iso, t.id) ? [t.id] : []);
+  const pic = shots.length > 0;
   const oz = t.meter ? waterOz(prof, iso) : 0;
+  const note = t.note ? noteOf(prof, iso, t.id) : '';
   const sub = t.meter
     ? (oz ? `${oz} of ${WATER_GOAL_OZ} oz` : `${WATER_GOAL_OZ} oz — tap to log`)
-    : t.sub;
+    : (note || t.sub);
   let shot = '';
   if(t.photo){
-    if(pic){
-      shot = `<button class="shot-btn filled" data-open-slot="${t.id}" aria-label="${t.nm} photo">
-                <img src="${api.photoUrl(prof, iso, t.id)}" alt="">
-              </button>`;
+    // newest shot is the thumbnail; the count says how many the day holds
+    const thumb = pic
+      ? `<button class="shot-btn filled" data-open-slot="${t.id}" aria-label="${t.nm} photos">
+           <img src="${api.photoUrl(prof, iso, shots[shots.length - 1])}" alt="">
+           ${shots.length > 1 ? `<span class="n">${shots.length}</span>` : ''}
+         </button>`
+      : '';
+    const camera = `<label class="shot-btn" aria-label="Add ${t.nm} photo">
+                      <span class="ic">${ICON.camera}</span>
+                      <input type="file" accept="image/*" data-shot="${t.id}" hidden>
+                    </label>`;
+    if(t.multi && editable){
+      // a multi task always offers the camera, so a second meal is one tap
+      shot = thumb + (shots.length < MAX_PER_SLOT ? camera : '');
+    } else if(pic){
+      shot = thumb;
     } else if(editable){
-      shot = `<label class="shot-btn" aria-label="Add ${t.nm} photo">
-                <span class="ic">${ICON.camera}</span>
-                <input type="file" accept="image/*" data-shot="${t.id}" hidden>
-              </label>`;
+      shot = camera;
     } else {
       shot = `<span class="shot-btn empty"></span>`;
     }
   }
+  // a written note stands in for a photo; the button fills once there is one
+  let noteBtn = '';
+  if(t.note && (editable || note)){
+    noteBtn = `<button class="shot-btn note-btn${note?' filled':''}"
+                 data-note="${t.id}" ${editable?'':'disabled'}
+                 aria-label="${note?'Edit':'Add'} ${t.nm} note">
+                 <span class="ic">${ICON.note}</span>
+               </button>`;
+  }
+
   // the meter row's own bottom hairline doubles as the gauge
   const fill = t.meter
     ? `<i class="fill" style="width:${waterPct(prof, iso)}%"></i>` : '';
   const mainAttr = t.meter
     ? `data-meter="${t.id}"`                       // opens the tracker
     : `data-task="${t.id}" ${editable?'':'disabled'}`;
+  // A meter's box reports the pour rather than setting it — ticking it directly
+  // would claim a gallon you never logged. Tapping it opens the tracker.
+  const checkAttr = t.meter
+    ? `data-meter="${t.id}" ${editable?'':'disabled'} aria-label="${t.nm} tracker"`
+    : `data-task="${t.id}" ${editable?'':'disabled'} aria-label="Toggle ${t.nm}"`;
 
   return `
     <div class="task ${on?'on':''}${t.meter?' meter':''}" data-row="${t.id}">
@@ -931,8 +1129,8 @@ function taskRow(prof, iso, t, editable){
           <span class="sub">${sub}</span>
         </span>
       </button>
-      ${shot}
-      <button class="task-check" data-task="${t.id}" ${editable?'':'disabled'} aria-label="Toggle ${t.nm}">
+      ${noteBtn}${shot}
+      <button class="task-check${t.meter?' derived':''}" ${checkAttr}>
         <span class="box"><span class="ic">${ICON.check}</span></span>
       </button>
       ${fill}
@@ -956,7 +1154,6 @@ function viewFinished(){
           <span class="v" style="color:var(--p)">${totalComplete(p.id)}</span>
         </div>`).join('')}
     </div>
-    <button class="btn" id="newBtn" style="margin-top:26px">Start a new 75</button>
   </div>`;
 }
 
@@ -1018,6 +1215,12 @@ function cells(p, ti){
 }
 
 /* ── feed ── */
+// One column for a lone frame, two up to four, three beyond that.
+const collageCols = n => n === 1 ? 1 : n <= 4 ? 2 : 3;
+// A post is a tall phone screen; past six tiles they'd shrink to slivers, so
+// the sixth carries a +N and the viewer holds the rest.
+const TILE_CAP = 6;
+
 function viewFeed(){
   localStorage.setItem('kudosSeen', String(state.reactions.length));
   const posts = [];
@@ -1044,24 +1247,30 @@ function viewFeed(){
     const c = kudosCount(o.p, o.iso);
     const mine = iGaveKudos(o.p, o.iso);
     const own = o.p === me();
-    const multi = o.slots.length > 1;
+    const n2 = o.slots.length;
+    const multi = n2 > 1;
     return `
     <div class="post" data-who="${whoAttr(o.p)}" data-post-p="${o.p}" data-post-iso="${o.iso}">
-      <div class="reel"${multi ? '' : ' data-single'}>
-        ${o.slots.map(s => `
-          <div class="slide">
-            <img src="${api.photoUrl(o.p, o.iso, s)}" alt="${SLOT_LABEL[s]}" loading="lazy" draggable="false">
-          </div>`).join('')}
-      </div>
+      ${(() => {
+        const shown = o.slots.slice(0, TILE_CAP);
+        const over = n2 - shown.length;
+        return `
+      <div class="collage${shown.length===1?' single':''}${shown.length===3?' three':''}"
+           style="grid-template-columns:repeat(${collageCols(shown.length)},1fr)">
+        ${shown.map((s, i) => `
+          <button class="tile" data-tile="${i}" aria-label="${slotLabel(s)}">
+            <img src="${api.photoUrl(o.p, o.iso, s)}" alt="${slotLabel(s)}" loading="lazy" draggable="false">
+            ${over && i === shown.length - 1 ? `<span class="more">+${over}</span>` : ''}
+          </button>`).join('')}
+      </div>`;
+      })()}
       <div class="shade"></div>
       <div class="post-top">
         <span class="who">${own?'You':nameOf(o.p)}</span>
         <span class="dt">${fmtDate(o.iso)}</span>
       </div>
-      ${multi ? `<div class="pips">${o.slots.map((s,i) =>
-        `<i class="${i===0?'on':''}"></i>`).join('')}</div>` : ''}
       <div class="post-bot">
-        <div class="slot-tag">${SLOT_LABEL[o.slots[0]]}${multi ? ` <span class="of">1/${o.slots.length}</span>` : ''}</div>
+        <div class="slot-tag">${multi ? `${n2} frames` : slotLabel(o.slots[0])}</div>
         <div class="day num">${d}</div>
         <div class="rule"></div>
         <div class="state">${full ? '<b>All five complete</b>' : n + ' of ' + TASKS.length + ' complete'}</div>
@@ -1138,14 +1347,23 @@ function wire(){
 
   // optional per-task photo: empty camera picks a file, filled thumb opens the day
   el.querySelectorAll('[data-shot]').forEach(input => {
-    input.onchange = () => uploadFrom(input, me(), todayISO(), input.dataset.shot);
+    input.onchange = () => uploadFrom(input, me(), todayISO(), newSlot(input.dataset.shot));
+  });
+  el.querySelectorAll('[data-note]').forEach(b => {
+    b.onclick = () => openNote(me(), todayISO(), b.dataset.note);
   });
   el.querySelectorAll('[data-open-slot]').forEach(b => {
     b.onclick = () => openDay(me(), todayISO());
   });
 
-  const frame = el.querySelector('#frameBtn');
+  // Only the filled card opens the sheet; an empty one is a <label> whose
+  // hidden input is already wired by the [data-shot] pass above.
+  const frame = el.querySelector('button#frameBtn');
   if(frame) frame.onclick = () => openDay(me(), todayISO());
+
+  // read-only peek at your partner's day, straight off their strip
+  const rb = el.querySelector('#rivalBtn');
+  if(rb) rb.onclick = () => openDay(them(), todayISO());
 
   el.querySelectorAll('#switch button').forEach(b => {
     b.onclick = () => { state.wallView = b.dataset.wv; haptic(6); render(); };
@@ -1159,33 +1377,26 @@ function wire(){
     };
   });
 
-  const nb = el.querySelector('#newBtn');
-  if(nb) nb.onclick = confirmReset;
-
   el.querySelectorAll('.post').forEach(post => {
     const p = post.dataset.postP, iso = post.dataset.postIso;
-    wireReel(post, p, iso);
+    post.querySelectorAll('[data-tile]').forEach(tile => {
+      tile.onclick = e => { e.stopPropagation(); openViewer(p, iso, Number(tile.dataset.tile)); };
+    });
     if(p === me()) return;
     const btn = post.querySelector('.kudos');
     if(btn) btn.onclick = e => { e.stopPropagation(); sendKudos(p, iso, post, false); };
-    let last = 0;
-    post.addEventListener('click', e => {
-      if(e.target.closest('.kudos')) return;
-      const now = Date.now();
-      if(now - last < 320){ last = 0; sendKudos(p, iso, post, true); } else last = now;
-    });
   });
 
   startCountdown();
 }
 
 /* Keep the slot caption and pips in step with the horizontal swipe. */
-function wireReel(post, p, iso){
-  const reel = post.querySelector('.reel');
+function wireReel(host, p, iso){
+  const reel = host.querySelector('.reel');
   const slots = slotsFor(p, iso);
   if(!reel || slots.length < 2) return;
-  const tag = post.querySelector('.slot-tag');
-  const pips = [...post.querySelectorAll('.pips i')];
+  const tag = host.querySelector('.slot-tag');
+  const pips = [...host.querySelectorAll('.pips i')];
   let shown = 0, raf = null;
 
   const sync = () => {
@@ -1194,7 +1405,7 @@ function wireReel(post, p, iso){
     const i = Math.max(0, Math.min(slots.length - 1, Math.round(reel.scrollLeft / w)));
     if(i === shown) return;
     shown = i;
-    if(tag) tag.innerHTML = `${SLOT_LABEL[slots[i]]} <span class="of">${i+1}/${slots.length}</span>`;
+    if(tag) tag.innerHTML = `${slotLabel(slots[i])} <span class="of">${i+1}/${slots.length}</span>`;
     pips.forEach((pip, n) => pip.classList.toggle('on', n === i));
   };
 
@@ -1209,16 +1420,10 @@ function wireReel(post, p, iso){
 /* ═══════════ actions ═══════════ */
 async function toggleTask(taskId, row){
   const you = me(), iso = todayISO();
-  if(!state.data[you][iso]) state.data[you][iso] = {};
+  seedDay(you, iso);
 
-  // ticking the water box is a shortcut for "filled it" / "actually didn't"
-  if(TASKS.find(t => t.id === taskId)?.meter){
-    const done = !!state.data[you][iso][taskId];
-    await setWater(you, iso, done ? 0 : WATER_GOAL_OZ, done ? [] : [WATER_GOAL_OZ]);
-    row.classList.toggle('on', !done);
-    haptic(done ? 6 : 12);
-    return;
-  }
+  // water is logged pour by pour; it is never ticked directly
+  if(TASKS.find(t => t.id === taskId)?.meter){ openWater(you, iso); return; }
 
   const was = isComplete(you, iso);
   const now = !state.data[you][iso][taskId];
@@ -1251,10 +1456,12 @@ async function uploadFrom(input, prof, iso, slot){
     await api.uploadPhoto(prof, iso, slot, 'image/jpeg', b64);
     addPhotoLocal(prof, iso, slot);
     haptic(16);
-    toast(slot === DAY_SLOT ? 'Frame logged' : `${SLOT_LABEL[slot]} photo added`);
+    toast(slot === DAY_SLOT ? 'Frame logged' : `${slotLabel(slot)} photo added`);
 
-    const row = screen().querySelector(`.task[data-row="${slot}"]`);
-    const label = row && row.querySelector('label.shot-btn');
+    const row = screen().querySelector(`.task[data-row="${slotBase(slot)}"]`);
+    // a multi task keeps its camera, so re-render instead of replacing it
+    const label = MULTI_SLOTS.includes(slotBase(slot))
+      ? null : row && row.querySelector('label.shot-btn');
     if(label){
       const btn = document.createElement('button');
       btn.className = 'shot-btn filled fresh';
@@ -1360,6 +1567,75 @@ function startCountdown(){
 }
 
 /* ═══════════ sheets ═══════════ */
+/*
+ * Full-screen photo viewer. The collage answers "what did the day look like";
+ * this answers "show me that one". It reuses the reel markup the feed used to
+ * carry, so the swipe, pips and caption behave exactly as before — and the
+ * double-tap kudos gesture moves here, since a tap on a tile now opens a photo
+ * rather than counting toward a double-tap.
+ */
+function openViewer(p, iso, index){
+  const slots = slotsFor(p, iso);
+  if(!slots.length) return;
+  const start = Math.max(0, Math.min(slots.length - 1, index || 0));
+  const multi = slots.length > 1;
+  const own = p === me();
+  const root = document.getElementById('viewer');
+
+  root.innerHTML = `
+    <div class="viewer" data-who="${whoAttr(p)}">
+      <div class="reel"${multi ? '' : ' data-single'}>
+        ${slots.map(sl => `
+          <div class="slide"><img src="${api.photoUrl(p, iso, sl)}" alt="${slotLabel(sl)}"></div>`).join('')}
+      </div>
+      <div class="viewer-shade"></div>
+      <button class="icon-btn viewer-x" aria-label="Close">${ICON.close}</button>
+      ${multi ? `<div class="pips">${slots.map((sl, i) =>
+        `<i class="${i===start?'on':''}"></i>`).join('')}</div>` : ''}
+      <div class="viewer-bot">
+        <div class="slot-tag">${slotLabel(slots[start])}${
+          multi ? ` <span class="of">${start+1}/${slots.length}</span>` : ''}</div>
+        <div class="viewer-meta">${own ? 'You' : nameOf(p)} — ${fmtDate(iso)}</div>
+        ${own ? '' : `<button class="kudos" id="vKudos">${
+          iGaveKudos(p, iso) ? 'Kudos given' : 'Give kudos'}</button>`}
+      </div>
+    </div>`;
+
+  const view = root.firstElementChild;
+  const reel = view.querySelector('.reel');
+  // jump to the tapped photo before the first paint, so it never flashes #1
+  reel.scrollLeft = start * (reel.clientWidth || window.innerWidth);
+  requestAnimationFrame(() => root.classList.add('open'));
+  wireReel(view, p, iso);
+
+  view.querySelector('.viewer-x').onclick = closeViewer;
+
+  // Tapping the photo steps to the next one and wraps at the end — swiping
+  // still works, this just saves the gesture. Kudos moved to its own button
+  // because a tap can't mean both "next" and "half a double-tap".
+  if(multi){
+    reel.addEventListener('click', () => {
+      const w = reel.clientWidth || 1;
+      const at = Math.round(reel.scrollLeft / w);
+      const next = (at + 1) % slots.length;
+      reel.scrollTo({ left: next * w, behavior: next === 0 ? 'auto' : 'smooth' });
+    });
+  }
+
+  const vk = view.querySelector('#vKudos');
+  if(vk) vk.onclick = (e) => {
+    e.stopPropagation();
+    sendKudos(p, iso, view, true);
+    vk.textContent = 'Kudos given';
+    vk.classList.add('mine');
+  };
+}
+function closeViewer(){
+  const root = document.getElementById('viewer');
+  root.classList.remove('open');
+  setTimeout(() => { if(!root.classList.contains('open')) root.innerHTML = ''; }, 260);
+}
+
 function openSheet(html, onMount){
   const root = document.getElementById('sheets');
   root.innerHTML = `<div class="scrim"></div><div class="sheet">${html}</div>`;
@@ -1383,9 +1659,9 @@ function openDay(prof, iso){
     }
     return `<div class="sheet-shots">${slots.map(s => `
       <figure class="sheet-shot" data-slot="${s}">
-        <img src="${api.photoUrl(prof, iso, s)}" alt="${SLOT_LABEL[s]}">
+        <img src="${api.photoUrl(prof, iso, s)}" alt="${slotLabel(s)}">
         <figcaption>
-          <span>${SLOT_LABEL[s]}</span>
+          <span>${slotLabel(s)}</span>
           ${mine ? `<button class="rm" data-del="${s}" aria-label="Remove">${ICON.close}</button>` : ''}
         </figcaption>
       </figure>`).join('')}</div>`;
@@ -1434,7 +1710,7 @@ function openDay(prof, iso){
       sheet.querySelectorAll('[data-del]').forEach(b => {
         b.onclick = async () => {
           const slot = b.dataset.del;
-          if(!confirm(`Remove the ${SLOT_LABEL[slot].toLowerCase()} photo?`)) return;
+          if(!confirm(`Remove the ${slotLabel(slot).toLowerCase()} photo?`)) return;
           try{
             await api.deletePhoto(prof, iso, slot);
             removePhotoLocal(prof, iso, slot);
@@ -1459,15 +1735,8 @@ function openDay(prof, iso){
       b.onclick = async () => {
         const id = b.dataset.task;
         const row = b.closest('.task');
-        if(!state.data[prof][iso]) state.data[prof][iso] = {};
-        if(TASKS.find(t => t.id === id)?.meter){
-          const done = !!state.data[prof][iso][id];
-          await setWater(prof, iso, done ? 0 : WATER_GOAL_OZ, done ? [] : [WATER_GOAL_OZ]);
-          row.classList.toggle('on', !done);
-          const h = sheet.querySelector('.sheet-head .s');
-          if(h) h.textContent = `${fmtDate(iso)} — You — ${doneCount(prof,iso)}/${TASKS.length}`;
-          return;
-        }
+        seedDay(prof, iso);
+        if(TASKS.find(t => t.id === id)?.meter){ openWater(prof, iso); return; }
         const v = !state.data[prof][iso][id];
         state.data[prof][iso][id] = v;
         row.classList.toggle('on', v);
@@ -1480,11 +1749,15 @@ function openDay(prof, iso){
       };
     });
 
+    sheet.querySelectorAll('[data-note]').forEach(b => {
+      b.onclick = () => { if(mine) openNote(prof, iso, b.dataset.note); };
+    });
+
     // any file input in the sheet: the progress frame or a task slot
     const bindInputs = () => {
       sheet.querySelectorAll('[data-sheet-shot],[data-shot]').forEach(input => {
         input.onchange = async () => {
-          const slot = input.dataset.sheetShot || input.dataset.shot;
+          const slot = input.dataset.sheetShot || newSlot(input.dataset.shot);
           const file = input.files && input.files[0];
           input.value = '';
           if(!file) return;
@@ -1495,7 +1768,7 @@ function openDay(prof, iso){
             await api.uploadPhoto(prof, iso, slot, 'image/jpeg', b64);
             addPhotoLocal(prof, iso, slot);
             haptic(16);
-            toast(slot === DAY_SLOT ? 'Frame logged' : `${SLOT_LABEL[slot]} photo added`);
+            toast(slot === DAY_SLOT ? 'Frame logged' : `${slotLabel(slot)} photo added`);
             repaint();
             refreshSheetTaskShot(sheet, prof, iso, slot);
             bindInputs();
@@ -1526,6 +1799,54 @@ function refreshSheetTaskShot(sheet, prof, iso, slot){
   if(fresh) old.replaceWith(fresh);
 }
 
+/* ── task note ── */
+/*
+ * Say what you did instead of showing it. Stored under `notes` in the day's
+ * existing tasks JSONB, so this needed no schema change and rides along with
+ * the save that was already happening.
+ */
+function openNote(prof, iso, taskId){
+  const t = TASKS.find(x => x.id === taskId);
+  const existing = noteOf(prof, iso, taskId);
+
+  openSheet(`
+    <div data-who="${whoAttr(prof)}" class="note-sheet">
+      <div class="sheet-head">
+        <div>
+          <div class="t">${t.nm}</div>
+          <div class="s">Day ${dayIndex(iso)} — what did you do?</div>
+        </div>
+        <button class="icon-btn" id="x">${ICON.close}</button>
+      </div>
+      <textarea id="nText" maxlength="280" placeholder="Ran 5k, easy pace">${existing}</textarea>
+      <button class="btn primary" id="nSave">Save</button>
+      ${existing ? `<button class="btn ghost" id="nClear">Remove note</button>` : ''}
+    </div>`, sheet => {
+    const box = sheet.querySelector('#nText');
+    sheet.querySelector('#x').onclick = closeSheet;
+    box.focus();
+    // put the caret at the end rather than selecting what is already there
+    box.setSelectionRange(box.value.length, box.value.length);
+
+    sheet.querySelector('#nSave').onclick = () => saveNote(prof, iso, taskId, box.value);
+    const clear = sheet.querySelector('#nClear');
+    if(clear) clear.onclick = () => saveNote(prof, iso, taskId, '');
+  });
+}
+
+async function saveNote(prof, iso, taskId, text){
+  seedDay(prof, iso);
+  const entry = state.data[prof][iso];
+  const notes = (entry.notes ||= {});
+  const clean = text.trim();
+  if(clean) notes[taskId] = clean; else delete notes[taskId];
+  if(!Object.keys(notes).length) delete entry.notes;
+
+  closeSheet(); render();
+  try{ await api.saveDay(prof, iso, entry); state.online = true; toast(clean ? 'Note saved' : 'Note removed'); }
+  catch(_){ toast('Offline — not saved'); }
+}
+
 /* ── water tracker ── */
 function openWater(prof, iso){
   const mine = prof === me();
@@ -1533,6 +1854,7 @@ function openWater(prof, iso){
 
   const body = () => {
     const oz = waterOz(prof, iso), pct = waterPct(prof, iso);
+    const raw = waterPctRaw(prof, iso), over = waterOver(prof, iso);
     const left = Math.max(0, WATER_GOAL_OZ - oz);
     const log = waterLog(prof, iso);
     const list = vessels();
@@ -1543,8 +1865,8 @@ function openWater(prof, iso){
       </div>
       <div class="wtr-bar"><i style="width:${pct}%"></i></div>
       <div class="wtr-note">
-        <span>${pct}%</span>
-        <span>${left ? `${left} oz to go` : 'Goal reached'}</span>
+        <span>${raw}%</span>
+        <span>${left ? `${left} oz to go` : (over ? `${over} oz over` : 'Goal reached')}</span>
       </div>
 
       ${mine ? `
@@ -1644,7 +1966,8 @@ function openWater(prof, iso){
 }
 
 async function setWater(prof, iso, oz, log){
-  const entry = (state.data[prof][iso] ||= {});
+  seedDay(prof, iso);
+  const entry = state.data[prof][iso];
   const was = isComplete(prof, iso);
   entry.waterOz = Math.max(0, Math.round(oz));
   entry.waterLog = log;
@@ -1694,8 +2017,8 @@ function openSettings(){
         </div>
         <button class="icon-btn" id="x">${ICON.close}</button>
       </div>
+      <button class="btn" id="alerts">Notifications — checking…</button>
       <button class="btn" id="swap">Switch to ${nameOf(them())}</button>
-      <button class="btn danger" id="reset">Reset — start a new 75</button>
       <button class="btn ghost" id="close">Close</button>
     </div>`, sheet => {
     sheet.querySelector('#x').onclick = closeSheet;
@@ -1706,24 +2029,95 @@ function openSettings(){
       closeSheet(); render();
       toast(`Tracking as ${nameOf(state.me)}`);
     };
-    sheet.querySelector('#reset').onclick = confirmReset;
+    wireAlerts(sheet.querySelector('#alerts'));
   });
 }
 
-async function confirmReset(){
-  if(!confirm('Start a brand new 75 days?\n\nThis erases all tasks, frames and kudos for BOTH of you. It cannot be undone.')) return;
-  try{
-    const sd = todayISO();
-    await api.reset(sd);
-    state.startDate = sd;
-    state.data = { sachin:{}, aarya:{} };
-    state.photos = { sachin:{}, aarya:{} };
-    state.reactions = [];
-    state.tab = 'today';
-    closeSheet(); render();
-    toast('New 75 started');
-  }catch(_){ toast('Reset failed'); }
+/* ═══════════ notifications ═══════════ */
+/*
+ * iOS only offers push to a PWA installed to the Home Screen, and only asks
+ * for permission from a real tap — hence a button in Settings rather than a
+ * prompt on load. It asks exactly once ever: a refusal can only be undone in
+ * iOS Settings, so the copy has to say so.
+ */
+const pushSupported = () =>
+  'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+
+// VAPID keys travel as base64url; PushManager wants raw bytes.
+function urlB64ToBytes(base64){
+  const pad = '='.repeat((4 - base64.length % 4) % 4);
+  const raw = atob((base64 + pad).replace(/-/g, '+').replace(/_/g, '/'));
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
 }
+
+async function currentSub(){
+  if(!pushSupported()) return null;
+  const reg = await navigator.serviceWorker.ready;
+  return reg.pushManager.getSubscription();
+}
+
+async function enableAlerts(){
+  const r = await fetch('/api/push');
+  const cfg = await r.json();
+  if(!cfg.enabled || !cfg.publicKey) throw new Error('Notifications are not set up on the server');
+
+  const permission = await Notification.requestPermission();
+  if(permission !== 'granted') throw new Error(
+    permission === 'denied' ? 'Blocked — turn it back on in iOS Settings' : 'Not allowed');
+
+  const reg = await navigator.serviceWorker.ready;
+  const sub = await reg.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: urlB64ToBytes(cfg.publicKey)
+  });
+  const save = await fetch('/api/push', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ profileId: me(), subscription: sub.toJSON() })
+  });
+  if(!save.ok) throw new Error('Could not register this phone');
+}
+
+async function disableAlerts(){
+  const sub = await currentSub();
+  if(!sub) return;
+  await fetch(`/api/push?endpoint=${encodeURIComponent(sub.endpoint)}`, { method:'DELETE' })
+    .catch(() => {});
+  await sub.unsubscribe();
+}
+
+async function wireAlerts(btn){
+  if(!btn) return;
+  const paint = (label, disabled) => {
+    btn.textContent = label;
+    btn.disabled = !!disabled;
+  };
+
+  if(!pushSupported()){
+    // Safari only exposes PushManager to an installed app, so this is the
+    // state you see in a browser tab rather than from the Home Screen.
+    paint('Notifications — add to Home Screen first', true);
+    return;
+  }
+  if(Notification.permission === 'denied'){
+    paint('Notifications blocked — allow in iOS Settings', true);
+    return;
+  }
+
+  const on = !!(await currentSub());
+  paint(on ? 'Notifications on — tap to turn off' : 'Turn on notifications');
+
+  btn.onclick = async () => {
+    paint('Working…', true);
+    try{
+      if(await currentSub()){ await disableAlerts(); toast('Notifications off'); }
+      else { await enableAlerts(); toast('Notifications on'); }
+    }catch(err){
+      toast(err.message || 'Could not change notifications');
+    }
+    wireAlerts(btn);
+  };
+}
+
 
 /* ═══════════ boot ═══════════ */
 async function loadState(){
@@ -1731,12 +2125,12 @@ async function loadState(){
     const r = await api.getState();
     state.startDate = r.startDate;
     state.data = r.data || { sachin:{}, aarya:{} };
-    state.photos = r.photos || { sachin:{}, aarya:{} };
+    state.photos = knownPhotos(r.photos);
     state.online = true;
-  }catch(_){
+  }catch(err){
     state.online = false;
     state.startDate = state.startDate || todayISO();
-    toast('Server unreachable');
+    toast(err.message || 'Server unreachable');
   }
   try{
     const r = await api.getReactions();
@@ -1744,19 +2138,44 @@ async function loadState(){
   }catch(_){ state.reactions = []; }
 }
 
+/*
+ * Opening the app on a given day is the check-in that starts the auto tasks
+ * ticked. Persist it so your partner's phone sees the same day you do —
+ * without a write, they'd read 0/5 while you read 1/5.
+ *
+ * Skipped while offline: seeding locally against a state we couldn't load
+ * would invent a day record that never reaches the server.
+ */
+async function checkIn(){
+  const you = me();
+  if(!you || !state.online) return;
+  const iso = todayISO();
+  if(!seedDay(you, iso)) return;
+  try{ await api.saveDay(you, iso, state.data[you][iso]); }
+  catch(_){ state.online = false; }
+}
+
 let lastDay = null;
 document.addEventListener('visibilitychange', async () => {
   if(document.hidden) return;
   await loadState();
+  await checkIn();
   if(lastDay !== todayISO()){ lastDay = todayISO(); state.tab = 'today'; }
   render();
 });
 
 (async function init(){
   await loadState();
+  await checkIn();
   lastDay = todayISO();
   render();
   if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+  // a device follows whoever is tracking on it, so re-register after a switch
+  if(pushSupported()) currentSub().then(sub => {
+    if(!sub || !me()) return;
+    fetch('/api/push', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ profileId: me(), subscription: sub.toJSON() }) }).catch(() => {});
+  });
 })();
 </script>
 </body>

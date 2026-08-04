@@ -1,9 +1,13 @@
-const { getSql, ensurePhotoSlot } = require('./lib/db');
+const { connect } = require('./lib/db');
+const { notify } = require('./lib/push');
 
 const PROFILES = ['sachin', 'aarya'];
+const NAMES = { sachin: 'Sachin', aarya: 'Aarya' };
+const TASK_IDS = ['diet', 'workout1', 'workout2', 'water', 'read'];
 
 module.exports = async function handler(req, res) {
-  const sql = getSql();
+  const sql = await connect(res);
+  if (!sql) return;
 
   if (req.method === 'GET') {
     try {
@@ -16,7 +20,6 @@ module.exports = async function handler(req, res) {
         WHERE profile_id = ANY(${PROFILES})
       `;
 
-      await ensurePhotoSlot(sql);
       const photoRows = await sql`
         SELECT profile_id, day_date::text AS day_date, slot
         FROM photos
@@ -54,6 +57,16 @@ module.exports = async function handler(req, res) {
         ON CONFLICT (profile_id, day_date)
         DO UPDATE SET tasks = EXCLUDED.tasks
       `;
+
+      // tell the other one when a day goes green
+      if (TASK_IDS.every((id) => tasks[id])) {
+        const other = PROFILES.find((p) => p !== profileId);
+        await notify(sql, {
+          to: other, date, kind: `complete:${profileId}`,
+          title: `${NAMES[profileId] || profileId} sealed the day`,
+          body: `All ${TASK_IDS.length} done. Your move.`
+        });
+      }
 
       return res.status(200).json({ ok: true });
     } catch (err) {

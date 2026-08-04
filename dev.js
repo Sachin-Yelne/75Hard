@@ -54,7 +54,11 @@ let demoStart;
     if (i % 2 === 0) {
       demo.photos.sachin[day] = ['day'];
       if (i % 4 === 0) demo.photos.sachin[day].push('workout1', 'read');
-      if (i % 6 === 0) demo.photos.sachin[day].push('water');
+      // several diet shots on some days, as snacks and dinner would land
+      if (i % 6 === 0) demo.photos.sachin[day].push(
+        `diet#${1750000000000 + i * 86400000 + 3600000}`,
+        `diet#${1750000000000 + i * 86400000 + 7200000}`,
+        `diet#${1750000000000 + i * 86400000 + 9000000}`);
     }
     if (i % 3 === 0) {
       demo.photos.aarya[day] = i % 6 === 0 ? ['day', 'workout2'] : ['workout1'];
@@ -194,12 +198,15 @@ async function demoApi(pathname, req, res, url) {
     res.setHeader('Content-Type', 'image/png');
     return res.status(200).send(demoPng(prof + date + slot));
   }
-  if (pathname === '/api/reset') {
-    demo.data = { sachin: {}, aarya: {} };
-    demo.photos = { sachin: {}, aarya: {} };
-    demo.reactions = [];
-    demoStart = new Date().toISOString().slice(0, 10);
-    return res.status(200).json({ ok: true, startDate: demoStart });
+  if (pathname === '/api/push') {
+    // demo mode has no push service; report it as unavailable
+    return res.status(200).json({ enabled: false, publicKey: null });
+  }
+  if (pathname === '/api/health') {
+    return res.status(200).json({
+      ok: true,
+      checks: { api: 'ok', databaseUrl: 'demo', database: 'demo', schema: 'demo' }
+    });
   }
   return res.status(404).json({ error: 'no route' });
 }
