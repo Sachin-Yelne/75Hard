@@ -333,11 +333,19 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
 /* ── music ─────────────────────────────── */
 /* One line on the frame: the sleeve, what's playing, and whether it's audible.
    The whole row is the sound toggle — no separate control to find. */
-.trk{
-  display:flex;align-items:center;gap:10px;width:100%;margin-top:15px;
-  transition:opacity .18s;
+.trk{display:flex;align-items:center;gap:10px;width:100%;margin-top:15px;}
+.trk .chg{font-family:var(--cond);font-weight:600;font-size:10px;letter-spacing:.16em;
+  text-transform:uppercase;color:rgba(255,255,255,.5);flex-shrink:0;}
+.trk.add .box{
+  width:26px;height:26px;flex-shrink:0;display:grid;place-items:center;
+  border:1px solid rgba(255,255,255,.35);
+  font-family:var(--cond);font-weight:600;font-size:15px;line-height:1;
+  color:rgba(255,255,255,.75);
 }
-.trk.off{opacity:.62;}
+.trk.add .nm{color:rgba(255,255,255,.7);}
+/* the sound control: the same bars, up where the eye already goes */
+.post-top .right{display:flex;align-items:center;gap:12px;}
+.snd{padding:3px 0 3px 10px;display:flex;align-items:center;}
 .trk .art{
   width:26px;height:26px;flex-shrink:0;object-fit:cover;display:block;
   background:var(--rule-2);
@@ -939,10 +947,13 @@ const state = {
  */
 const music = {
   el:null,
-  on:false,       // does the listener want sound
+  // Wanting sound is a setting, not a per-visit decision: the feed plays by
+  // default and stays muted if you muted it. Only an explicit tap writes here.
+  on: localStorage.getItem('musicOff') !== '1',
   at:null,        // 'profile|iso' of the post on screen
   loaded:null,    // src currently in the element
   fade:null,
+  armed:false,    // waiting on a gesture to satisfy iOS
   hinted:false
 };
 
@@ -1244,18 +1255,36 @@ function musicApply(){
   }
   // play() stays synchronous with the tap that called it — that's the unlock
   const started = a.play();
-  if(started && started.catch) started.then(() => fadeTo(1)).catch(() => {
-    // refused: no gesture has been spent yet, so fall back to silent
-    music.on = false;
-    paintTrackRows();
-  });
+  if(started && started.catch) started.then(() => fadeTo(1)).catch(armForGesture);
   paintTrackRows();
 }
 
-/* Tapping a track row is both "this post" and "sound on/off". */
+/*
+ * A page that has just loaded has no gesture to spend, so the first attempt at
+ * autoplay is refused. Rather than give up and call it muted, wait for the
+ * next touch anywhere — a scroll of the feed counts — and start then. The
+ * preference is untouched: the listener never asked for silence.
+ */
+function armForGesture(){
+  if(music.armed) return;
+  music.armed = true;
+  const go = () => {
+    document.removeEventListener('pointerdown', go);
+    music.armed = false;
+    if(music.on && music.at) musicApply();
+  };
+  document.addEventListener('pointerdown', go, { once:true, passive:true });
+  if(!music.hinted){
+    music.hinted = true;
+    setTimeout(() => { if(music.armed) toast('Tap anywhere for sound'); }, 600);
+  }
+}
+
+/* The one deliberate mute/unmute — and the only thing that writes the setting. */
 function musicToggle(prof, iso){
-  music.at = `${prof}|${iso}`;
+  if(prof) music.at = `${prof}|${iso}`;
   music.on = !music.on;
+  localStorage.setItem('musicOff', music.on ? '' : '1');
   haptic(8);
   musicApply();
 }
@@ -1269,19 +1298,28 @@ function musicLeave(){
   music.at = null;
 }
 
-/* Repaint every track row in place — cheaper and calmer than a re-render. */
+/* Repaint the music bits in place — cheaper and calmer than a re-render. */
 function paintTrackRows(){
   document.querySelectorAll('[data-post-p][data-post-iso]').forEach(host => {
-    const row = host.querySelector('.trk');
-    if(!row) return;
     const p = host.dataset.postP, iso = host.dataset.postIso;
-    const wrap = document.createElement('div');
-    wrap.innerHTML = trackHTML(p, iso).trim();
-    const fresh = wrap.firstElementChild;
-    if(!fresh) return;
-    row.replaceWith(fresh);
-    fresh.onclick = e => { e.stopPropagation(); musicToggle(p, iso); };
+    const swap = (sel, html) => {
+      const old = host.querySelector(sel);
+      if(!old) return null;
+      const wrap = document.createElement('div');
+      wrap.innerHTML = html.trim();
+      const fresh = wrap.firstElementChild;
+      if(!fresh){ old.remove(); return null; }
+      old.replaceWith(fresh);
+      return fresh;
+    };
+    bindPostMusic(swap('.snd', soundHTML(p, iso)), swap('.trk', trackHTML(p, iso)), p, iso);
   });
+}
+
+/* Top control mutes; the row underneath is the track, and yours to change. */
+function bindPostMusic(snd, trk, p, iso){
+  if(snd) snd.onclick = e => { e.stopPropagation(); musicToggle(p, iso); };
+  if(trk && trk.dataset.music) trk.onclick = e => { e.stopPropagation(); openMusic(p, iso); };
 }
 
 /*
@@ -1306,11 +1344,10 @@ function wireFeedMusic(feed){
   feed.addEventListener('scrollend', sync, { passive:true });
   sync();
 
-  // said once, only while there is something to hear and nothing playing
-  if(!music.hinted && !music.on && feed.querySelector('.trk')){
-    music.hinted = true;
-    setTimeout(() => { if(!music.on) toast('Tap the track for sound'); }, 700);
-  }
+  // Arriving at the feed starts it. When that arrival was a tap on the Feed
+  // tab this call is still inside that gesture, which is exactly what iOS
+  // wants; on a cold load into the feed it's refused and the next touch does it.
+  if(music.on) musicApply();
 }
 
 /* The picker borrows the same element, so the unlock carries into it. */
@@ -1355,12 +1392,22 @@ function render(){
   document.getElementById('nav').hidden = false;
   renderNav();
   const el = screen();
+  // a re-render while reading the feed shouldn't throw you back to today —
+  // the feed snaps one post per screen, so the index is all there is to keep
+  const open = el.querySelector('#feed');
+  const wasAt = open ? Math.round(open.scrollTop / (open.clientHeight || 1)) : 0;
+
   el.classList.toggle('flush', state.tab === 'feed');
   el.scrollTop = 0;
   el.innerHTML =
     state.tab === 'today'  ? viewToday()  :
     state.tab === 'wall'   ? viewWall()   :
     state.tab === 'feed'   ? viewFeed()   : viewRivals();
+
+  if(wasAt){
+    const feed = el.querySelector('#feed');
+    if(feed) feed.scrollTop = wasAt * (feed.clientHeight || window.innerHeight);
+  }
   wire();
 }
 
@@ -1697,7 +1744,10 @@ function viewFeed(){
       <div class="shade"></div>
       <div class="post-top">
         <span class="who">${own?'You':nameOf(o.p)}</span>
-        <span class="dt">${fmtDate(o.iso)}</span>
+        <span class="right">
+          <span class="dt">${fmtDate(o.iso)}</span>
+          ${soundHTML(o.p, o.iso)}
+        </span>
       </div>
       <div class="post-bot">
         <div class="slot-tag">${multi ? `${n2} frames` : slotLabel(o.slots[0])}</div>
@@ -1737,15 +1787,37 @@ function cmtHTML(prof, iso){
    so the hint only shows while it's off and there's nothing to hear. */
 function trackHTML(prof, iso){
   const t = trackOf(prof, iso);
-  if(!t) return '';
+  const own = prof === me();
+
+  // your own day, nothing on it yet: the way in, right where the track goes
+  if(!t){
+    return own ? `
+      <button class="trk add" data-music="1" aria-label="Add music to this day">
+        <span class="box">+</span>
+        <span class="txt"><span class="nm">Add music</span></span>
+      </button>` : '';
+  }
+
+  const inner = `
+    <img class="art" src="${esc(t.art || '')}" alt="" loading="lazy">
+    <span class="txt">
+      <span class="nm">${esc(t.nm)}</span>
+      <span class="ar">${esc(t.ar || '')}</span>
+    </span>
+    ${own ? '<span class="chg">Change</span>' : ''}`;
+
+  return own
+    ? `<button class="trk" data-music="1" aria-label="Change the music on this day">${inner}</button>`
+    : `<div class="trk">${inner}</div>`;
+}
+
+/* Sound is a property of listening, not of one post, so its control sits at the
+   top where it always is — and only where there is something to hear. */
+function soundHTML(prof, iso){
+  if(!trackOf(prof, iso)) return '';
   const on = music.on;
   return `
-    <button class="trk ${on ? '' : 'off'}" aria-label="${on ? 'Mute' : 'Play'} ${esc(t.nm)}">
-      <img class="art" src="${esc(t.art || '')}" alt="" loading="lazy">
-      <span class="txt">
-        <span class="nm">${esc(t.nm)}</span>
-        <span class="ar">${esc(t.ar || '')}</span>
-      </span>
+    <button class="snd" aria-label="${on ? 'Mute' : 'Unmute'}" aria-pressed="${on}">
       <span class="eq ${on ? 'on' : ''}"><i></i><i></i><i></i></span>
     </button>`;
 }
@@ -1864,8 +1936,7 @@ function wire(){
     });
     // your own frames included — a reply to their comment belongs there too
     bindComments(post, p, iso, DAY_SLOT);
-    const trk = post.querySelector('.trk');
-    if(trk) trk.onclick = e => { e.stopPropagation(); musicToggle(p, iso); };
+    bindPostMusic(post.querySelector('.snd'), post.querySelector('.trk'), p, iso);
     if(p === me()) return;
     const btn = post.querySelector('.kudos');
     if(btn) btn.onclick = e => { e.stopPropagation(); sendKudos(p, iso, post, false); };
