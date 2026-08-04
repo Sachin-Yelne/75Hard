@@ -953,6 +953,7 @@ const music = {
   at:null,        // 'profile|iso' of the post on screen
   loaded:null,    // src currently in the element
   fade:null,
+  raf:null,       // pending scroll frame, cancelled when the feed goes away
   armed:false,    // waiting on a gesture to satisfy iOS
   hinted:false
 };
@@ -1235,14 +1236,29 @@ function fadeTo(target, ms = 260){
   }, 40);
 }
 
+/*
+ * Sound comes out of the feed, only from the post on screen, and only if it was
+ * asked for. Stated once here so no caller has to remember all three — a stray
+ * call from anywhere else is simply a no-op.
+ */
+const musicWanted = () => music.on && !!music.at && state.tab === 'feed';
+
+/* The track that should be sounding right now, if any. */
+function wantedTrack(){
+  if(!musicWanted()) return null;
+  return trackOf(music.at.split('|')[0], music.at.split('|')[1]);
+}
+
 /* Bring the element in line with "what's on screen" and "do they want sound". */
 function musicApply(){
   const a = musicEl();
-  const t = music.at && music.on
-    ? trackOf(music.at.split('|')[0], music.at.split('|')[1]) : null;
+  const t = wantedTrack();
 
   if(!t){
-    if(!a.paused){ fadeTo(0, 180); setTimeout(() => { if(!music.on || music.loaded) a.pause(); }, 200); }
+    // Fade, then stop — a day with no song leaves silence, not a muted track
+    // still running. Re-checked at the end, since the fade is long enough for
+    // the answer to have changed.
+    if(!a.paused){ fadeTo(0, 180); setTimeout(() => { if(!wantedTrack()) a.pause(); }, 200); }
     paintTrackRows();
     return;
   }
@@ -1289,13 +1305,22 @@ function musicToggle(prof, iso){
   musicApply();
 }
 
-function musicLeave(){
+/* Silence without forgetting that sound was wanted — for a backgrounded app,
+   which should pick the song back up when you return to it. */
+function musicPause(){
   const a = music.el;
   if(!a) return;
   clearInterval(music.fade); music.fade = null;
   a.pause();
-  a.volume = 0;
+}
+
+/* Leaving the feed altogether: stop, and forget where we were. */
+function musicLeave(){
+  // a scroll frame queued before the feed was replaced must not outlive it
+  if(music.raf !== null){ cancelAnimationFrame(music.raf); music.raf = null; }
   music.at = null;
+  musicPause();
+  if(music.el) music.el.volume = 0;
 }
 
 /* Repaint the music bits in place — cheaper and calmer than a re-render. */
@@ -1327,9 +1352,15 @@ function bindPostMusic(snd, trk, p, iso){
  * arithmetic rather than a guess — no observer needed.
  */
 function wireFeedMusic(feed){
-  let raf = null;
   const sync = () => {
-    raf = null;
+    music.raf = null;
+    /*
+     * A queued frame can land after this feed has been swapped out for another
+     * tab's view. The detached node reports scrollTop and clientHeight as 0,
+     * which reads as "post one" — and would start the first day's song over the
+     * top of a tab that has nothing to do with music.
+     */
+    if(!feed.isConnected) return;
     const i = Math.round(feed.scrollTop / (feed.clientHeight || 1));
     const post = feed.children[i];
     if(!post || !post.dataset.postP) return;
@@ -1339,7 +1370,7 @@ function wireFeedMusic(feed){
     if(music.on) musicApply();
   };
   feed.addEventListener('scroll', () => {
-    if(raf === null) raf = requestAnimationFrame(sync);
+    if(music.raf === null) music.raf = requestAnimationFrame(sync);
   }, { passive:true });
   feed.addEventListener('scrollend', sync, { passive:true });
   sync();
@@ -3212,8 +3243,13 @@ async function checkIn(){
 
 let lastDay = null;
 document.addEventListener('visibilitychange', async () => {
-  // pocketed phone, backgrounded tab: nothing should still be singing
-  if(document.hidden){ musicLeave(); music.on = false; return; }
+  /*
+   * Pocketed phone or backgrounded app: stop the sound, but don't read that as
+   * wanting silence. Clearing the preference here meant coming back to a dead
+   * feed until the app was reloaded — a reload being the only thing that read
+   * the setting again.
+   */
+  if(document.hidden){ musicPause(); return; }
   await loadState();
   await checkIn();
   if(lastDay !== todayISO()){ lastDay = todayISO(); state.tab = 'today'; }
