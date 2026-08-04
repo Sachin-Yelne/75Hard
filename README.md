@@ -47,7 +47,57 @@ Open the URL Vercel prints (usually http://localhost:3000).
    - `DATABASE_URL` = your Neon connection string (use the **pooled** one)
 3. Redeploy.
 
+Notifications are optional — leave the variables below unset and the app
+behaves exactly as before, with the Settings toggle reporting them as
+unavailable.
+
 Get the connection string from the [Neon console](https://console.neon.tech) → your **75Hard** project → Connect.
+
+## Notifications (optional)
+
+Four alerts: kudos received, your partner finishing their day, your partner
+posting photos (once a day, not once a photo), and an evening nudge if you
+still have tasks left.
+
+iOS only allows Web Push for a PWA **installed to the Home Screen**, and only
+asks permission from a real tap — hence the toggle in Settings rather than a
+prompt on load. It asks once ever; a refusal can only be undone in iOS
+Settings.
+
+1. Generate a keypair — the private key is a secret, keep it out of git:
+
+   ```bash
+   npx web-push generate-vapid-keys
+   ```
+
+2. In Vercel → **Project → Settings → Environment Variables** add:
+   - `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` from step 1
+   - `VAPID_SUBJECT` = `mailto:you@example.com`
+   - `CRON_SECRET` = any long random string (`openssl rand -hex 32`)
+   - `APP_TIMEZONE` = e.g. `America/New_York`, used to decide which local day
+     the nudge is about
+3. Redeploy, then open Settings in the app on each phone and turn notifications
+   on. Each phone registers separately.
+
+The first three alerts need nothing else — they are sent by the API handlers
+that already run when kudos, tasks and photos are saved.
+
+The evening nudge needs a scheduler, because iOS gives an installed PWA no way
+to schedule a local notification (Safari has no Notification Triggers API) and
+Vercel functions only run when called. `.github/workflows/nudge.yml` calls
+`/api/notify` daily; add two repository secrets under **Settings → Secrets and
+variables → Actions**:
+
+- `APP_URL` = `https://your-app.vercel.app` (no trailing slash)
+- `CRON_SECRET` = the same value you set in Vercel
+
+Run it by hand from the Actions tab to test. `notifications_sent` makes every
+alert once-per-person-per-day, so an extra run is harmless.
+
+Until those secrets exist the daily run skips quietly rather than failing —
+notifications are opt-in, and an unconfigured feature shouldn't mail you a
+red X every morning. A manual run does fail, since that one is you asking
+whether it works.
 
 ## Install on iPhone
 
@@ -68,8 +118,11 @@ Neon project **75Hard** stores:
   so a day can hold several — the key makes one row per slot, so reusing the
   bare id would overwrite. `slot` is a text column, so this needed no migration.
 - `reactions` — kudos between profiles
+- `push_subscriptions` — one row per registered device
+- `notifications_sent` — one row per alert delivered, keyed
+  `(profile_id, day_date, kind)`, which is what stops anything ringing twice
 
-All four are created on the first request (`CREATE TABLE IF NOT EXISTS`, in
+All six are created on the first request (`CREATE TABLE IF NOT EXISTS`, in
 `api/lib/db.js`), and a `photos` table predating the `slot` column is widened
 in place at the same time. Pointing `DATABASE_URL` at an empty Neon database is
 enough — there is no migration step to run by hand.
@@ -103,9 +156,13 @@ api/              Vercel serverless routes
   reactions.js    Kudos between profiles
   reset.js        Start a new challenge
   health.js       Config/database diagnostics
+  push.js         Register/unregister a device for notifications
+  notify.js       Evening nudge, called by the scheduled workflow
   lib/db.js       Connection, schema bootstrap
+  lib/push.js     Web Push sending, throttling, dead-subscription cleanup
 manifest.json     PWA install config
-sw.js             Offline shell cache
+sw.js             Offline shell cache, push handlers
+.github/workflows/nudge.yml   Daily call to /api/notify
 ```
 
 ## Notes
@@ -120,4 +177,6 @@ sw.js             Offline shell cache
 - Water had a camera and no longer does. `knownPhotos()` filters the photos map on load to slots in `SLOT_ORDER`, so rows left behind by a retired slot are ignored by the feed, the Wall markers and the Rivals tally alike — without it they would be invisible yet still counted. `api/photos.js` still accepts the `water` slot so any stray rows can be deleted later.
 - Water totals live in the existing `day_tasks.tasks` JSONB as `waterOz` and `waterLog`, so no schema change was needed. The `water` boolean stays derived from `waterOz >= 128`, which keeps streaks, the wall and completion logic untouched. Days ticked before the meter existed read as a full gallon.
 - Your vessels are personal kit rather than shared progress, so they live in `localStorage` per profile. They don't follow you to a second device — move them to a table if that becomes annoying.
+- Notifications fail silently by design: `notify()` swallows everything, so a push problem can never turn a successful save into an error for the person saving. With no VAPID keys set, every send is a no-op.
+- A push endpoint belongs to whoever last claimed it, so switching profile on a phone moves that phone's alerts. Deleting and re-adding the app strands the old endpoint; the server drops it on the first 404/410.
 - Free Neon + Vercel tiers are enough for two people over 75 days.

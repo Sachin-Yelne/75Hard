@@ -1921,6 +1921,7 @@ function openSettings(){
         </div>
         <button class="icon-btn" id="x">${ICON.close}</button>
       </div>
+      <button class="btn" id="alerts">Notifications — checking…</button>
       <button class="btn" id="swap">Switch to ${nameOf(them())}</button>
       <button class="btn danger" id="reset">Reset — start a new 75</button>
       <button class="btn ghost" id="close">Close</button>
@@ -1934,7 +1935,93 @@ function openSettings(){
       toast(`Tracking as ${nameOf(state.me)}`);
     };
     sheet.querySelector('#reset').onclick = confirmReset;
+    wireAlerts(sheet.querySelector('#alerts'));
   });
+}
+
+/* ═══════════ notifications ═══════════ */
+/*
+ * iOS only offers push to a PWA installed to the Home Screen, and only asks
+ * for permission from a real tap — hence a button in Settings rather than a
+ * prompt on load. It asks exactly once ever: a refusal can only be undone in
+ * iOS Settings, so the copy has to say so.
+ */
+const pushSupported = () =>
+  'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+
+// VAPID keys travel as base64url; PushManager wants raw bytes.
+function urlB64ToBytes(base64){
+  const pad = '='.repeat((4 - base64.length % 4) % 4);
+  const raw = atob((base64 + pad).replace(/-/g, '+').replace(/_/g, '/'));
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+}
+
+async function currentSub(){
+  if(!pushSupported()) return null;
+  const reg = await navigator.serviceWorker.ready;
+  return reg.pushManager.getSubscription();
+}
+
+async function enableAlerts(){
+  const r = await fetch('/api/push');
+  const cfg = await r.json();
+  if(!cfg.enabled || !cfg.publicKey) throw new Error('Notifications are not set up on the server');
+
+  const permission = await Notification.requestPermission();
+  if(permission !== 'granted') throw new Error(
+    permission === 'denied' ? 'Blocked — turn it back on in iOS Settings' : 'Not allowed');
+
+  const reg = await navigator.serviceWorker.ready;
+  const sub = await reg.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: urlB64ToBytes(cfg.publicKey)
+  });
+  const save = await fetch('/api/push', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ profileId: me(), subscription: sub.toJSON() })
+  });
+  if(!save.ok) throw new Error('Could not register this phone');
+}
+
+async function disableAlerts(){
+  const sub = await currentSub();
+  if(!sub) return;
+  await fetch(`/api/push?endpoint=${encodeURIComponent(sub.endpoint)}`, { method:'DELETE' })
+    .catch(() => {});
+  await sub.unsubscribe();
+}
+
+async function wireAlerts(btn){
+  if(!btn) return;
+  const paint = (label, disabled) => {
+    btn.textContent = label;
+    btn.disabled = !!disabled;
+  };
+
+  if(!pushSupported()){
+    // Safari only exposes PushManager to an installed app, so this is the
+    // state you see in a browser tab rather than from the Home Screen.
+    paint('Notifications — add to Home Screen first', true);
+    return;
+  }
+  if(Notification.permission === 'denied'){
+    paint('Notifications blocked — allow in iOS Settings', true);
+    return;
+  }
+
+  const on = !!(await currentSub());
+  paint(on ? 'Notifications on — tap to turn off' : 'Turn on notifications');
+
+  btn.onclick = async () => {
+    paint('Working…', true);
+    try{
+      if(await currentSub()){ await disableAlerts(); toast('Notifications off'); }
+      else { await enableAlerts(); toast('Notifications on'); }
+    }catch(err){
+      toast(err.message || 'Could not change notifications');
+    }
+    wireAlerts(btn);
+  };
 }
 
 async function confirmReset(){
@@ -2003,6 +2090,12 @@ document.addEventListener('visibilitychange', async () => {
   lastDay = todayISO();
   render();
   if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+  // a device follows whoever is tracking on it, so re-register after a switch
+  if(pushSupported()) currentSub().then(sub => {
+    if(!sub || !me()) return;
+    fetch('/api/push', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ profileId: me(), subscription: sub.toJSON() }) }).catch(() => {});
+  });
 })();
 </script>
 </body>

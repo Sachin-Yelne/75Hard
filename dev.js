@@ -198,6 +198,10 @@ async function demoApi(pathname, req, res, url) {
     res.setHeader('Content-Type', 'image/png');
     return res.status(200).send(demoPng(prof + date + slot));
   }
+  if (pathname === '/api/push') {
+    // demo mode has no push service; report it as unavailable
+    return res.status(200).json({ enabled: false, publicKey: null });
+  }
   if (pathname === '/api/health') {
     return res.status(200).json({
       ok: true,

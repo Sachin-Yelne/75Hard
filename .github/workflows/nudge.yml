@@ -1,0 +1,38 @@
+# The evening nudge. iOS gives an installed PWA no way to schedule a local
+# notification, so the reminder has to be pushed from the server — and Vercel
+# functions only run when something calls them. This is that something.
+name: Evening nudge
+
+on:
+  schedule:
+    # 00:00 UTC = 8pm US Eastern during daylight saving, 7pm outside it.
+    # The endpoint resolves the local date itself via APP_TIMEZONE, and only
+    # ever nudges once per person per day, so a shifted hour is harmless.
+    - cron: '0 0 * * *'
+  workflow_dispatch:        # lets you fire one by hand to test
+
+jobs:
+  nudge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call the nudge endpoint
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$APP_URL" ] || [ -z "$CRON_SECRET" ]; then
+            echo "APP_URL or CRON_SECRET is not set — add them under Settings → Secrets → Actions."
+            # Notifications are opt-in. Until they are configured a scheduled run
+            # skips quietly rather than mailing a red X every morning; a manual
+            # run is someone asking whether it works, so that one fails loudly.
+            if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then exit 1; fi
+            echo "Scheduled run — skipping until notifications are set up."
+            exit 0
+          fi
+          code=$(curl -sS -o /tmp/out.json -w '%{http_code}' \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            "$APP_URL/api/notify")
+          echo "HTTP $code"
+          cat /tmp/out.json
+          echo
+          [ "$code" = "200" ]
