@@ -32,7 +32,9 @@ if (!DEMO) {
 
 /* ---- demo data: day 22 of 75, both profiles active ---- */
 const TASK_IDS = ['diet', 'workout1', 'workout2', 'water', 'read'];
-const demo = { data: { sachin: {}, aarya: {} }, photos: { sachin: {}, aarya: {} }, reactions: [] };
+const demo = { data: { sachin: {}, aarya: {} }, photos: { sachin: {}, aarya: {} },
+               reactions: [], comments: [] };
+let demoCommentId = 1;
 let demoStart;
 {
   const iso = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -79,6 +81,15 @@ let demoStart;
     { from: 'aarya', to: 'sachin', date: at(20), emoji: 'kudos' },
     { from: 'aarya', to: 'sachin', date: at(18), emoji: 'kudos' },
     { from: 'sachin', to: 'aarya', date: at(18), emoji: 'kudos' }
+  ];
+  const ago = (mins) => new Date(Date.now() - mins * 60000).toISOString();
+  demo.comments = [
+    { id: demoCommentId++, from: 'aarya', to: 'sachin', date: at(20), slot: 'day',
+      body: 'Look at the shoulders on day 21 vs day 1.', at: ago(320) },
+    { id: demoCommentId++, from: 'sachin', to: 'sachin', date: at(20), slot: 'day',
+      body: 'Barely made the second one, it was pouring.', at: ago(180) },
+    { id: demoCommentId++, from: 'sachin', to: 'aarya', date: at(18), slot: 'workout1',
+      body: 'That hill again? Respect.', at: ago(96) }
   ];
 }
 
@@ -197,6 +208,26 @@ async function demoApi(pathname, req, res, url) {
     }
     res.setHeader('Content-Type', 'image/png');
     return res.status(200).send(demoPng(prof + date + slot));
+  }
+  if (pathname === '/api/comments') {
+    if (req.method === 'POST') {
+      const b = await readBody(req);
+      const body = String(b.body || '').trim();
+      if (!body) return res.status(400).json({ error: 'Comment is empty' });
+      const c = { id: demoCommentId++, from: b.from, to: b.to, date: b.date,
+                  slot: b.slot || 'day', body, at: new Date().toISOString() };
+      demo.comments.push(c);
+      return res.status(200).json({ ok: true, comment: c });
+    }
+    if (req.method === 'DELETE') {
+      const id = Number(url.searchParams.get('id'));
+      const from = url.searchParams.get('from');
+      const i = demo.comments.findIndex((c) => c.id === id && c.from === from);
+      if (i < 0) return res.status(404).json({ error: 'Comment not found' });
+      demo.comments.splice(i, 1);
+      return res.status(200).json({ ok: true });
+    }
+    return res.status(200).json({ comments: demo.comments });
   }
   if (pathname === '/api/push') {
     // demo mode has no push service; report it as unavailable

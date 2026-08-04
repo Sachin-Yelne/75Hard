@@ -9,7 +9,7 @@ Four tabs, phone-first:
 - **Today** — the day number set large, a five-segment rule (one per task), streak, a live countdown to local midnight, and your partner's progress underneath. Workout One, Workout Two and Read each carry an optional camera; Diet carries one you can use over and over, so snacks and dinner all land on the same day. The two workouts also take a written note, for when you would rather say what you did than photograph it. Diet starts ticked — you only touch it to record a day you didn't keep it. Completing all five holds a full-screen typographic moment for a second and a half, then returns you to the day.
 - **Water** is logged incrementally rather than ticked. Tap the row to open the tracker, then tap a vessel — a 16 oz bottle, a 32 oz tumbler, whatever you keep — to pour it toward the gallon. The row's own bottom hairline fills as you go, and the task checks itself at 128 oz. Keep pouring past the gallon if you want — the total and percentage carry on past 100% while the bar stays full. Undo removes the last pour. The checkbox can't be tapped: it mirrors the pour rather than setting it, so tapping it opens the tracker.
 - **Wall** — the 75-day grid for both people, with missed days, photo markers, and a milestone list.
-- **Feed** — one day per screen, newest first, each rendered as a collage of everything logged that day. A lone frame fills the screen; more than one tiles into a grid, and past six the last tile carries a `+N`. Tap any tile to open the full-screen viewer; inside it a tap steps to the next frame and wraps at the end, swiping still works, and kudos has its own button. The collage carries a kudos button too.
+- **Feed** — one day per screen, newest first, each rendered as a collage of everything logged that day. A lone frame fills the screen; more than one tiles into a grid, and past six the last tile carries a `+N`. Tap any tile to open the full-screen viewer; inside it a tap steps to the next frame and wraps at the end, and swiping still works. Two actions sit under the day, on the collage and in the viewer alike: a thumb for kudos, and a bubble for comments, each carrying its count. The most recent comment reads as one line above them. Tapping either opens the day's thread, where both of you can write — including on your own frame, so a reply lands where the picture is. A comment written in the viewer is filed against the frame on screen and carries its task as a tag.
 - **Rivals** — a side-by-side table: perfect days, current and longest streaks, consistency, per-task completion rates, photos posted, kudos received.
 
 Your partner's strip at the foot of Today opens their day read-only — every task and photo visible, nothing tickable. Pick who you are on first launch (stored locally); you can switch from the settings sheet. Your own progress is always clay, your partner's sage.
@@ -19,6 +19,12 @@ Your partner's strip at the foot of Today opens their day read-only — every ta
 Editorial and deliberately restrained — near-black, hairline rules, Anton for figures and Barlow Condensed for labels. Two muted accents (clay `#C8613A` for you, sage `#6E7F6A` for your partner) carry all state; there are no gradients, glows, emoji, or confetti anywhere.
 
 Icons come from Font Awesome Pro (`sharp-light`). The full library lives in `svgs/` locally and is **gitignored** — it's ~132MB across 35k files. Only the icons actually used are inlined as paths in `index.html`, totalling about 3KB. To swap one in, copy the `d` attribute out of the relevant `svgs/sharp-light/*.svg` and add it to the `ICON` map.
+
+Two entries in that map — `thumb` and `comment`, the feed's kudos and comment
+glyphs — are drawn by hand rather than copied, since the library isn't in the
+repo. They follow the same spec as the rest (512 box, 32 stroke, square
+corners) and sit at the same weight; paste the real `thumbs-up` and `comment`
+paths over them if you have `svgs/` to hand.
 
 The app icon is a large Anton `75` in bone on the app's near-black — the same
 face the day number uses. Regenerate all sizes with
@@ -64,9 +70,13 @@ Get the connection string from the [Neon console](https://console.neon.tech) →
 
 ## Notifications (optional)
 
-Four alerts: kudos received, your partner finishing their day, your partner
-posting photos (once a day, not once a photo), and an evening nudge if you
-still have tasks left.
+Five alerts: kudos received, a comment on one of your frames, your partner
+finishing their day, your partner posting photos (once a day, not once a
+photo), and an evening nudge if you still have tasks left.
+
+Comments are the one alert that isn't throttled to once a day — each is worth
+its own, so the throttle key carries the comment's row id. Talking to yourself
+on your own frame doesn't ring your own phone.
 
 iOS only allows Web Push for a PWA **installed to the Home Screen**, and only
 asks permission from a real tap — hence the toggle in Settings rather than a
@@ -127,11 +137,14 @@ Neon project **75Hard** stores:
   so a day can hold several — the key makes one row per slot, so reusing the
   bare id would overwrite. `slot` is a text column, so this needed no migration.
 - `reactions` — kudos between profiles
+- `comments` — one thread per feed post, keyed by the post's owner and day,
+  plus the photo `slot` the comment was written under, so a note left in the
+  viewer can say which frame it means. Bodies are capped at 280 characters
 - `push_subscriptions` — one row per registered device
 - `notifications_sent` — one row per alert delivered, keyed
   `(profile_id, day_date, kind)`, which is what stops anything ringing twice
 
-All six are created on the first request (`CREATE TABLE IF NOT EXISTS`, in
+All seven are created on the first request (`CREATE TABLE IF NOT EXISTS`, in
 `api/lib/db.js`), and a `photos` table predating the `slot` column is widened
 in place at the same time. Pointing `DATABASE_URL` at an empty Neon database is
 enough — there is no migration step to run by hand.
@@ -163,6 +176,7 @@ api/              Vercel serverless routes
   state.js        Load/save tasks
   photos.js       Upload/view/delete pics (per slot)
   reactions.js    Kudos between profiles
+  comments.js     Feed comments, one thread per post
   health.js       Config/database diagnostics
   push.js         Register/unregister a device for notifications
   notify.js       Evening nudge, called by the scheduled workflow
@@ -180,6 +194,9 @@ sw.js             Offline shell cache, push handlers
 - All day boundaries use the device's **local** date, so the day rolls over at local midnight rather than UTC.
 - `index.html` is served network-first by the service worker, so a redeploy reaches both phones instead of being pinned to a cached shell.
 - Reaction rows are written with the token `kudos`; emoji tokens from the previous build still validate and still count.
+- Comment bodies are the only free text either phone sends the other, so they are escaped on render and capped at 280 characters. Posting is optimistic: the line appears at once, rolls back on failure, and keeps your text in the box. Deleting is scoped to the author server-side, so one phone can't remove the other's words even though the app has no real accounts.
+- The feed's nav dot covers kudos landing on you *and* anything your partner has said; opening the Feed tab marks both seen. It counts kudos to you against the same measure it stores — it used to compare that against every reaction in the table, so it rarely lit up.
+- `#sheets` sits at `z-index:65`, above the photo viewer and below the completion moment. The comment sheet is the first sheet that opens on top of an open photo, and `#viewer` comes later in the DOM.
 - Diet carries `auto:true`: opening the app on a day writes the tick into that day's record, so you only untick it to log a failure. It is seeded on check-in rather than defaulted at read time — a read-time default would credit Diet on days nobody opened the app and would rewrite past days' streaks and rates. A day you never open stays at 0/5.
 - Diet takes several photos a day (`multi:true`), capped at 12; every other camera holds one. `slotBase()`/`slotLabel()` read through the `#` suffix, and `isKnownSlot()` accepts a stamped slot only for a multi task, so a stray `read#123` is rejected on both client and server.
 - Water had a camera and no longer does. `knownPhotos()` filters the photos map on load to slots in `SLOT_ORDER`, so rows left behind by a retired slot are ignored by the feed, the Wall markers and the Rivals tally alike — without it they would be invisible yet still counted. `api/photos.js` still accepts the `water` slot so any stray rows can be deleted later.
