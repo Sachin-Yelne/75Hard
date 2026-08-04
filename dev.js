@@ -208,13 +208,6 @@ async function demoApi(pathname, req, res, url) {
       checks: { api: 'ok', databaseUrl: 'demo', database: 'demo', schema: 'demo' }
     });
   }
-  if (pathname === '/api/reset') {
-    demo.data = { sachin: {}, aarya: {} };
-    demo.photos = { sachin: {}, aarya: {} };
-    demo.reactions = [];
-    demoStart = new Date().toISOString().slice(0, 10);
-    return res.status(200).json({ ok: true, startDate: demoStart });
-  }
   return res.status(404).json({ error: 'no route' });
 }
 
