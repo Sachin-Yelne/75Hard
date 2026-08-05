@@ -676,7 +676,37 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
 .cmt-none{border:1px solid var(--rule);padding:34px 0;text-align:center;
   font-family:var(--cond);font-weight:500;font-size:12px;letter-spacing:.16em;
   text-transform:uppercase;color:var(--bone-3);}
+/*
+ * What a new comment is about, said before you write it. A thread covers a
+ * whole day, so on a day with several frames "this frame" was a guess — the
+ * viewer filed against whatever photo you'd swiped to, and nothing on screen
+ * admitted it. This is that answer, and the way to change it.
+ * Single-frame days never show it: there is nothing to get wrong.
+ */
+.cmt-on{margin-top:18px;}
+.cmt-on-btn{
+  display:flex;align-items:center;gap:9px;width:100%;text-align:left;
+  border:1px solid var(--rule-2);padding:7px 9px;
+  font-family:var(--cond);font-weight:600;font-size:10px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--bone-3);
+}
+.cmt-on-btn img{width:20px;height:20px;object-fit:cover;flex:0 0 auto;}
+.cmt-on-btn .nm{color:var(--bone-2);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.cmt-on-btn .ch{margin-left:auto;padding-left:8px;color:var(--p);flex:0 0 auto;}
+.cmt-on.open .cmt-on-btn{border-color:var(--bone-3);}
+/* the frames themselves, since a thumbnail settles it faster than a label */
+.cmt-pick{display:flex;gap:6px;overflow-x:auto;padding-top:6px;scrollbar-width:none;}
+.cmt-pick::-webkit-scrollbar{display:none;}
+.cmt-pick .fr{
+  flex:0 0 auto;width:54px;height:54px;background:var(--ink-3);
+  border:1px solid var(--rule-2);opacity:.45;transition:opacity .12s;
+}
+.cmt-pick .fr img{width:100%;height:100%;object-fit:cover;}
+.cmt-pick .fr.day{font-family:var(--cond);font-weight:600;font-size:10px;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--bone-3);}
+.cmt-pick .fr.on{opacity:1;border-color:var(--bone);}
 .cmt-form{display:flex;align-items:flex-end;gap:8px;margin-top:18px;}
+.cmt-on + .cmt-form{margin-top:10px;}   /* the chip already carries the gap */
 .cmt-form textarea{
   flex:1;min-width:0;resize:none;overflow-y:auto;max-height:116px;
   background:var(--ink-3);border:1px solid var(--rule-2);color:var(--bone);
@@ -2918,6 +2948,21 @@ function openComments(prof, iso, slot = DAY_SLOT){
   // On a single-frame day there is nothing to disambiguate, so no slot tags.
   const tagged = s => slots.length > 1 && s && s !== DAY_SLOT && slots.includes(s);
 
+  /*
+   * What the next comment gets filed against. It arrives as whatever you were
+   * looking at, but it is not fixed: swipe one photo too far and the fix is
+   * here rather than back out through the viewer.
+   *
+   * The day's own progress frame *is* DAY_SLOT, so "the whole day" and "the
+   * progress frame" are the same string — which is why a day that carries one
+   * needs no separate whole-day option.
+   */
+  const picks = slots.includes(DAY_SLOT) ? slots : [DAY_SLOT, ...slots];
+  // a slot the day no longer carries (a deleted frame) falls back to the day
+  let target = picks.includes(slot) ? slot : DAY_SLOT;
+  const canPick = slots.length > 1;
+  const targetName = () => slots.includes(target) ? slotLabel(target) : 'The whole day';
+
   const thread = () => {
     const list = commentsOn(prof, iso);
     if(!list.length){
@@ -2948,9 +2993,12 @@ function openComments(prof, iso, slot = DAY_SLOT){
 
       <div id="thread">${thread()}</div>
 
+      ${canPick ? `<div class="cmt-on" id="onBox"></div>` : ''}
+
       <form class="cmt-form" id="cForm">
         <textarea id="cInput" rows="1" maxlength="280" enterkeyhint="enter"
-          placeholder="${own ? 'Add a note to this frame' : `Say something to ${nameOf(prof)}`}"></textarea>
+          placeholder="${own ? (canPick ? 'Add a note' : 'Add a note to this frame')
+                             : `Say something to ${nameOf(prof)}`}"></textarea>
         <button class="cmt-send" id="cSend" type="submit">Post</button>
       </form>
     </div>`, sheet => {
@@ -2958,6 +3006,43 @@ function openComments(prof, iso, slot = DAY_SLOT){
     const box = sheet.querySelector('#thread');
     const ta  = sheet.querySelector('#cInput');
     const send = sheet.querySelector('#cSend');
+    const onBox = sheet.querySelector('#onBox');
+
+    /*
+     * The chip, and the frames behind it. Closed it is one quiet line; open it
+     * is the day's photos at thumbnail size, which settles "which one is that"
+     * faster than any label could. Picking closes it again — one tap, done.
+     */
+    const paintOn = (open) => {
+      if(!onBox) return;
+      const shot = slots.includes(target);
+      onBox.classList.toggle('open', !!open);
+      onBox.innerHTML = `
+        <button class="cmt-on-btn" type="button" aria-expanded="${!!open}">
+          <span>On</span>
+          ${shot ? `<img src="${api.photoUrl(prof, iso, target)}" alt="">` : ''}
+          <span class="nm">${esc(targetName())}</span>
+          <span class="ch">${open ? 'Close' : 'Change'}</span>
+        </button>
+        ${open ? `<div class="cmt-pick">${picks.map(s => {
+          const on = s === target ? ' on' : '';
+          return slots.includes(s)
+            ? `<button class="fr${on}" type="button" data-pick="${esc(s)}" aria-label="${slotLabel(s)}">
+                 <img src="${api.photoUrl(prof, iso, s)}" alt="" loading="lazy"></button>`
+            : `<button class="fr day${on}" type="button" data-pick="${esc(s)}">Day</button>`;
+        }).join('')}</div>` : ''}`;
+
+      onBox.querySelector('.cmt-on-btn').onclick = () => paintOn(!open);
+      onBox.querySelectorAll('[data-pick]').forEach(b => {
+        b.onclick = () => {
+          target = b.dataset.pick;
+          haptic(8);
+          paintOn(false);
+          ta.focus();
+        };
+      });
+    };
+    paintOn(false);
 
     const bindRows = () => {
       sheet.querySelectorAll('[data-rm]').forEach(b => {
@@ -3006,14 +3091,16 @@ function openComments(prof, iso, slot = DAY_SLOT){
       haptic(10);
 
       // optimistic: the line appears now, the id arrives with the response
-      const pending = { id:`t${Date.now()}`, from:me(), to:prof, date:iso, slot,
+      // `target`, not the slot the sheet opened on — the chip may have moved it
+      const on = target;
+      const pending = { id:`t${Date.now()}`, from:me(), to:prof, date:iso, slot:on,
                         body, at:new Date().toISOString(), pending:true };
       state.comments.push(pending);
       repaint();
       sheet.scrollTo({ top:sheet.scrollHeight, behavior:'smooth' });
 
       try{
-        const r = await api.addComment(me(), prof, iso, slot, body);
+        const r = await api.addComment(me(), prof, iso, on, body);
         const i = state.comments.indexOf(pending);
         if(i >= 0) state.comments.splice(i, 1, r.comment || { ...pending, pending:false });
         markFeedSeen();
