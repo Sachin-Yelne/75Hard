@@ -12,7 +12,7 @@ on Today until there's something to look at.
 - **Today** — the day number set large, a five-segment rule (one per task), streak, a live countdown to local midnight, and your partner's progress underneath. Workout One, Workout Two and Read each carry an optional camera; Diet carries one you can use over and over, so snacks and dinner all land on the same day. The two workouts also take a written note, for when you would rather say what you did than photograph it. Diet starts ticked — you only touch it to record a day you didn't keep it. Every photo takes a caption: the moment one lands — any of them, not just food — a sheet asks what it is, with a prompt that fits the task ("What did you do?" for a workout, "What was it?" for a meal). Diet frames also offer a one-tap verdict: loved it, fine, regret it. Skipping is fine, and an uncaptioned frame just reads as its task, as before. Once captioned, the Diet row says what you last ate rather than the rule you're keeping. Completing all five holds a full-screen typographic moment for a second and a half, then returns you to the day.
 - **Water** is logged incrementally rather than ticked. Tap the row to open the tracker, then tap a vessel — a 16 oz bottle, a 32 oz tumbler, whatever you keep — to pour it toward the gallon. The row's own bottom hairline fills as you go, and the task checks itself at 128 oz. Keep pouring past the gallon if you want — the total and percentage carry on past 100% while the bar stays full. Undo removes the last pour. The checkbox can't be tapped: it mirrors the pour rather than setting it, so tapping it opens the tracker.
 - **Wall** — the 75-day grid for both people, with missed days, photo markers, and a milestone list. Opening a day shows its gallery, where each photo reads as its caption if it has one; tap it to write or change one, or do the same from the photo itself in the full-screen viewer. Your partner sees the captions, read-only.
-- **Feed** — one day per screen, newest first, each rendered as a collage of everything logged that day. A lone frame fills the screen; more than one tiles into a grid, and past six the last tile carries a `+N`. Tap any tile to open the full-screen viewer; inside it a tap steps to the next frame and wraps at the end, and swiping still works. Two actions sit under the day, on the collage and in the viewer alike: a thumb for kudos, and a bubble for comments, each carrying its count. The most recent comment reads as one line above them; tapping it opens the day's thread, where both of you can write — including on your own frame, so a reply lands where the picture is. Open a frame full screen and its own caption lies faintly over the photo, under the task it belongs to: the run you described, the meal you named. Tap it to write or change one on your own frames. A comment written in the viewer is filed against the frame on screen and carries its task as a tag. A day can also carry a song. It plays when you open the Feed, and scrolling from day to day swaps the track, fading between them; a day without one falls silent. The sleeve, title and artist read as one line on the post, and three bars beside the date move while the sound is on — tap them to mute, and the choice is remembered. On your own posts that line is also the way in: **Add music** where there is none, **Change** where there is.
+- **Feed** — one day per screen, newest first, each rendered as a collage of everything logged that day. A lone frame fills the screen; more than one tiles into a grid, and past six the last tile carries a `+N`. Tap any tile to open the full-screen viewer; inside it tap the left third to go back and anywhere else to go on, both wrapping, and swiping still works. Two actions sit under the day, on the collage and in the viewer alike: a thumb for kudos, and a bubble for comments, each carrying its count. The most recent comment reads as one line above them; tapping it opens the day's thread, where both of you can write — including on your own frame, so a reply lands where the picture is. Open a frame full screen and its own caption lies faintly over the photo, under the task it belongs to: the run you described, the meal you named. Tap it to write or change one on your own frames. A comment written in the viewer is filed against the frame on screen and carries its task as a tag. A day can also carry a song. It plays when you open the Feed, and scrolling from day to day swaps the track, fading between them; a day without one falls silent. The sleeve, title and artist read as one line on the post, and three bars beside the date move while the sound is on — tap them to mute, and the choice is remembered. On your own posts that line is also the way in: **Add music** where there is none, **Change** where there is.
 - **Rivals** — a side-by-side table: perfect days, current and longest streaks, consistency, per-task completion rates, photos posted, kudos received.
 
 Your partner's strip at the foot of Today opens their day read-only — every task and photo visible, nothing tickable. Pick who you are on first launch (stored locally); you can switch from the settings sheet. Your own progress is always clay, your partner's sage.
@@ -100,13 +100,21 @@ Get the connection string from the [Neon console](https://console.neon.tech) →
 
 ## Notifications (optional)
 
-Five alerts: kudos received, a comment on one of your frames, your partner
-finishing their day, your partner posting photos (once a day, not once a
-photo), and an evening nudge if you still have tasks left.
+Five kinds: kudos received, a comment on one of your frames, your partner
+finishing their day, your partner posting a photo, and an evening nudge if you
+still have tasks left.
 
-Comments are the one alert that isn't throttled to once a day — each is worth
-its own, so the throttle key carries the comment's row id. Talking to yourself
-on your own frame doesn't ring your own phone.
+Each one says what it is rather than that something happened. A photo alert
+names the task — *Aarya put up Workout One*, *Aarya logged a meal* — and a
+comment names the frame it was left on, with the comment itself as the body.
+
+The throttle is per kind, and the kinds are chosen so the count stays sane. A
+photo rings once per **task** per day rather than once per person per day:
+Diet alone can be a dozen shots, so per-photo would be a pager, but a single
+daily alert meant the evening run went unmentioned if breakfast had already
+fired. Five in a day is the ceiling. Comments aren't throttled at all — each is
+worth its own, so the key carries the comment's row id. Talking to yourself on
+your own frame doesn't ring your own phone.
 
 iOS only allows Web Push for a PWA **installed to the Home Screen**, and only
 asks permission from a real tap — hence the toggle in Settings rather than a

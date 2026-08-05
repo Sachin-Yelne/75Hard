@@ -493,8 +493,10 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
   background:linear-gradient(180deg,rgba(0,0,0,.5) 0%,transparent 20%,
     transparent 40%,rgba(0,0,0,.5) 62%,rgba(0,0,0,.93) 100%);}
 .viewer .slide img{width:100%;height:100%;object-fit:contain;}
-.viewer-x{position:absolute;top:calc(var(--safe-top) + 12px);right:var(--pad);z-index:2;
-  width:20px;height:20px;color:var(--bone);}
+/* A 44px target with a 24px mark inside it: the old one was 20px of button
+   with 7px of padding, which left six pixels of actual cross to hit. */
+.viewer-x{position:absolute;top:calc(var(--safe-top) + 6px);right:calc(var(--pad) - 10px);z-index:3;
+  width:44px;height:44px;padding:10px;color:var(--bone);}
 .viewer-bot{position:absolute;left:var(--pad);right:var(--pad);
   bottom:calc(var(--safe-bot) + 26px);pointer-events:none;}
 .viewer-bot .acts,.viewer-bot .cmt-peek,.viewer-bot .frame-cap{pointer-events:auto;}
@@ -2341,15 +2343,24 @@ function openViewer(p, iso, index){
     openCaption(p, iso, tag.dataset.slot, { after:() => repaintViewerTag(p, iso) });
   };
 
-  // Tapping the photo steps to the next one and wraps at the end — swiping
-  // still works, this just saves the gesture. Kudos moved to its own button
-  // because a tap can't mean both "next" and "half a double-tap".
+  /*
+   * Tap the left third to go back, anywhere else to go on — the reading order
+   * everyone already has from stories. Swiping still works; this just saves the
+   * gesture. Both directions wrap, so no tap is ever a dead one, and a wrap
+   * jumps rather than sliding the whole way across the reel.
+   *
+   * The left zone is a third rather than a half because "next" is the common
+   * case and thumbs land on the right.
+   */
   if(multi){
-    reel.addEventListener('click', () => {
+    reel.addEventListener('click', e => {
       const w = reel.clientWidth || 1;
       const at = Math.round(reel.scrollLeft / w);
-      const next = (at + 1) % slots.length;
-      reel.scrollTo({ left: next * w, behavior: next === 0 ? 'auto' : 'smooth' });
+      const back = e.clientX < (reel.getBoundingClientRect().width * 0.33);
+      const to = back ? (at - 1 + slots.length) % slots.length
+                      : (at + 1) % slots.length;
+      const wrapped = back ? to > at : to < at;
+      reel.scrollTo({ left: to * w, behavior: wrapped ? 'auto' : 'smooth' });
     });
   }
 

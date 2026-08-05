@@ -5,6 +5,15 @@ const PROFILES = ['sachin', 'aarya'];
 const NAMES = { sachin: 'Sachin', aarya: 'Aarya' };
 const MAX_LEN = 280;
 
+// The frame a comment was filed against, said the way you'd say it out loud.
+const ON_LABEL = {
+  day: 'progress frame',
+  diet: 'meal',
+  workout1: 'Workout One',
+  workout2: 'Workout Two',
+  read: 'reading shot'
+};
+
 const shape = (r) => ({
   id: Number(r.id),
   from: r.from_profile,
@@ -61,9 +70,14 @@ module.exports = async function handler(req, res) {
       // claim key carries the row id — the throttle still stops a retry of the
       // same insert ringing twice.
       if (from !== to) {
+        const on = ON_LABEL[String(slot).split('#')[0]];
         await notify(sql, {
           to, date, kind: `comment:${from}:${rows[0].id}`,
-          title: `${NAMES[from] || from} commented`,
+          // naming the frame turns "someone said something" into something you
+          // can picture before you've even opened the app
+          title: on
+            ? `${NAMES[from] || from} commented on your ${on}`
+            : `${NAMES[from] || from} commented`,
           body: text.length > 120 ? `${text.slice(0, 119)}…` : text
         });
       }

@@ -12,6 +12,21 @@ const SLOTS = ['day', 'workout1', 'workout2', 'water', 'read', 'diet'];
 // since the table is keyed (profile_id, day_date, slot). Accept that shape as
 // well as the bare id.
 const MULTI = ['diet'];
+
+// What a fresh frame is called when it lands on the other phone. Written per
+// task rather than "posted a photo" so the alert is worth reading on a lock
+// screen — you know whether it's a run, a meal or the day's progress frame.
+const PHOTO_TITLE = {
+  day:      (n) => `${n} posted today's progress frame`,
+  diet:     (n) => `${n} logged a meal`,
+  workout1: (n) => `${n} put up Workout One`,
+  workout2: (n) => `${n} put up Workout Two`,
+  read:     (n) => `${n} posted a reading shot`
+};
+const whenLabel = (date) =>
+  new Date(`${date}T12:00:00Z`).toLocaleDateString('en-US', {
+    weekday: 'long', month: 'short', day: 'numeric', timeZone: 'UTC'
+  });
 const validSlot = (slot) => {
   if (SLOTS.includes(slot)) return true;
   const [base, stamp, ...rest] = String(slot).split('#');
@@ -72,13 +87,20 @@ module.exports = async function handler(req, res) {
         DO UPDATE SET content_type = EXCLUDED.content_type, data = EXCLUDED.data, updated_at = now()
       `;
 
-      // Diet alone can be a dozen shots a day, so this is deliberately once
-      // per person per day — the notification says "look", not "count".
+      /*
+       * One alert per task per day rather than one per person per day. Diet
+       * alone can be a dozen shots, so per-photo would be a pager — but a
+       * single daily "posted fresh shots" meant the evening run never got
+       * mentioned if breakfast already had. Five at the very most, and each
+       * one says what it is.
+       */
       const other = PROFILES.find((p) => p !== profileId);
+      const base = String(slot).split('#')[0];
+      const who = NAMES[profileId] || profileId;
       await notify(sql, {
-        to: other, date, kind: `photo:${profileId}`,
-        title: `${NAMES[profileId] || profileId} posted fresh shots`,
-        body: 'Tap to view the latest frames.',
+        to: other, date, kind: `photo:${profileId}:${base}`,
+        title: PHOTO_TITLE[base] ? PHOTO_TITLE[base](who) : `${who} added a photo`,
+        body: whenLabel(date),
         url: '/'
       });
 
