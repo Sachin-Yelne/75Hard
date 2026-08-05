@@ -483,14 +483,35 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
   opacity:0;transition:opacity .22s ease;
 }
 #viewer.open .viewer{opacity:1;}
+/*
+ * The comments now live at the foot of the frame, so the scrim has to be dark
+ * enough *where the text starts*, not only at the very bottom. The extra stop
+ * ramps it early; without it the topmost line washes out over a white photo.
+ * The middle stays untouched — this is a photo viewer first.
+ */
 .viewer-shade{position:absolute;inset:0;pointer-events:none;
-  background:linear-gradient(180deg,rgba(0,0,0,.5) 0%,transparent 22%,transparent 58%,rgba(0,0,0,.82) 100%);}
+  background:linear-gradient(180deg,rgba(0,0,0,.5) 0%,transparent 20%,
+    transparent 40%,rgba(0,0,0,.5) 62%,rgba(0,0,0,.93) 100%);}
 .viewer .slide img{width:100%;height:100%;object-fit:contain;}
 .viewer-x{position:absolute;top:calc(var(--safe-top) + 12px);right:var(--pad);z-index:2;
   width:20px;height:20px;color:var(--bone);}
 .viewer-bot{position:absolute;left:var(--pad);right:var(--pad);
   bottom:calc(var(--safe-bot) + 26px);pointer-events:none;}
-.viewer-bot .acts,.viewer-bot .cmt-peek{pointer-events:auto;}
+.viewer-bot .acts,.viewer-bot .cmt-peek,.viewer-bot .notes{pointer-events:auto;}
+/* the day's last words, laid faintly over the frame they're about */
+.notes{display:flex;flex-direction:column;gap:8px;width:100%;margin-top:14px;text-align:left;}
+.notes .more{
+  font-family:var(--cond);font-weight:600;font-size:10px;letter-spacing:.16em;
+  text-transform:uppercase;color:rgba(255,255,255,.42);
+}
+.note-line{
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+  font-size:12.5px;line-height:1.4;color:rgba(255,255,255,.74);
+}
+.note-line .who{
+  font-family:var(--cond);font-weight:700;font-size:10.5px;letter-spacing:.18em;
+  text-transform:uppercase;margin-right:8px;
+}
 .viewer-meta{font-family:var(--cond);font-weight:600;font-size:12px;
   letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.62);}
 
@@ -1294,9 +1315,18 @@ function armForGesture(){
     if(music.on && music.at) musicApply();
   };
   document.addEventListener('pointerdown', go, { once:true, passive:true });
-  if(!music.hinted){
+  /*
+   * Said once per device, not once per load. The app opens on the feed, which
+   * is a load with no gesture spent, so every single launch would otherwise
+   * arrive with the same tip — and the first touch starts the music anyway.
+   */
+  if(!music.hinted && localStorage.getItem('soundHint') !== '1'){
     music.hinted = true;
-    setTimeout(() => { if(music.armed) toast('Tap anywhere for sound'); }, 600);
+    setTimeout(() => {
+      if(!music.armed) return;
+      toast('Tap anywhere for sound');
+      localStorage.setItem('soundHint', '1');
+    }, 600);
   }
 }
 
@@ -1735,8 +1765,10 @@ const collageCols = n => n === 1 ? 1 : n <= 4 ? 2 : 3;
 // the sixth carries a +N and the viewer holds the rest.
 const TILE_CAP = 6;
 
-function viewFeed(){
-  markFeedSeen();
+/* Every day either of you photographed, newest first, yours ahead on a tie.
+   Shared with the launch decision, so "is there a feed to open into" and "what
+   the feed shows" can't drift apart. */
+function feedPosts(){
   const posts = [];
   for(const p of PROFILES){
     for(const iso of Object.keys(state.photos[p.id] || {})){
@@ -1744,7 +1776,12 @@ function viewFeed(){
       if(slots.length) posts.push({ p:p.id, iso, slots });
     }
   }
-  posts.sort((a,b) => a.iso === b.iso ? (a.p === me() ? -1 : 1) : (a.iso < b.iso ? 1 : -1));
+  return posts.sort((a,b) => a.iso === b.iso ? (a.p === me() ? -1 : 1) : (a.iso < b.iso ? 1 : -1));
+}
+
+function viewFeed(){
+  markFeedSeen();
+  const posts = feedPosts();
 
   if(!posts.length) return `
     <div class="feed-empty">
@@ -1854,6 +1891,31 @@ function soundHTML(prof, iso){
   return `
     <button class="snd" aria-label="${on ? 'Mute' : 'Unmute'}" aria-pressed="${on}">
       <span class="eq ${on ? 'on' : ''}"><i></i><i></i><i></i></span>
+    </button>`;
+}
+
+/*
+ * The day's last words, faint over the photo itself. The collage keeps its
+ * one-line peek — it is already carrying a day number, a status and two
+ * actions — but a frame opened full screen has room to say what was said about
+ * it, which is the whole reason for opening it.
+ *
+ * Three at most, two lines each: enough to read the exchange, never enough to
+ * become a wall of text over someone's photograph.
+ */
+const VIEWER_NOTES = 3;
+function notesHTML(prof, iso){
+  const all = commentsOn(prof, iso);
+  if(!all.length) return '';
+  const shown = all.slice(-VIEWER_NOTES);
+  const earlier = all.length - shown.length;
+  return `
+    <button class="notes" aria-label="${all.length === 1 ? '1 comment' : all.length + ' comments'}">
+      ${earlier ? `<span class="more">+${earlier} earlier</span>` : ''}
+      ${shown.map(c => `
+        <span class="note-line">
+          <span class="who ${c.from === me() ? 'c-a' : 'c-b'}">${c.from === me() ? 'You' : nameOf(c.from)}</span>${esc(c.body)}
+        </span>`).join('')}
     </button>`;
 }
 
@@ -1991,7 +2053,7 @@ function wire(){
  * are looking at in the viewer.
  */
 function bindComments(host, prof, iso, slot){
-  host.querySelectorAll('.cmt, .cmt-peek').forEach(b => {
+  host.querySelectorAll('.cmt, .cmt-peek, .notes').forEach(b => {
     b.onclick = e => {
       e.stopPropagation();
       openComments(prof, iso, typeof slot === 'function' ? slot() : slot);
@@ -2175,7 +2237,9 @@ function paintKudos(postEl, to, iso){
 function paintComments(prof, iso){
   document.querySelectorAll(`[data-post-p="${prof}"][data-post-iso="${iso}"]`).forEach(host => {
     const slot = host.querySelector('.cmt-slot');
-    if(slot) slot.innerHTML = peekHTML(prof, iso);
+    // the open frame shows the exchange; the collage shows only the last word
+    if(slot) slot.innerHTML = host.classList.contains('viewer')
+      ? notesHTML(prof, iso) : peekHTML(prof, iso);
     const btn = host.querySelector('.cmt');
     if(btn) btn.outerHTML = cmtHTML(prof, iso);
     bindComments(host, prof, iso, host._cmtSlot || DAY_SLOT);
@@ -2226,7 +2290,7 @@ function openViewer(p, iso, index){
              data-slot="${slots[start]}">${frameCaption(p, iso, slots[start])}${
           multi ? ` <span class="of">${start+1}/${slots.length}</span>` : ''}</div>
         <div class="viewer-meta">${own ? 'You' : nameOf(p)} — ${fmtDate(iso)}</div>
-        <div class="cmt-slot">${peekHTML(p, iso)}</div>
+        <div class="cmt-slot">${notesHTML(p, iso)}</div>
         <div class="acts">
           ${own ? '' : kudosHTML(p, iso, false)}
           ${cmtHTML(p, iso)}
@@ -3264,6 +3328,14 @@ document.addEventListener('visibilitychange', async () => {
   await loadState();
   await checkIn();
   lastDay = todayISO();
+
+  /*
+   * Open on the feed — it's the part worth coming back to, and the tasks are
+   * one tap away. A challenge with no photos in it yet is the exception: an
+   * empty feed is a poor front door, so a fresh start still lands on Today.
+   */
+  state.tab = feedPosts().length ? 'feed' : 'today';
+
   render();
   if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
   // a device follows whoever is tracking on it, so re-register after a switch
