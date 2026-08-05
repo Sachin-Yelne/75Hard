@@ -497,21 +497,27 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
   width:20px;height:20px;color:var(--bone);}
 .viewer-bot{position:absolute;left:var(--pad);right:var(--pad);
   bottom:calc(var(--safe-bot) + 26px);pointer-events:none;}
-.viewer-bot .acts,.viewer-bot .cmt-peek,.viewer-bot .notes{pointer-events:auto;}
-/* the day's last words, laid faintly over the frame they're about */
-.notes{display:flex;flex-direction:column;gap:8px;width:100%;margin-top:14px;text-align:left;}
-.notes .more{
-  font-family:var(--cond);font-weight:600;font-size:10px;letter-spacing:.16em;
-  text-transform:uppercase;color:rgba(255,255,255,.42);
+.viewer-bot .acts,.viewer-bot .cmt-peek,.viewer-bot .frame-cap{pointer-events:auto;}
+/*
+ * What you wrote about this frame, over this frame. Sentence case and softer
+ * than the eyebrow above it — this is your voice, not a label. Three lines is
+ * as much as belongs over a photograph.
+ */
+.frame-cap{margin-top:9px;}
+.frame-cap .tx{
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
+  font-size:14.5px;line-height:1.4;color:rgba(255,255,255,.88);
 }
-.note-line{
-  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
-  font-size:12.5px;line-height:1.4;color:rgba(255,255,255,.74);
+.frame-cap .tx.add{
+  display:inline-block;font-family:var(--cond);font-weight:600;font-size:11.5px;
+  letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.5);
+  border-bottom:1px solid rgba(255,255,255,.22);padding-bottom:3px;
 }
-.note-line .who{
-  font-family:var(--cond);font-weight:700;font-size:10.5px;letter-spacing:.18em;
-  text-transform:uppercase;margin-right:8px;
-}
+/* only your own frames are yours to caption */
+.viewer-bot .frame-cap.edit{cursor:pointer;}
+.frame-cap:empty{display:none;}
+/* the caption is a sentence, the line under it a label — let them breathe */
+.frame-cap + .viewer-meta{margin-top:8px;}
 .viewer-meta{font-family:var(--cond);font-weight:600;font-size:12px;
   letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.62);}
 
@@ -595,6 +601,7 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
 .meal-name{
   width:100%;background:var(--ink-3);border:1px solid var(--rule-2);color:var(--bone);
   padding:14px 12px;font-family:var(--body);font-size:15px;
+  line-height:1.45;resize:none;display:block;
 }
 .meal-name:focus{outline:none;border-color:var(--p);}
 .meal-name::placeholder{color:var(--bone-3);}
@@ -776,7 +783,7 @@ const MULTI_SLOTS = TASKS.filter(t => t.multi).map(t => t.id);
 // A `meal` task's shots are things you ate, so each one can carry a name and a
 // verdict rather than just the task's label.
 const MEAL_SLOTS = TASKS.filter(t => t.meal).map(t => t.id);
-const MEAL_NAME_MAX = 60;
+const CAP_MAX = 120;              // a caption, not an essay
 const VERDICTS = [
   { id:'loved',  nm:'Loved it' },
   { id:'fine',   nm:'Fine' },
@@ -1066,14 +1073,38 @@ const waterLog = (p, iso) => entryOf(p, iso).waterLog || [];
    showing it. Lives in the existing tasks JSONB, so no schema change. */
 const noteOf = (p, iso, id) => ((entryOf(p, iso).notes || {})[id] || '').trim();
 
-/* What you ate, keyed by the photo's own slot. Rides the same JSONB as notes —
-   `{ 'diet#1750…': { nm:'Chipotle bowl', v:'loved' } }`. */
+/*
+ * A caption belongs to one photo and is keyed by that photo's own slot, riding
+ * the same JSONB as notes: `{ 'diet#1750…': { nm:'Blueberries', v:'loved' } }`.
+ * `v` is the verdict, and only a meal slot ever carries one — "what was it" and
+ * "was it any good" are both worth recording about food; a run needs no rating.
+ *
+ * Read through `caps`, falling back to `meals`, which is where captions lived
+ * when they were diet-only. A day rewrites itself to `caps` the next time it is
+ * saved, so the fallback empties itself out.
+ */
 const isMealSlot = s => MEAL_SLOTS.includes(slotBase(s));
-const mealOf = (p, iso, slot) => (entryOf(p, iso).meals || {})[slot] || null;
-const mealName = (p, iso, slot) => (mealOf(p, iso, slot)?.nm || '').trim();
-// every labelled meal of a day, oldest first, for the row summary
+const capOf = (p, iso, slot) => {
+  const e = entryOf(p, iso);
+  return (e.caps || {})[slot] || (e.meals || {})[slot] || null;
+};
+/*
+ * What a photo says. Its own caption first; failing that, the written note its
+ * task already carries — a workout note *is* the caption for its photo, and
+ * asking for the same sentence twice would be daft. Only a single-photo task
+ * can lend one, so a day of meals never shares a caption between frames.
+ */
+const capText = (p, iso, slot) => {
+  const own = (capOf(p, iso, slot)?.nm || '').trim();
+  if(own) return own;
+  const t = TASKS.find(x => x.id === slotBase(slot));
+  return t && t.note && !t.multi ? noteOf(p, iso, t.id) : '';
+};
+const capVerdict = (p, iso, slot) => (isMealSlot(slot) && capOf(p, iso, slot)?.v) || '';
+
+// every captioned meal of a day, oldest first, for the Diet row summary
 const mealsOf = (p, iso) => MEAL_SLOTS.flatMap(id => photosOf(p, iso, id))
-  .map(slot => ({ slot, ...(mealOf(p, iso, slot) || {}) }))
+  .map(slot => ({ slot, nm: capText(p, iso, slot), v: capVerdict(p, iso, slot) }))
   .filter(m => m.nm);
 
 /* The track attached to a post — one per person per day, in the same JSONB.
@@ -1084,15 +1115,22 @@ const trackOf = (p, iso) => {
   return t && t.url && t.nm ? t : null;
 };
 
-/* What a frame is called: the meal's own name once it has one, else the task.
-   `frameTitle` is plain text for alt/aria; `frameCaption` is markup. */
-const frameTitle = (p, iso, slot) => mealName(p, iso, slot) || slotLabel(slot);
 const verdictDot = v => v ? `<i class="vd ${v}" aria-hidden="true"></i>` : '';
+
+/* What a frame is called, in plain text, for alt and aria. */
+const frameTitle = (p, iso, slot) => capText(p, iso, slot) || slotLabel(slot);
+
+/* The day sheet's gallery gives each photo one line, so it shows whichever says
+   more: the caption if there is one, else the task it belongs to. */
 const frameCaption = (p, iso, slot) => {
-  const m = isMealSlot(slot) ? mealOf(p, iso, slot) : null;
-  const nm = (m?.nm || '').trim();
-  return `${nm ? verdictDot(m.v) : ''}<span class="tx">${esc(nm || slotLabel(slot))}</span>`;
+  const cap = capText(p, iso, slot);
+  return `${verdictDot(capVerdict(p, iso, slot))}<span class="tx">${esc(cap || slotLabel(slot))}</span>`;
 };
+
+/* The viewer has room for both, so it keeps the task as an eyebrow and gives
+   the caption a line of its own underneath. */
+const frameTag = (p, iso, slot) =>
+  `${verdictDot(capVerdict(p, iso, slot))}<span class="tx">${esc(slotLabel(slot))}</span>`;
 // the bar can only fill once, but the number should tell the truth
 const waterPct    = (p, iso) => Math.min(100, waterPctRaw(p, iso));
 const waterPctRaw = (p, iso) => Math.round(waterOz(p, iso) / WATER_GOAL_OZ * 100);
@@ -1477,7 +1515,8 @@ function render(){
 }
 
 function renderNav(){
-  const tabs = [['today','Today'],['wall','Wall'],['feed','Feed'],['rivals','Rivals']];
+  // the feed leads: it's where the app opens and the thing worth coming back to
+  const tabs = [['feed','Feed'],['today','Today'],['wall','Wall'],['rivals','Rivals']];
   const badge = feedBadge();
   document.getElementById('nav').innerHTML = tabs.map(([id,label]) => `
     <button class="tab ${state.tab===id?'on':''}" data-tab="${id}">
@@ -1895,28 +1934,15 @@ function soundHTML(prof, iso){
 }
 
 /*
- * The day's last words, faint over the photo itself. The collage keeps its
- * one-line peek — it is already carrying a day number, a status and two
- * actions — but a frame opened full screen has room to say what was said about
- * it, which is the whole reason for opening it.
- *
- * Three at most, two lines each: enough to read the exchange, never enough to
- * become a wall of text over someone's photograph.
+ * What you wrote about this photo, laid faintly over it. Comments stay tucked
+ * behind their own sheet — this is the caption, which belongs to the frame.
+ * Your own frames get an invitation when there's nothing written yet; that
+ * prompt is the only reason an empty caption renders at all.
  */
-const VIEWER_NOTES = 3;
-function notesHTML(prof, iso){
-  const all = commentsOn(prof, iso);
-  if(!all.length) return '';
-  const shown = all.slice(-VIEWER_NOTES);
-  const earlier = all.length - shown.length;
-  return `
-    <button class="notes" aria-label="${all.length === 1 ? '1 comment' : all.length + ' comments'}">
-      ${earlier ? `<span class="more">+${earlier} earlier</span>` : ''}
-      ${shown.map(c => `
-        <span class="note-line">
-          <span class="who ${c.from === me() ? 'c-a' : 'c-b'}">${c.from === me() ? 'You' : nameOf(c.from)}</span>${esc(c.body)}
-        </span>`).join('')}
-    </button>`;
+function capLineHTML(prof, iso, slot, own){
+  const cap = capText(prof, iso, slot);
+  if(cap) return `<span class="tx">${esc(cap)}</span>`;
+  return own ? `<span class="tx add">Add a caption</span>` : '';
 }
 
 /* The latest word on a frame — one line, on the photo, tap for the thread. */
@@ -2053,7 +2079,7 @@ function wire(){
  * are looking at in the viewer.
  */
 function bindComments(host, prof, iso, slot){
-  host.querySelectorAll('.cmt, .cmt-peek, .notes').forEach(b => {
+  host.querySelectorAll('.cmt, .cmt-peek').forEach(b => {
     b.onclick = e => {
       e.stopPropagation();
       openComments(prof, iso, typeof slot === 'function' ? slot() : slot);
@@ -2077,11 +2103,12 @@ function wireReel(host, p, iso){
     if(i === shown) return;
     shown = i;
     if(tag){
-      tag.innerHTML = `${frameCaption(p, iso, slots[i])} <span class="of">${i+1}/${slots.length}</span>`;
-      // the caption only opens the meal editor on your own food
-      tag.classList.toggle('edit', p === me() && isMealSlot(slots[i]));
+      tag.innerHTML = `${frameTag(p, iso, slots[i])} <span class="of">${i+1}/${slots.length}</span>`;
       tag.dataset.slot = slots[i];
     }
+    // every frame carries its own caption, so swiping has to bring the next one
+    const cap = host.querySelector('.frame-cap');
+    if(cap) cap.innerHTML = capLineHTML(p, iso, slots[i], p === me());
     pips.forEach((pip, n) => pip.classList.toggle('on', n === i));
   };
 
@@ -2148,8 +2175,8 @@ async function uploadFrom(input, prof, iso, slot){
     } else {
       render();
     }
-    // straight into naming it, while you still remember what it was
-    if(isMealSlot(slot)) openMeal(prof, iso, slot, { fresh:true });
+    // straight into saying what it is, while you still remember
+    openCaption(prof, iso, slot, { fresh:true });
   }catch(_){ toast('Upload failed'); }
 }
 
@@ -2237,9 +2264,7 @@ function paintKudos(postEl, to, iso){
 function paintComments(prof, iso){
   document.querySelectorAll(`[data-post-p="${prof}"][data-post-iso="${iso}"]`).forEach(host => {
     const slot = host.querySelector('.cmt-slot');
-    // the open frame shows the exchange; the collage shows only the last word
-    if(slot) slot.innerHTML = host.classList.contains('viewer')
-      ? notesHTML(prof, iso) : peekHTML(prof, iso);
+    if(slot) slot.innerHTML = peekHTML(prof, iso);
     const btn = host.querySelector('.cmt');
     if(btn) btn.outerHTML = cmtHTML(prof, iso);
     bindComments(host, prof, iso, host._cmtSlot || DAY_SLOT);
@@ -2286,11 +2311,11 @@ function openViewer(p, iso, index){
       ${multi ? `<div class="pips">${slots.map((sl, i) =>
         `<i class="${i===start?'on':''}"></i>`).join('')}</div>` : ''}
       <div class="viewer-bot">
-        <div class="slot-tag${own && isMealSlot(slots[start]) ? ' edit' : ''}"
-             data-slot="${slots[start]}">${frameCaption(p, iso, slots[start])}${
+        <div class="slot-tag" data-slot="${slots[start]}">${frameTag(p, iso, slots[start])}${
           multi ? ` <span class="of">${start+1}/${slots.length}</span>` : ''}</div>
+        <div class="frame-cap${own ? ' edit' : ''}">${capLineHTML(p, iso, slots[start], own)}</div>
         <div class="viewer-meta">${own ? 'You' : nameOf(p)} — ${fmtDate(iso)}</div>
-        <div class="cmt-slot">${notesHTML(p, iso)}</div>
+        <div class="cmt-slot">${peekHTML(p, iso)}</div>
         <div class="acts">
           ${own ? '' : kudosHTML(p, iso, false)}
           ${cmtHTML(p, iso)}
@@ -2307,14 +2332,13 @@ function openViewer(p, iso, index){
 
   view.querySelector('.viewer-x').onclick = closeViewer;
 
-  // Naming a meal from the photo itself: the caption is the handle, and only
-  // on your own food. The viewer stays open underneath.
+  // Writing a caption from the frame itself — any of yours, not just food.
+  // The viewer stays open underneath it.
   const tag = view.querySelector('.slot-tag');
-  if(own && tag) tag.onclick = e => {
-    const sl = tag.dataset.slot;
-    if(!isMealSlot(sl)) return;
+  const cap = view.querySelector('.frame-cap');
+  if(own && cap) cap.onclick = e => {
     e.stopPropagation();
-    openMeal(p, iso, sl, { after:() => repaintViewerTag(p, iso) });
+    openCaption(p, iso, tag.dataset.slot, { after:() => repaintViewerTag(p, iso) });
   };
 
   // Tapping the photo steps to the next one and wraps at the end — swiping
@@ -2348,15 +2372,17 @@ function openViewer(p, iso, index){
 /* The viewer outlives the meal sheet opened on top of it, so its caption has to
    catch up once that sheet is done. */
 function repaintViewerTag(p, iso){
-  const tag = document.querySelector('#viewer .viewer .slot-tag');
+  const view = document.querySelector('#viewer .viewer');
+  const tag = view && view.querySelector('.slot-tag');
   if(!tag) return;
   const slots = slotsFor(p, iso);
   const sl = tag.dataset.slot;
   const i = slots.indexOf(sl);
   const of = slots.length > 1 && i >= 0
     ? ` <span class="of">${i+1}/${slots.length}</span>` : '';
-  tag.innerHTML = frameCaption(p, iso, sl) + of;
-  tag.classList.toggle('edit', p === me() && isMealSlot(sl));
+  tag.innerHTML = frameTag(p, iso, sl) + of;
+  const cap = view.querySelector('.frame-cap');
+  if(cap) cap.innerHTML = capLineHTML(p, iso, sl, p === me());
 }
 
 function closeViewer(){
@@ -2389,15 +2415,15 @@ function openDay(prof, iso){
       return `<div class="shot-none">${mine ? 'No photos yet — all optional' : 'No photos this day'}</div>`;
     }
     return `<div class="sheet-shots">${slots.map(s => {
-      const named = isMealSlot(s) && mealName(prof, iso, s);
-      const cap = `class="cap${named ? ' named' : ''}"`;
+      const written = !!capText(prof, iso, s);
+      const cap = `class="cap${written ? ' named' : ''}"`;
       return `
       <figure class="sheet-shot" data-slot="${s}">
         <img src="${api.photoUrl(prof, iso, s)}" alt="${esc(frameTitle(prof, iso, s))}">
         <figcaption>
-          ${mine && isMealSlot(s)
-            ? `<button ${cap} data-meal="${s}"
-                 aria-label="${named ? 'Edit meal' : 'Name this meal'}">${frameCaption(prof, iso, s)}</button>`
+          ${mine
+            ? `<button ${cap} data-cap="${s}"
+                 aria-label="${written ? 'Edit caption' : 'Add a caption'}">${frameCaption(prof, iso, s)}</button>`
             : `<span ${cap}>${frameCaption(prof, iso, s)}</span>`}
           ${mine ? `<button class="rm" data-del="${s}" aria-label="Remove">${ICON.close}</button>` : ''}
         </figcaption>
@@ -2450,8 +2476,8 @@ function openDay(prof, iso){
 
     function bindGallery(){
       if(!mine) return;
-      sheet.querySelectorAll('[data-meal]').forEach(b => {
-        b.onclick = () => openMeal(prof, iso, b.dataset.meal, { after:() => openDay(prof, iso) });
+      sheet.querySelectorAll('[data-cap]').forEach(b => {
+        b.onclick = () => openCaption(prof, iso, b.dataset.cap, { after:() => openDay(prof, iso) });
       });
       sheet.querySelectorAll('[data-del]').forEach(b => {
         b.onclick = async () => {
@@ -2461,10 +2487,10 @@ function openDay(prof, iso){
             await api.deletePhoto(prof, iso, slot);
             removePhotoLocal(prof, iso, slot);
             toast('Photo removed');
-            // the label goes with the photo rather than outliving it
-            if(dropMeal(prof, iso, slot)){
+            // the caption goes with the photo rather than outliving it
+            if(dropCaption(prof, iso, slot)){
               try{ await api.saveDay(prof, iso, state.data[prof][iso]); }
-              catch(_){ toast('Offline — label not cleared'); }
+              catch(_){ toast('Offline — caption not cleared'); }
             }
             repaint();
             refreshSheetTaskShot(sheet, prof, iso, slot);
@@ -2523,10 +2549,8 @@ function openDay(prof, iso){
             repaint();
             refreshSheetTaskShot(sheet, prof, iso, slot);
             bindInputs();
-            // name it now, then hand the day sheet back
-            if(isMealSlot(slot)){
-              openMeal(prof, iso, slot, { fresh:true, after:() => openDay(prof, iso) });
-            }
+            // caption it now, then hand the day sheet back
+            openCaption(prof, iso, slot, { fresh:true, after:() => openDay(prof, iso) });
           }catch(_){ toast('Upload failed'); }
         };
       });
@@ -2742,19 +2766,33 @@ async function saveTrack(prof, iso, t){
   }catch(_){ toast('Offline — not saved'); }
 }
 
-/* ── meals ── */
+/* ── captions ── */
 /*
- * Name what you ate, and say how it went. Opens by itself the moment a diet
- * photo lands — that's when you remember what it was — and can be reopened
- * from the day sheet's gallery afterwards. Skipping is fine: an unnamed shot
- * just falls back to reading as "Diet", exactly as it did before.
+ * Say what a photo is. Opens by itself the moment any photo lands — that is the
+ * one moment you reliably remember — and can be reopened later by tapping the
+ * caption on the frame, or its line in the day sheet's gallery. Skipping is
+ * fine: an uncaptioned frame simply reads as its task, as it always did.
  *
- * Stored under `meals` in the day's tasks JSONB, keyed by the photo's own slot,
+ * Diet frames also offer a verdict. Nothing else does.
+ *
+ * Stored under `caps` in the day's tasks JSONB, keyed by the photo's own slot,
  * so it rides the save that was already happening and needs no schema change.
  */
-function openMeal(prof, iso, slot, opts = {}){
+const CAP_PROMPT = {
+  day:      { ask:'This frame',          hint:'Day 21, and it shows' },
+  diet:     { ask:'What was it?',        hint:'Blueberries — liked it' },
+  workout1: { ask:'What did you do?',    hint:'5k, easy pace' },
+  workout2: { ask:'What did you do?',    hint:'Hill loop, sunset' },
+  read:     { ask:'What did you read?',  hint:'Ten pages of Dune' }
+};
+
+function openCaption(prof, iso, slot, opts = {}){
   const { fresh = false, after = null } = opts;
-  const existing = mealOf(prof, iso, slot) || {};
+  const meal = isMealSlot(slot);
+  const prompt = CAP_PROMPT[slotBase(slot)] || { ask:'Add a caption', hint:'A few words' };
+  const existing = capOf(prof, iso, slot) || {};
+  // a workout's written note stands in until the frame has a caption of its own
+  const text = existing.nm != null ? existing.nm : capText(prof, iso, slot);
   let verdict = existing.v || '';
   // opened from a sheet, so hand that sheet back once this one is done with
   const andThen = () => { if(after) setTimeout(after, 340); };
@@ -2764,36 +2802,35 @@ function openMeal(prof, iso, slot, opts = {}){
 
   const stamp = slotStamp(slot);
   const when = stamp
-    ? new Date(stamp).toLocaleTimeString(undefined, { hour:'numeric', minute:'2-digit' })
-    : '';
+    ? `${slotLabel(slot)}, ${new Date(stamp).toLocaleTimeString(undefined, { hour:'numeric', minute:'2-digit' })}`
+    : slotLabel(slot);
 
   openSheet(`
     <div data-who="${whoAttr(prof)}">
       <div class="sheet-head">
         <div>
-          <div class="t">${fresh ? 'What was it?' : 'Edit meal'}</div>
-          <div class="s">Day ${dayIndex(iso)}${when ? ` — ${when}` : ''}</div>
+          <div class="t">${fresh || !text ? prompt.ask : 'Edit caption'}</div>
+          <div class="s">Day ${dayIndex(iso)} — ${esc(when)}</div>
         </div>
         <button class="icon-btn" id="x">${ICON.close}</button>
       </div>
 
       ${shot()}
-      <input id="mName" class="meal-name" type="text" maxlength="${MEAL_NAME_MAX}"
-             placeholder="Chipotle bowl, double chicken"
-             value="${esc(existing.nm || '')}">
-      <div class="verdicts">
+      <textarea id="mName" class="meal-name" rows="2" maxlength="${CAP_MAX}"
+        placeholder="${esc(prompt.hint)}">${esc(text || '')}</textarea>
+      ${meal ? `<div class="verdicts">
         ${VERDICTS.map(v => `
           <button class="verdict ${verdict === v.id ? 'on' : ''}" data-v="${v.id}">
             <i class="vd ${v.id}"></i><span>${v.nm}</span>
           </button>`).join('')}
-      </div>
+      </div>` : ''}
 
       <button class="btn primary" id="mSave">Save</button>
       ${fresh
         ? `<button class="btn ghost" id="mSkip">Skip</button>`
-        : (existing.nm || existing.v)
-          ? `<button class="btn ghost" id="mClear">Remove label</button>` : ''}
-      ${fresh ? `<div class="meal-when">You can name it later from the day</div>` : ''}
+        : (text || verdict)
+          ? `<button class="btn ghost" id="mClear">Remove caption</button>` : ''}
+      ${fresh ? `<div class="meal-when">You can write it later from the photo</div>` : ''}
     </div>`, sheet => {
 
     const name = sheet.querySelector('#mName');
@@ -2809,48 +2846,58 @@ function openMeal(prof, iso, slot, opts = {}){
       };
     });
 
-    // saveMeal closes the sheet synchronously, so the handback can follow it
+    // saveCaption closes the sheet synchronously, so the handback can follow it
     sheet.querySelector('#mSave').onclick = () => {
-      saveMeal(prof, iso, slot, name.value, verdict); andThen();
+      saveCaption(prof, iso, slot, name.value, verdict); andThen();
     };
     const skip = sheet.querySelector('#mSkip');
     if(skip) skip.onclick = () => { closeSheet(); andThen(); };
     const clear = sheet.querySelector('#mClear');
-    if(clear) clear.onclick = () => { saveMeal(prof, iso, slot, '', ''); andThen(); };
+    if(clear) clear.onclick = () => { saveCaption(prof, iso, slot, '', ''); andThen(); };
 
-    // a fresh meal wants the keyboard; an edit wants the caret at the end
     watchKeyboard();
     name.focus();
     name.setSelectionRange(name.value.length, name.value.length);
   });
 }
 
-async function saveMeal(prof, iso, slot, nm, v){
+async function saveCaption(prof, iso, slot, nm, v){
   seedDay(prof, iso);
   const entry = state.data[prof][iso];
-  const meals = (entry.meals ||= {});
-  const clean = String(nm || '').trim().slice(0, MEAL_NAME_MAX);
+  const caps = (entry.caps ||= {});
+  const clean = String(nm || '').trim().slice(0, CAP_MAX);
 
-  if(clean || v) meals[slot] = v ? { nm:clean, v } : { nm:clean };
-  else delete meals[slot];
-  if(!Object.keys(meals).length) delete entry.meals;
+  if(clean || v) caps[slot] = v ? { nm:clean, v } : { nm:clean };
+  else delete caps[slot];
+  // whatever this slot said under the old key, `caps` is the answer now
+  if(entry.meals){
+    delete entry.meals[slot];
+    if(!Object.keys(entry.meals).length) delete entry.meals;
+  }
+  if(!Object.keys(caps).length) delete entry.caps;
 
   closeSheet(); render();
   try{
     await api.saveDay(prof, iso, entry);
     state.online = true;
-    // the caption already says the name; the toast only confirms the save
-    toast(clean || v ? 'Meal saved' : 'Label removed');
+    // the frame already shows the words; the toast only confirms the save
+    toast(clean || v ? 'Caption saved' : 'Caption removed');
   }catch(_){ toast('Offline — not saved'); }
 }
 
-/* A deleted photo takes its label with it, rather than leaving an orphan. */
-function dropMeal(prof, iso, slot){
+/* A deleted photo takes its caption with it, rather than leaving an orphan. */
+function dropCaption(prof, iso, slot){
   const entry = state.data[prof]?.[iso];
-  if(!entry?.meals?.[slot]) return false;
-  delete entry.meals[slot];
-  if(!Object.keys(entry.meals).length) delete entry.meals;
-  return true;
+  if(!entry) return false;
+  let hit = false;
+  for(const key of ['caps', 'meals']){
+    if(entry[key] && entry[key][slot]){
+      delete entry[key][slot];
+      if(!Object.keys(entry[key]).length) delete entry[key];
+      hit = true;
+    }
+  }
+  return hit;
 }
 
 /* ── comments ── */
