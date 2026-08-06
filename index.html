@@ -347,9 +347,33 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
   color:rgba(255,255,255,.75);
 }
 .trk.add .nm{color:rgba(255,255,255,.7);}
-/* the sound control: the same bars, up where the eye already goes */
+/*
+ * The sound chip: a small square that says whether the frame is audible, up
+ * where the eye already goes, and then gets out of the way. It shows itself
+ * whenever the answer could have changed — a new day under the thumb, a tap,
+ * a track added, playback starting or failing — and retires a beat later.
+ *
+ * Silence is the state worth explaining, so a muted chip doesn't leave: it
+ * settles back to a whisper and stays a target for the tap that brings the
+ * sound back. Audible needs no caption, and fades out altogether.
+ */
 .post-top .right{display:flex;align-items:center;gap:12px;}
-.snd{padding:3px 0 3px 10px;display:flex;align-items:center;}
+.snd{
+  width:24px;height:24px;flex-shrink:0;display:grid;place-items:center;
+  border:1px solid rgba(255,255,255,.34);background:rgba(0,0,0,.3);
+  color:var(--bone);
+  opacity:0;transform:scale(.88);pointer-events:none;
+  transition:opacity .34s ease,transform .34s cubic-bezier(.3,1,.4,1);
+}
+.snd .ic{width:13px;height:13px;}
+/* These two glyphs are strokes, not filled outlines like the rest of the set —
+   a filled cone and its waves close into a blob at 13px. The global svg rule
+   sets a fill, and a stylesheet beats the element's own fill attribute, so the
+   override has to live here or the drawing arrives solid. */
+.snd svg{fill:none;}
+.snd.show{opacity:1;transform:scale(1);pointer-events:auto;}
+.snd.rest{opacity:.4;transform:scale(1);pointer-events:auto;}
+.snd:active{opacity:1;}
 .trk .art{
   width:26px;height:26px;flex-shrink:0;object-fit:cover;display:block;
   background:var(--rule-2);
@@ -364,7 +388,8 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
 .trk .txt .ar{color:rgba(255,255,255,.55);flex-shrink:0;max-width:40%;
   overflow:hidden;text-overflow:ellipsis;}
 
-/* three bars that move while the sound is on, flat while it isn't */
+/* Three bars that move while the sound is on. The picker's marker for the row
+   currently auditioning — on the frame itself that job belongs to .snd. */
 .eq{display:flex;align-items:flex-end;gap:2px;height:13px;flex-shrink:0;}
 .eq i{width:2px;height:3px;background:var(--bone);transform-origin:bottom;}
 .eq.on i{animation:eqbar .9s ease-in-out infinite;}
@@ -887,7 +912,12 @@ const ICON = {
   note:'<svg viewBox="0 0 448 512" aria-hidden="true"><path d="M0 96l448 0 0 32L0 128l0-32zm0 144l448 0 0 32L0 272l0-32zM0 384l288 0 0 32L0 416l0-32z"/></svg>',
   close:'<svg viewBox="0 0 384 512" aria-hidden="true"><path d="M192 233.4L59.5 100.9 36.9 123.5 169.4 256 36.9 388.5l22.6 22.6L192 278.6 324.5 411.1l22.6-22.6L214.6 256 347.1 123.5l-22.6-22.6L192 233.4z"/></svg>',
   thumb:'<svg viewBox="0 0 512 512" aria-hidden="true"><path d="M208 48L256 48L256 208L464 208L464 432L432 464L176 464L176 80ZM208 93L208 432L419 432L432 419L432 240L224 240L224 80ZM32 240L144 240L144 464L32 464ZM64 272L64 432L112 432L112 272Z"/></svg>',
-  comment:'<svg viewBox="0 0 512 512" aria-hidden="true"><path d="M16 64L496 64L496 384L128 384L16 464L16 64ZM48 96L48 402L118 352L464 352L464 96L48 96Z"/></svg>'
+  comment:'<svg viewBox="0 0 512 512" aria-hidden="true"><path d="M16 64L496 64L496 384L128 384L16 464L16 64ZM48 96L48 402L118 352L464 352L464 96L48 96Z"/></svg>',
+  /* The two states of the sound chip. Drawn as strokes rather than the filled
+     outlines the rest of the set uses: at 13px a speaker's cone and its waves
+     close up into a blob when filled, and these have to read at a glance. */
+  sound:'<svg viewBox="0 0 512 512" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="30" stroke-linejoin="miter"><path d="M24 192L104 192L232 88L232 424L104 320L24 320Z"/><path d="M300 184A100 100 0 0 1 300 328"/><path d="M360 128A180 180 0 0 1 360 384"/></svg>',
+  soundOff:'<svg viewBox="0 0 512 512" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="30" stroke-linejoin="miter"><path d="M24 192L104 192L232 88L232 424L104 320L24 320Z"/><path d="M312 196L448 316"/><path d="M448 196L312 316"/></svg>'
 };
 
 /* ═══════════ api ═══════════ */
@@ -1019,8 +1049,19 @@ const music = {
   fade:null,
   raf:null,       // pending scroll frame, cancelled when the feed goes away
   armed:false,    // waiting on a gesture to satisfy iOS
-  hinted:false
+  /*
+   * Sound was wanted and didn't happen — autoplay refused, or the preview URL
+   * is dead. Kept apart from `on`, which is the preference and stays true: the
+   * chip has to show a mute glyph either way, but a tap means "start" here and
+   * "stop" when the preference itself is off.
+   */
+  blocked:false,
+  shown:false,    // chip in its loud state
+  reveal:null     // timer that retires it
 };
+
+/* Long enough to read on the way past, short enough not to sit on the frame. */
+const SND_HOLD = 2000;
 
 const me   = () => state.me;
 const them = () => state.me === 'sachin' ? 'aarya' : 'sachin';
@@ -1313,6 +1354,27 @@ function musicEl(){
   a.preload = 'none';
   a.setAttribute('playsinline', '');
   a.volume = 0;
+
+  /* The chip follows the element, not our hopes for it, so anything that
+     starts or kills playback behind our back still ends up on screen. */
+  a.addEventListener('playing', () => {
+    if(!music.blocked) return;
+    music.blocked = false;
+    revealSnd();              // the moment it goes audible is worth showing
+  });
+  a.addEventListener('error', () => {
+    /*
+     * Apple's preview URLs go stale, and a track saved months ago can simply
+     * stop resolving. That is silence with a reason, and the chip is where the
+     * reason gets stated. Ignored while the picker is auditioning, which
+     * borrows this element and clears `loaded` to say so.
+     */
+    const t = wantedTrack();
+    if(!t || music.loaded !== t.url) return;
+    music.blocked = true;
+    revealSnd();
+  });
+
   music.el = a;
   return a;
 }
@@ -1366,7 +1428,10 @@ function musicApply(){
   }
   // play() stays synchronous with the tap that called it — that's the unlock
   const started = a.play();
-  if(started && started.catch) started.then(() => fadeTo(1)).catch(armForGesture);
+  if(started && started.catch){
+    started.then(() => { music.blocked = false; fadeTo(1); paintSnds(); })
+           .catch(armForGesture);
+  }
   paintTrackRows();
 }
 
@@ -1375,29 +1440,34 @@ function musicApply(){
  * autoplay is refused. Rather than give up and call it muted, wait for the
  * next touch anywhere — a scroll of the feed counts — and start then. The
  * preference is untouched: the listener never asked for silence.
+ *
+ * The frame is silent in the meantime either way, though, and that is the
+ * confusion the chip exists to answer — so mark it blocked and let it say so.
  */
 function armForGesture(){
+  music.blocked = true;       // silent for now, and the chip should say so
+  revealSnd();
   if(music.armed) return;
   music.armed = true;
-  const go = () => {
-    document.removeEventListener('pointerdown', go);
-    music.armed = false;
-    if(music.on && music.at) musicApply();
-  };
-  document.addEventListener('pointerdown', go, { once:true, passive:true });
+  document.addEventListener('pointerdown', spendGesture, { passive:true });
+}
+
+function spendGesture(e){
   /*
-   * Said once per device, not once per load. The app opens on the feed, which
-   * is a load with no gesture spent, so every single launch would otherwise
-   * arrive with the same tip — and the first touch starts the music anyway.
+   * A tap on the chip is not a gesture to steal. pointerdown runs before the
+   * chip's own click, so starting the song here would leave that click to read
+   * as "mute" and stop it again — one tap, both ways, nothing to hear. The
+   * chip knows which of the two it means; let it say.
    */
-  if(!music.hinted && localStorage.getItem('soundHint') !== '1'){
-    music.hinted = true;
-    setTimeout(() => {
-      if(!music.armed) return;
-      toast('Tap anywhere for sound');
-      localStorage.setItem('soundHint', '1');
-    }, 600);
-  }
+  if(e && e.target && e.target.closest && e.target.closest('.snd')) return;
+  releaseGesture();
+  if(music.on && music.at) musicApply();
+}
+
+function releaseGesture(){
+  if(!music.armed) return;
+  music.armed = false;
+  document.removeEventListener('pointerdown', spendGesture);
 }
 
 /* The one deliberate mute/unmute — and the only thing that writes the setting. */
@@ -1405,8 +1475,28 @@ function musicToggle(prof, iso){
   if(prof) music.at = `${prof}|${iso}`;
   music.on = !music.on;
   localStorage.setItem('musicOff', music.on ? '' : '1');
+  // asking for sound is itself the gesture iOS was holding out for
+  if(music.on) releaseGesture();
+  music.blocked = false;
   haptic(8);
   musicApply();
+  revealSnd();
+}
+
+/*
+ * What the chip does when tapped. Two jobs, one control: muted by choice, a tap
+ * asks for sound; silent because autoplay was refused or the preview died, a
+ * tap is a retry — and must not flip the preference off, which would mean
+ * tapping an "unmute" glyph to mute something already silent.
+ */
+function sndTap(prof, iso){
+  if(!(music.on && music.blocked)){ musicToggle(prof, iso); return; }
+  if(prof) music.at = `${prof}|${iso}`;
+  releaseGesture();
+  music.blocked = false;
+  haptic(8);
+  musicApply();
+  revealSnd();
 }
 
 /* Silence without forgetting that sound was wanted — for a backgrounded app,
@@ -1422,32 +1512,91 @@ function musicPause(){
 function musicLeave(){
   // a scroll frame queued before the feed was replaced must not outlive it
   if(music.raf !== null){ cancelAnimationFrame(music.raf); music.raf = null; }
+  clearTimeout(music.reveal);
+  music.reveal = null;
+  music.shown = false;
   music.at = null;
   musicPause();
   if(music.el) music.el.volume = 0;
+}
+
+/* Whether the chip should read as audible: wanted, and nothing in the way. */
+const soundOn = () => music.on && !music.blocked;
+
+/*
+ * Show the state, then stop showing it. Called from everywhere the answer to
+ * "why can't I hear this" could just have changed, and safe to call twice —
+ * a second call only restarts the clock.
+ */
+function revealSnd(){
+  clearTimeout(music.reveal);
+  music.shown = true;
+  paintSnds();
+  music.reveal = setTimeout(() => {
+    music.reveal = null;
+    music.shown = false;
+    paintSnds();
+  }, SND_HOLD);
+}
+
+function paintSnds(){
+  document.querySelectorAll('[data-post-p][data-post-iso]').forEach(host => {
+    paintSnd(host, host.dataset.postP, host.dataset.postIso);
+  });
+}
+
+/*
+ * The chip is updated rather than replaced. A fresh node would start its
+ * transition over from nothing every time, which is a fade that never fades —
+ * and on a timer that fires twice a scroll, a flicker.
+ */
+function paintSnd(host, p, iso){
+  let btn = host.querySelector('.snd');
+  if(!trackOf(p, iso)){ if(btn) btn.remove(); return null; }
+
+  if(!btn){
+    // a day that has only just had music put on it
+    const right = host.querySelector('.post-top .right');
+    if(!right) return null;
+    const wrap = document.createElement('div');
+    wrap.innerHTML = soundHTML(p, iso).trim();
+    btn = wrap.firstElementChild;
+    if(!btn) return null;
+    right.appendChild(btn);
+    bindPostMusic(btn, null, p, iso);
+  }
+
+  const on = soundOn();
+  const ic = btn.querySelector('.ic');
+  if(ic) ic.innerHTML = on ? ICON.sound : ICON.soundOff;
+  btn.setAttribute('aria-label', on ? 'Mute the music' : 'Unmute the music');
+
+  // only the frame under the thumb speaks; the rest are off screen anyway
+  const here = music.at === `${p}|${iso}`;
+  btn.classList.toggle('show', here && music.shown);
+  btn.classList.toggle('rest', here && !music.shown && !on);
+  return btn;
 }
 
 /* Repaint the music bits in place — cheaper and calmer than a re-render. */
 function paintTrackRows(){
   document.querySelectorAll('[data-post-p][data-post-iso]').forEach(host => {
     const p = host.dataset.postP, iso = host.dataset.postIso;
-    const swap = (sel, html) => {
-      const old = host.querySelector(sel);
-      if(!old) return null;
+    const old = host.querySelector('.trk');
+    let trk = null;
+    if(old){
       const wrap = document.createElement('div');
-      wrap.innerHTML = html.trim();
-      const fresh = wrap.firstElementChild;
-      if(!fresh){ old.remove(); return null; }
-      old.replaceWith(fresh);
-      return fresh;
-    };
-    bindPostMusic(swap('.snd', soundHTML(p, iso)), swap('.trk', trackHTML(p, iso)), p, iso);
+      wrap.innerHTML = trackHTML(p, iso).trim();
+      trk = wrap.firstElementChild;
+      if(trk) old.replaceWith(trk); else old.remove();
+    }
+    bindPostMusic(paintSnd(host, p, iso), trk, p, iso);
   });
 }
 
 /* Top control mutes; the row underneath is the track, and yours to change. */
 function bindPostMusic(snd, trk, p, iso){
-  if(snd) snd.onclick = e => { e.stopPropagation(); musicToggle(p, iso); };
+  if(snd) snd.onclick = e => { e.stopPropagation(); sndTap(p, iso); };
   if(trk && trk.dataset.music) trk.onclick = e => { e.stopPropagation(); openMusic(p, iso); };
 }
 
@@ -1471,6 +1620,8 @@ function wireFeedMusic(feed){
     const key = `${post.dataset.postP}|${post.dataset.postIso}`;
     if(key === music.at) return;
     music.at = key;
+    // a new day under the thumb re-states the sound, the way a feed should
+    revealSnd();
     if(music.on) musicApply();
   };
   feed.addEventListener('scroll', () => {
@@ -1483,6 +1634,14 @@ function wireFeedMusic(feed){
   // tab this call is still inside that gesture, which is exactly what iOS
   // wants; on a cold load into the feed it's refused and the next touch does it.
   if(music.on) musicApply();
+
+  /*
+   * Arriving states the sound too — a cold launch, a tab switch, a return from
+   * the background and a track just saved all land here, and all of them are
+   * moments where the frame could be quiet with no explanation on it. Last,
+   * so it outlives the paint musicApply() does on its way through.
+   */
+  revealSnd();
 }
 
 /* The picker borrows the same element, so the unlock carries into it. */
@@ -1954,14 +2113,18 @@ function trackHTML(prof, iso){
     : `<div class="trk">${inner}</div>`;
 }
 
-/* Sound is a property of listening, not of one post, so its control sits at the
-   top where it always is — and only where there is something to hear. */
+/*
+ * Sound is a property of listening, not of one post, so its control sits at the
+ * top where it always is — and only where there is something to hear. Rendered
+ * retired: paintSnd() decides whether this frame is the one showing it, which
+ * keeps a re-render from flashing every chip in the feed at once.
+ */
 function soundHTML(prof, iso){
   if(!trackOf(prof, iso)) return '';
-  const on = music.on;
+  const on = soundOn();
   return `
-    <button class="snd" aria-label="${on ? 'Mute' : 'Unmute'}" aria-pressed="${on}">
-      <span class="eq ${on ? 'on' : ''}"><i></i><i></i><i></i></span>
+    <button class="snd" aria-label="${on ? 'Mute the music' : 'Unmute the music'}">
+      <span class="ic">${on ? ICON.sound : ICON.soundOff}</span>
     </button>`;
 }
 
