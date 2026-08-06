@@ -348,20 +348,25 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
 }
 .trk.add .nm{color:rgba(255,255,255,.7);}
 /*
- * The sound chip: a small square that says whether the frame is audible, up
- * where the eye already goes, and then gets out of the way. It shows itself
- * whenever the answer could have changed — a new day under the thumb, a tap,
- * a track added, playback starting or failing — and retires a beat later.
+ * The sound chip: a small mark beside the date saying whether the frame is
+ * audible. It announces itself whenever the answer could have changed — a new
+ * day under the thumb, a tap, a track added, playback starting or failing —
+ * and a beat later settles into whichever resting state it belongs in.
  *
- * Silence is the state worth explaining, so a muted chip doesn't leave: it
- * settles back to a whisper and stays a target for the tap that brings the
- * sound back. Audible needs no caption, and fades out altogether — while it is
- * up, though, it is the bars rather than a glyph, moving as long as the song is.
+ * Playing rests at full strength: bars moving in time with the song, which is
+ * worth looking at and is the reason the whole thing is here. Silence rests at
+ * a whisper — it has an explanation to offer, offers it once, then stops
+ * asking, while staying a target for the tap that brings the sound back.
+ * Neither leaves the frame; the difference is only how loudly it stays.
  */
-.post-top .right{display:flex;align-items:center;gap:12px;}
+/* 6px, not 12: the chip's target is wider than its drawing, so the gap that
+   looks right is measured to the glyph rather than to the button's edge. */
+.post-top .right{display:flex;align-items:center;gap:6px;}
+/* No border and no backing: the name and the date sit up here as bare marks on
+   the shade, and a boxed control among them reads as chrome. The 24px is a
+   thumb-sized target around a 13px drawing, not a shape anyone should see. */
 .snd{
   width:24px;height:24px;flex-shrink:0;display:grid;place-items:center;
-  border:1px solid rgba(255,255,255,.34);background:rgba(0,0,0,.3);
   color:var(--bone);
   opacity:0;transform:scale(.88);pointer-events:none;
   transition:opacity .34s ease,transform .34s cubic-bezier(.3,1,.4,1);
@@ -376,6 +381,13 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
 /* Faint enough to stop reading as a control demanding an answer, solid enough
    to still be findable and hittable on a bright frame. */
 .snd.rest{opacity:.24;transform:scale(1);pointer-events:auto;}
+/*
+ * Playing doesn't recede. The bars are worth watching — they are the one mark
+ * on the frame moving in time with something — and a control that never leaves
+ * is also always a way to stop the sound, which a chip that faded out was not.
+ * Only silence is transient here: it says its piece and then settles back.
+ */
+.snd.rest[data-on="true"]{opacity:1;}
 .snd:active{opacity:1;}
 /* Nothing to see, so nothing to animate — the bars are only alive on a chip
    that is actually on screen. */
@@ -1584,8 +1596,10 @@ function paintSnd(host, p, iso){
 
   // only the frame under the thumb speaks; the rest are off screen anyway
   const here = music.at === `${p}|${iso}`;
+  /* Both faces rest rather than leave; how visible that resting state is, is
+     the stylesheet's business — full for the bars, a whisper for silence. */
   btn.classList.toggle('show', here && music.shown);
-  btn.classList.toggle('rest', here && !music.shown && !on);
+  btn.classList.toggle('rest', here && !music.shown);
   return btn;
 }
 
