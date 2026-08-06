@@ -355,7 +355,8 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
  *
  * Silence is the state worth explaining, so a muted chip doesn't leave: it
  * settles back to a whisper and stays a target for the tap that brings the
- * sound back. Audible needs no caption, and fades out altogether.
+ * sound back. Audible needs no caption, and fades out altogether — while it is
+ * up, though, it is the bars rather than a glyph, moving as long as the song is.
  */
 .post-top .right{display:flex;align-items:center;gap:12px;}
 .snd{
@@ -372,8 +373,13 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
    override has to live here or the drawing arrives solid. */
 .snd svg{fill:none;}
 .snd.show{opacity:1;transform:scale(1);pointer-events:auto;}
-.snd.rest{opacity:.4;transform:scale(1);pointer-events:auto;}
+/* Faint enough to stop reading as a control demanding an answer, solid enough
+   to still be findable and hittable on a bright frame. */
+.snd.rest{opacity:.24;transform:scale(1);pointer-events:auto;}
 .snd:active{opacity:1;}
+/* Nothing to see, so nothing to animate — the bars are only alive on a chip
+   that is actually on screen. */
+.snd:not(.show):not(.rest) .eq.on i{animation:none;}
 .trk .art{
   width:26px;height:26px;flex-shrink:0;object-fit:cover;display:block;
   background:var(--rule-2);
@@ -388,8 +394,8 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
 .trk .txt .ar{color:rgba(255,255,255,.55);flex-shrink:0;max-width:40%;
   overflow:hidden;text-overflow:ellipsis;}
 
-/* Three bars that move while the sound is on. The picker's marker for the row
-   currently auditioning — on the frame itself that job belongs to .snd. */
+/* Three bars that move while the sound is on: the chip's audible face, and the
+   picker's marker for the row currently auditioning. */
 .eq{display:flex;align-items:flex-end;gap:2px;height:13px;flex-shrink:0;}
 .eq i{width:2px;height:3px;background:var(--bone);transform-origin:bottom;}
 .eq.on i{animation:eqbar .9s ease-in-out infinite;}
@@ -913,10 +919,10 @@ const ICON = {
   close:'<svg viewBox="0 0 384 512" aria-hidden="true"><path d="M192 233.4L59.5 100.9 36.9 123.5 169.4 256 36.9 388.5l22.6 22.6L192 278.6 324.5 411.1l22.6-22.6L214.6 256 347.1 123.5l-22.6-22.6L192 233.4z"/></svg>',
   thumb:'<svg viewBox="0 0 512 512" aria-hidden="true"><path d="M208 48L256 48L256 208L464 208L464 432L432 464L176 464L176 80ZM208 93L208 432L419 432L432 419L432 240L224 240L224 80ZM32 240L144 240L144 464L32 464ZM64 272L64 432L112 432L112 272Z"/></svg>',
   comment:'<svg viewBox="0 0 512 512" aria-hidden="true"><path d="M16 64L496 64L496 384L128 384L16 464L16 64ZM48 96L48 402L118 352L464 352L464 96L48 96Z"/></svg>',
-  /* The two states of the sound chip. Drawn as strokes rather than the filled
-     outlines the rest of the set uses: at 13px a speaker's cone and its waves
-     close up into a blob when filled, and these have to read at a glance. */
-  sound:'<svg viewBox="0 0 512 512" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="30" stroke-linejoin="miter"><path d="M24 192L104 192L232 88L232 424L104 320L24 320Z"/><path d="M300 184A100 100 0 0 1 300 328"/><path d="M360 128A180 180 0 0 1 360 384"/></svg>',
+  /* The silent face of the sound chip; the audible one is the moving bars, not
+     a glyph. Drawn as strokes rather than the filled outlines the rest of the
+     set uses: at 13px a speaker's cone closes up into a blob when filled, and
+     this has to read at a glance. */
   soundOff:'<svg viewBox="0 0 512 512" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="30" stroke-linejoin="miter"><path d="M24 192L104 192L232 88L232 424L104 320L24 320Z"/><path d="M312 196L448 316"/><path d="M448 196L312 316"/></svg>'
 };
 
@@ -1567,8 +1573,13 @@ function paintSnd(host, p, iso){
   }
 
   const on = soundOn();
-  const ic = btn.querySelector('.ic');
-  if(ic) ic.innerHTML = on ? ICON.sound : ICON.soundOff;
+  /* Swapped only when it actually changes: the bars restart their animation
+     from flat every time this markup is replaced, and paint runs on every
+     scroll frame that lands on a new day. */
+  if(btn.dataset.on !== String(on)){
+    btn.dataset.on = String(on);
+    btn.innerHTML = sndFace(on);
+  }
   btn.setAttribute('aria-label', on ? 'Mute the music' : 'Unmute the music');
 
   // only the frame under the thumb speaks; the rest are off screen anyway
@@ -2123,10 +2134,20 @@ function soundHTML(prof, iso){
   if(!trackOf(prof, iso)) return '';
   const on = soundOn();
   return `
-    <button class="snd" aria-label="${on ? 'Mute the music' : 'Unmute the music'}">
-      <span class="ic">${on ? ICON.sound : ICON.soundOff}</span>
+    <button class="snd" data-on="${on}" aria-label="${on ? 'Mute the music' : 'Unmute the music'}">
+      ${sndFace(on)}
     </button>`;
 }
+
+/*
+ * The chip's two faces. Playing is the bars, moving in time with the fact that
+ * something is: a still glyph can say "sound is on" but only a moving one says
+ * it is on *now*. Silence gets the crossed speaker, because a stopped animation
+ * and a broken one look the same, and this state is the one carrying a reason.
+ */
+const sndFace = on => on
+  ? '<span class="eq on"><i></i><i></i><i></i></span>'
+  : `<span class="ic">${ICON.soundOff}</span>`;
 
 /*
  * What you wrote about this photo, laid faintly over it. Comments stay tucked
