@@ -1,4 +1,4 @@
-const { connect } = require('./lib/db');
+const { connect, fail } = require('./lib/db');
 const { notify } = require('./lib/push');
 
 const PROFILES = ['sachin', 'aarya'];
@@ -47,11 +47,24 @@ module.exports = async function handler(req, res) {
 
   if (req.method === 'GET') {
     try {
-      const rows = await sql`
-        SELECT content_type, encode(data, 'base64') AS data_base64
-        FROM photos
-        WHERE profile_id = ${profileId} AND day_date = ${date}::date AND slot = ${slot}
-      `;
+      /*
+       * `size=thumb` asks for the collage-sized rendition. COALESCE rather
+       * than a second request path: a frame posted before thumbs existed has
+       * none, and answering with the full image keeps it looking right while
+       * the app backfills. Nothing has to know which frames are converted.
+       */
+      const wantThumb = req.query.size === 'thumb';
+      const rows = wantThumb
+        ? await sql`
+            SELECT content_type, encode(COALESCE(thumb, data), 'base64') AS data_base64
+            FROM photos
+            WHERE profile_id = ${profileId} AND day_date = ${date}::date AND slot = ${slot}
+          `
+        : await sql`
+            SELECT content_type, encode(data, 'base64') AS data_base64
+            FROM photos
+            WHERE profile_id = ${profileId} AND day_date = ${date}::date AND slot = ${slot}
+          `;
 
       if (!rows.length) {
         return res.status(404).json({ error: 'Photo not found' });
@@ -63,14 +76,34 @@ module.exports = async function handler(req, res) {
       res.setHeader('Cache-Control', 'private, max-age=31536000, immutable');
       return res.status(200).send(buffer);
     } catch (err) {
-      console.error(err);
-      return res.status(500).json({ error: 'Failed to load photo' });
+      return fail(res, err, 'Failed to load photo');
     }
   }
 
   if (req.method === 'POST') {
     try {
-      const { contentType = 'image/jpeg', dataBase64 } = req.body || {};
+      const { contentType = 'image/jpeg', dataBase64, thumbBase64 } = req.body || {};
+
+      /*
+       * A body carrying only a thumb is the app converting a frame posted
+       * before thumbs existed. It fills in the missing rendition and nothing
+       * else — the photo is not new, so it neither replaces the full image nor
+       * rings the other phone. `thumb IS NULL` makes it a no-op if two devices
+       * get to the same frame at once.
+       */
+      if (!dataBase64 && thumbBase64) {
+        const thumbOnly = Buffer.from(thumbBase64, 'base64');
+        if (thumbOnly.length > 1024 * 1024) {
+          return res.status(413).json({ error: 'Thumbnail too large' });
+        }
+        await sql`
+          UPDATE photos SET thumb = ${thumbOnly}
+          WHERE profile_id = ${profileId} AND day_date = ${date}::date
+            AND slot = ${slot} AND thumb IS NULL
+        `;
+        return res.status(200).json({ ok: true, filled: true });
+      }
+
       if (!dataBase64) {
         return res.status(400).json({ error: 'dataBase64 is required' });
       }
@@ -79,12 +112,14 @@ module.exports = async function handler(req, res) {
       if (bytes.length > 4 * 1024 * 1024) {
         return res.status(413).json({ error: 'Photo too large (max 4MB)' });
       }
+      const thumb = thumbBase64 ? Buffer.from(thumbBase64, 'base64') : null;
 
       await sql`
-        INSERT INTO photos (profile_id, day_date, slot, content_type, data, updated_at)
-        VALUES (${profileId}, ${date}::date, ${slot}, ${contentType}, ${bytes}, now())
+        INSERT INTO photos (profile_id, day_date, slot, content_type, data, thumb, updated_at)
+        VALUES (${profileId}, ${date}::date, ${slot}, ${contentType}, ${bytes}, ${thumb}, now())
         ON CONFLICT (profile_id, day_date, slot)
-        DO UPDATE SET content_type = EXCLUDED.content_type, data = EXCLUDED.data, updated_at = now()
+        DO UPDATE SET content_type = EXCLUDED.content_type, data = EXCLUDED.data,
+                      thumb = EXCLUDED.thumb, updated_at = now()
       `;
 
       /*
@@ -106,8 +141,7 @@ module.exports = async function handler(req, res) {
 
       return res.status(200).json({ ok: true });
     } catch (err) {
-      console.error(err);
-      return res.status(500).json({ error: 'Failed to save photo' });
+      return fail(res, err, 'Failed to save photo');
     }
   }
 
@@ -119,8 +153,7 @@ module.exports = async function handler(req, res) {
       `;
       return res.status(200).json({ ok: true });
     } catch (err) {
-      console.error(err);
-      return res.status(500).json({ error: 'Failed to delete photo' });
+      return fail(res, err, 'Failed to delete photo');
     }
   }
 

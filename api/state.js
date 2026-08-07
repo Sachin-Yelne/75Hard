@@ -1,4 +1,4 @@
-const { connect } = require('./lib/db');
+const { connect, fail } = require('./lib/db');
 const { notify } = require('./lib/push');
 
 const PROFILES = ['sachin', 'aarya'];
@@ -20,8 +20,10 @@ module.exports = async function handler(req, res) {
         WHERE profile_id = ANY(${PROFILES})
       `;
 
+      // No image bytes here — just which frames exist, and which of them still
+      // have no small rendition for the app to fill in.
       const photoRows = await sql`
-        SELECT profile_id, day_date::text AS day_date, slot
+        SELECT profile_id, day_date::text AS day_date, slot, (thumb IS NULL) AS needs_thumb
         FROM photos
         WHERE profile_id = ANY(${PROFILES})
       `;
@@ -33,14 +35,16 @@ module.exports = async function handler(req, res) {
 
       // { sachin: { '2026-08-02': ['day','read'] }, ... }
       const photos = { sachin: {}, aarya: {} };
+      // ['sachin|2026-08-02|day', ...] — the work list for thumbnail backfill
+      const needThumb = [];
       for (const row of photoRows) {
         (photos[row.profile_id][row.day_date] ||= []).push(row.slot);
+        if (row.needs_thumb) needThumb.push(`${row.profile_id}|${row.day_date}|${row.slot}`);
       }
 
-      return res.status(200).json({ startDate, data, photos });
+      return res.status(200).json({ startDate, data, photos, needThumb });
     } catch (err) {
-      console.error(err);
-      return res.status(500).json({ error: 'Failed to load state' });
+      return fail(res, err, 'Failed to load state');
     }
   }
 
@@ -70,8 +74,7 @@ module.exports = async function handler(req, res) {
 
       return res.status(200).json({ ok: true });
     } catch (err) {
-      console.error(err);
-      return res.status(500).json({ error: 'Failed to save tasks' });
+      return fail(res, err, 'Failed to save tasks');
     }
   }
 
@@ -90,8 +93,7 @@ module.exports = async function handler(req, res) {
 
       return res.status(200).json({ ok: true });
     } catch (err) {
-      console.error(err);
-      return res.status(500).json({ error: 'Failed to update start date' });
+      return fail(res, err, 'Failed to update start date');
     }
   }
 

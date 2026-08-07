@@ -163,6 +163,7 @@ function chunk(type, data) {
   return Buffer.concat([len, td, crc]);
 }
 const demoUploads = new Map();   // prof|date|slot -> { type, buf }
+const demoThumbs  = new Map();   // prof|date|slot -> Buffer, once one exists
 const pngCache = new Map();
 function demoPng(seed) {
   if (pngCache.has(seed)) return pngCache.get(seed);
@@ -218,7 +219,21 @@ async function demoApi(pathname, req, res, url) {
       demo.data[b.profileId][b.date] = b.tasks;
       return res.status(200).json({ ok: true });
     }
-    return res.status(200).json({ startDate: demoStart, data: demo.data, photos: demo.photos });
+    /*
+     * Half the seeded frames deliberately arrive without a thumb, so the
+     * backfill the real app runs against a pre-thumbnail database is something
+     * you can actually watch happen locally.
+     */
+    const needThumb = [];
+    for (const [prof, byDay] of Object.entries(demo.photos)) {
+      for (const [day, slots] of Object.entries(byDay)) {
+        for (const slot of slots) {
+          const key = `${prof}|${day}|${slot}`;
+          if (!demoThumbs.has(key)) needThumb.push(key);
+        }
+      }
+    }
+    return res.status(200).json({ startDate: demoStart, data: demo.data, photos: demo.photos, needThumb });
   }
   if (pathname === '/api/reactions') {
     if (req.method === 'POST') {
@@ -234,14 +249,20 @@ async function demoApi(pathname, req, res, url) {
     const prof = url.searchParams.get('profile'), date = url.searchParams.get('date');
     const slot = url.searchParams.get('slot') || 'day';
     if (req.method === 'POST') {
+      const b = await readBody(req);
+      const key = `${prof}|${date}|${slot}`;
+      // a body with only a thumb is the backfill filling in an old frame
+      if (!b.dataBase64 && b.thumbBase64) {
+        if (!demoThumbs.has(key)) demoThumbs.set(key, Buffer.from(b.thumbBase64, 'base64'));
+        return res.status(200).json({ ok: true, filled: true });
+      }
       const list = (demo.photos[prof][date] ||= []);
       if (!list.includes(slot)) list.push(slot);
       // keep the real bytes so what you upload is what you see back
-      const b = await readBody(req);
       if (b.dataBase64) {
-        demoUploads.set(`${prof}|${date}|${slot}`,
-          { type: b.contentType || 'image/jpeg', buf: Buffer.from(b.dataBase64, 'base64') });
+        demoUploads.set(key, { type: b.contentType || 'image/jpeg', buf: Buffer.from(b.dataBase64, 'base64') });
       }
+      if (b.thumbBase64) demoThumbs.set(key, Buffer.from(b.thumbBase64, 'base64'));
       return res.status(200).json({ ok: true });
     }
     if (req.method === 'DELETE') {
@@ -253,6 +274,11 @@ async function demoApi(pathname, req, res, url) {
       return res.status(200).json({ ok: true });
     }
     if (!(demo.photos[prof]?.[date] || []).includes(slot)) return res.status(404).json({ error: 'not found' });
+    // COALESCE(thumb, data), the same fallback the real handler does
+    if (url.searchParams.get('size') === 'thumb') {
+      const t = demoThumbs.get(`${prof}|${date}|${slot}`);
+      if (t) { res.setHeader('Content-Type', 'image/jpeg'); return res.status(200).send(t); }
+    }
     const up = demoUploads.get(`${prof}|${date}|${slot}`);
     if (up) {
       res.setHeader('Content-Type', up.type);

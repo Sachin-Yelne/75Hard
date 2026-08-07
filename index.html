@@ -290,8 +290,20 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
 /* ── feed ──────────────────────────────── */
 .feed{height:100%;overflow-y:auto;scroll-snap-type:y mandatory;
   -webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
+/*
+ * A day off screen is not laid out or painted. By the end of a challenge the
+ * feed is 150 of these, each holding a collage, a caption block and a comment
+ * line, and the browser was doing that work for every one of them on every
+ * render — a tab switch, a task ticked, coming back to the app. Now it does it
+ * for the two or three you can actually see.
+ *
+ * Safe against the scroll arithmetic that decides which day is playing because
+ * .post is explicitly 100% tall: a skipped element keeps that height rather
+ * than guessing at one, so scrollHeight is the same number it always was and
+ * no contain-intrinsic-size is needed to prop it up.
+ */
 .post{height:100%;scroll-snap-align:start;scroll-snap-stop:always;
-  position:relative;background:#000;overflow:hidden;}
+  position:relative;background:#000;overflow:hidden;content-visibility:auto;}
 /* horizontal reel: one slide per photo logged that day */
 .reel{
   display:flex;height:100%;width:100%;
@@ -942,6 +954,9 @@ const ICON = {
 const photoQuery = (p, date, slot) =>
   `/api/photos?profile=${encodeURIComponent(p)}&date=${encodeURIComponent(date)}&slot=${encodeURIComponent(slot)}`;
 
+// A frame is stored twice; this is how a caller says which one it is drawing.
+const THUMB = 'thumb';
+
 // A failed load used to surface as a flat "Server unreachable", which covers
 // three very different faults: no network, the /api routes not deployed, and
 // the database being unconfigured or down. Carry the server's own message
@@ -1014,19 +1029,30 @@ const api = {
       { method:'DELETE' });
     if(!r.ok) throw new Error('uncomment');
   },
-  async uploadPhoto(profileId, date, slot, contentType, dataBase64){
+  async uploadPhoto(profileId, date, slot, contentType, dataBase64, thumbBase64){
     const r = await fetch(photoQuery(profileId, date, slot),
       { method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ profileId, date, slot, contentType, dataBase64 }) });
+        body: JSON.stringify({ profileId, date, slot, contentType, dataBase64, thumbBase64 }) });
     if(!r.ok) throw new Error('upload');
+  },
+  /* Fills in the small rendition of a frame that predates it. No image bytes
+     go the other way — the server keeps the full one it already has. */
+  async fillThumb(profileId, date, slot, thumbBase64){
+    const r = await fetch(photoQuery(profileId, date, slot),
+      { method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ profileId, date, slot, thumbBase64 }) });
+    if(!r.ok) throw new Error('thumb');
   },
   async deletePhoto(profileId, date, slot){
     const r = await fetch(photoQuery(profileId, date, slot), { method:'DELETE' });
     if(!r.ok) throw new Error('delete');
   },
-  photoUrl(profileId, date, slot){
+  /* `size` picks the rendition: THUMB for anything drawn small, nothing for
+     the frame itself. Both are cached under their own URL, so a tile you have
+     already seen stays free even after you open it full screen. */
+  photoUrl(profileId, date, slot, size){
     const v = state.photoV[`${profileId}|${date}|${slot}`] || 0;
-    return `${photoQuery(profileId, date, slot)}&v=${v}`;
+    return `${photoQuery(profileId, date, slot)}&v=${v}${size ? `&size=${size}` : ''}`;
   }
 };
 
@@ -1037,6 +1063,8 @@ const state = {
   // { sachin: { '2026-08-02': ['day','read'] }, aarya: {…} }
   photos:{ sachin:{}, aarya:{} },
   photoV:{},
+  // ['sachin|2026-08-02|day', …] — frames still carrying only the full image
+  needThumb:[],
   reactions:[],
   // [{ id, from, to, date, slot, body, at }] — one thread per feed post
   comments:[],
@@ -1682,18 +1710,80 @@ function auditionTrack(url){
 }
 
 /* ═══════════ images ═══════════ */
-async function compressImage(file){
+/*
+ * Two renditions of every frame, which is the whole trick behind a photo feed
+ * that stays quick as it fills up. The full one is what you see when a frame
+ * is open across the screen; the small one is what a collage tile actually
+ * needs — a tile is a couple of hundred points wide, so the full image was
+ * being handed to the browser at roughly forty times the pixels it drew, and
+ * paid for at that rate every time a day scrolled past.
+ */
+const FULL_MAX  = 1200;
+const THUMB_MAX = 640;   // a 2-up tile is ~194pt, so this still has room at 3x
+
+async function renditions(file){
   const bmp = await createImageBitmap(file);
-  const max = 1200;
-  const s = Math.min(1, max/Math.max(bmp.width, bmp.height));
-  const w = Math.round(bmp.width*s), h = Math.round(bmp.height*s);
-  const c = document.createElement('canvas');
-  c.width = w; c.height = h;
-  c.getContext('2d').drawImage(bmp, 0, 0, w, h);
-  const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.82));
+  const draw = (max, quality) => {
+    const s = Math.min(1, max/Math.max(bmp.width, bmp.height));
+    const w = Math.round(bmp.width*s), h = Math.round(bmp.height*s);
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    c.getContext('2d').drawImage(bmp, 0, 0, w, h);
+    return new Promise(r => c.toBlob(r, 'image/jpeg', quality));
+  };
+  const [full, thumb] = await Promise.all([draw(FULL_MAX, .82), draw(THUMB_MAX, .7)]);
   bmp.close();
-  return blob;
+  // A frame that was already small can re-encode larger than it started;
+  // storing that would cost bytes to save none. The reader falls back to the
+  // full image on its own, so the answer is simply not to keep one.
+  return { full, thumb: thumb && thumb.size < full.size ? thumb : null };
 }
+
+/*
+ * Frames posted before there were two renditions have only the full image, so
+ * a collage tile asking for the small one is answered with the large one and
+ * the saving never arrives for the back catalogue. Rather than a migration
+ * this app has no way to run — resizing an image needs a canvas, and the
+ * serverless side has none — the phone converts them, a few at a time, out of
+ * the way of everything else.
+ *
+ * The download is the one that tile was going to make anyway, so the only new
+ * cost is the small upload. /api/state names the frames still missing one, so
+ * this picks up where it left off and stops for good once the list is empty.
+ */
+const BACKFILL_AT_A_TIME = 3;
+
+async function thumbFor(url){
+  const src = await (await fetch(url)).blob();
+  const bmp = await createImageBitmap(src);
+  const s = Math.min(1, THUMB_MAX/Math.max(bmp.width, bmp.height));
+  const c = document.createElement('canvas');
+  c.width = Math.round(bmp.width*s); c.height = Math.round(bmp.height*s);
+  c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+  bmp.close();
+  const out = await new Promise(r => c.toBlob(r, 'image/jpeg', .7));
+  return out && out.size < src.size ? out : null;   // as in renditions()
+}
+
+async function backfillThumbs(){
+  const queue = state.needThumb.splice(0, BACKFILL_AT_A_TIME);
+  if(!queue.length) return;
+  for(const key of queue){
+    const [p, iso, slot] = key.split('|');
+    try{
+      const blob = await thumbFor(api.photoUrl(p, iso, slot));
+      if(blob) await api.fillThumb(p, iso, slot, await blobToBase64(blob));
+    }catch(_){
+      // a frame that won't convert is not worth retrying every launch, and it
+      // still draws correctly from the full image
+    }
+  }
+  idle(backfillThumbs);
+}
+
+/* Never in front of anything the person is waiting for. */
+const idle = fn => (window.requestIdleCallback || (f => setTimeout(f, 900)))(
+  () => { if(state.online && !document.hidden) fn(); }, { timeout: 8000 });
 function blobToBase64(blob){
   return new Promise((res, rej) => {
     const r = new FileReader();
@@ -1826,7 +1916,7 @@ function viewToday(){
       // filled opens the day sheet to view, replace or remove.
       return dayPic
         ? `<button class="frame filled" id="frameBtn">
-             <img src="${api.photoUrl(you, iso, DAY_SLOT)}" alt="">
+             <img src="${api.photoUrl(you, iso, DAY_SLOT, THUMB)}" alt="">
              ${label}
            </button>`
         : `<label class="frame" id="frameBtn">
@@ -1879,7 +1969,7 @@ function taskRow(prof, iso, t, editable){
     // newest shot is the thumbnail; the count says how many the day holds
     const thumb = pic
       ? `<button class="shot-btn filled" data-open-slot="${t.id}" aria-label="${t.nm} photos">
-           <img src="${api.photoUrl(prof, iso, shots[shots.length - 1])}" alt="">
+           <img src="${api.photoUrl(prof, iso, shots[shots.length - 1], THUMB)}" alt="">
            ${shots.length > 1 ? `<span class="n">${shots.length}</span>` : ''}
          </button>`
       : '';
@@ -2058,12 +2148,17 @@ function viewFeed(){
       ${(() => {
         const shown = o.slots.slice(0, TILE_CAP);
         const over = n2 - shown.length;
+        /* A lone frame is drawn across the whole screen and wants every pixel
+           it has. Everything from two tiles up is a grid cell a couple of
+           hundred points wide, where the small rendition is indistinguishable
+           and roughly a twentieth of the weight. */
+        const size = shown.length === 1 ? undefined : THUMB;
         return `
       <div class="collage${shown.length===1?' single':''}${shown.length===3?' three':''}"
            style="grid-template-columns:repeat(${collageCols(shown.length)},1fr)">
         ${shown.map((s, i) => `
           <button class="tile" data-tile="${i}" aria-label="${slotLabel(s)}">
-            <img src="${api.photoUrl(o.p, o.iso, s)}" alt="${slotLabel(s)}" loading="lazy" draggable="false">
+            <img src="${api.photoUrl(o.p, o.iso, s, size)}" alt="${slotLabel(s)}" loading="lazy" draggable="false">
             ${over && i === shown.length - 1 ? `<span class="more">+${over}</span>` : ''}
           </button>`).join('')}
       </div>`;
@@ -2384,9 +2479,9 @@ async function uploadFrom(input, prof, iso, slot){
   if(!file) return;
   try{
     toast('Uploading');
-    const blob = await compressImage(file);
-    const b64 = await blobToBase64(blob);
-    await api.uploadPhoto(prof, iso, slot, 'image/jpeg', b64);
+    const { full, thumb } = await renditions(file);
+    const [b64, t64] = await Promise.all([blobToBase64(full), thumb ? blobToBase64(thumb) : null]);
+    await api.uploadPhoto(prof, iso, slot, 'image/jpeg', b64, t64);
     addPhotoLocal(prof, iso, slot);
     haptic(16);
     toast(slot === DAY_SLOT ? 'Frame logged' : `${slotLabel(slot)} photo added`);
@@ -2399,7 +2494,7 @@ async function uploadFrom(input, prof, iso, slot){
       const btn = document.createElement('button');
       btn.className = 'shot-btn filled fresh';
       btn.dataset.openSlot = slot;
-      btn.innerHTML = `<img src="${api.photoUrl(prof, iso, slot)}" alt="">`;
+      btn.innerHTML = `<img src="${api.photoUrl(prof, iso, slot, THUMB)}" alt="">`;
       btn.onclick = () => openDay(prof, iso);
       label.replaceWith(btn);
     } else {
@@ -2658,7 +2753,7 @@ function openDay(prof, iso){
       const cap = `class="cap${written ? ' named' : ''}"`;
       return `
       <figure class="sheet-shot" data-slot="${s}">
-        <img src="${api.photoUrl(prof, iso, s)}" alt="${esc(frameTitle(prof, iso, s))}">
+        <img src="${api.photoUrl(prof, iso, s, THUMB)}" alt="${esc(frameTitle(prof, iso, s))}">
         <figcaption>
           ${mine
             ? `<button ${cap} data-cap="${s}"
@@ -2779,9 +2874,9 @@ function openDay(prof, iso){
           if(!file) return;
           try{
             toast('Uploading');
-            const blob = await compressImage(file);
-            const b64 = await blobToBase64(blob);
-            await api.uploadPhoto(prof, iso, slot, 'image/jpeg', b64);
+            const { full, thumb } = await renditions(file);
+            const [b64, t64] = await Promise.all([blobToBase64(full), thumb ? blobToBase64(thumb) : null]);
+            await api.uploadPhoto(prof, iso, slot, 'image/jpeg', b64, t64);
             addPhotoLocal(prof, iso, slot);
             haptic(16);
             toast(slot === DAY_SLOT ? 'Frame logged' : `${slotLabel(slot)} photo added`);
@@ -3218,7 +3313,7 @@ function openComments(prof, iso, slot = DAY_SLOT){
       onBox.innerHTML = `
         <button class="cmt-on-btn" type="button" aria-expanded="${!!open}">
           <span>On</span>
-          ${shot ? `<img src="${api.photoUrl(prof, iso, target)}" alt="">` : ''}
+          ${shot ? `<img src="${api.photoUrl(prof, iso, target, THUMB)}" alt="">` : ''}
           <span class="nm">${esc(targetName())}</span>
           <span class="ch">${open ? 'Close' : 'Change'}</span>
         </button>
@@ -3226,7 +3321,7 @@ function openComments(prof, iso, slot = DAY_SLOT){
           const on = s === target ? ' on' : '';
           return slots.includes(s)
             ? `<button class="fr${on}" type="button" data-pick="${esc(s)}" aria-label="${slotLabel(s)}">
-                 <img src="${api.photoUrl(prof, iso, s)}" alt="" loading="lazy"></button>`
+                 <img src="${api.photoUrl(prof, iso, s, THUMB)}" alt="" loading="lazy"></button>`
             : `<button class="fr day${on}" type="button" data-pick="${esc(s)}">Day</button>`;
         }).join('')}</div>` : ''}`;
 
@@ -3613,26 +3708,37 @@ async function wireAlerts(btn){
 
 
 /* ═══════════ boot ═══════════ */
+/*
+ * The three of these are separate serverless functions with nothing to say to
+ * each other, and they used to be awaited one after the next — so a cold open
+ * paid three cold starts and three sets of database round trips end to end,
+ * for data that could all have been in flight at once. Fired together they
+ * cost the slowest one instead of the sum.
+ *
+ * allSettled rather than all: kudos and comments are garnish, and a failure in
+ * either used to leave the tab empty rather than take the app down with it.
+ * That stays true — each result is unpacked on its own.
+ */
 async function loadState(){
-  try{
-    const r = await api.getState();
+  const [core, reactions, comments] = await Promise.allSettled([
+    api.getState(), api.getReactions(), api.getComments()
+  ]);
+
+  if(core.status === 'fulfilled'){
+    const r = core.value;
     state.startDate = r.startDate;
     state.data = r.data || { sachin:{}, aarya:{} };
     state.photos = knownPhotos(r.photos);
+    state.needThumb = r.needThumb || [];
     state.online = true;
-  }catch(err){
+  }else{
     state.online = false;
     state.startDate = state.startDate || todayISO();
-    toast(err.message || 'Server unreachable');
+    toast(core.reason?.message || 'Server unreachable');
   }
-  try{
-    const r = await api.getReactions();
-    state.reactions = r.reactions || [];
-  }catch(_){ state.reactions = []; }
-  try{
-    const r = await api.getComments();
-    state.comments = r.comments || [];
-  }catch(_){ state.comments = []; }
+
+  state.reactions = reactions.status === 'fulfilled' ? (reactions.value.reactions || []) : [];
+  state.comments  = comments.status === 'fulfilled' ? (comments.value.comments || []) : [];
 }
 
 /*
@@ -3680,6 +3786,8 @@ document.addEventListener('visibilitychange', async () => {
   state.tab = feedPosts().length ? 'feed' : 'today';
 
   render();
+  // once there is something on screen, and only in the gaps
+  idle(backfillThumbs);
   if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
   // a device follows whoever is tracking on it, so re-register after a switch
   if(pushSupported()) currentSub().then(sub => {

@@ -208,6 +208,67 @@ Preview URLs rotate occasionally, so the track's id is stored alongside its
 URL — `/api/music?id=…` re-resolves a stale one without needing the search
 again.
 
+## Performance
+
+A photo feed gets slower as it fills up unless something is done about it, and
+by day 75 this one holds a few hundred frames. Four things keep it quick; the
+numbers below are from a 75-day stand-in — both people, seven frames a day, 976
+photos, ~180MB of stored image bytes — driven in a headless phone-sized browser
+against a server that delays every call by a plausible Neon round trip.
+
+**Nothing loads all the photos.** It never did: `/api/state` returns which
+frames exist, not their bytes, so the payload at day 75 is about 65KB of JSON.
+Each image is a separate request, `loading="lazy"` so the browser fetches only
+what is near the screen, and served `immutable` for a year — scrolling back
+over a day you have already seen costs nothing at all.
+
+**Two renditions per frame, and tiles get the small one.** This was the real
+cost. A collage tile is a couple of hundred points wide, but it was being
+handed the full ~1200px image — around forty times the pixels it draws, paid
+for every time a day scrolled past. Uploads now produce a ~640px copy
+alongside the full one, and everything that draws a photo small asks for it
+with `?size=thumb`. The full frame is still what you get in the full-screen
+viewer, and still what a lone frame filling the screen is drawn from.
+
+    scrolling 20 days   21.7 MB → 5.3 MB     (1.09 MB → 0.26 MB per day)
+    opening the app      3.3 MB → 0.8 MB
+
+Frames posted before this existed have no `thumb`, so reads fall back to
+`COALESCE(thumb, data)` and look correct regardless. Converting them needs a
+canvas, which the serverless side hasn't got, so the phone does it: `/api/state`
+lists the frames still missing one, and the app works through them a few at a
+time in idle callbacks, uploading only the small copy. The download it makes is
+the one that tile was going to make anyway. The list shrinks every launch and
+the work stops for good when it empties.
+
+**One trip to the server, not three.** `state`, `reactions` and `comments` are
+separate functions with nothing to say to each other, and were awaited one
+after another — three cold starts end to end. `Promise.allSettled` puts them in
+flight together, so a cold open costs the slowest rather than the sum, and each
+result is still unpacked on its own so a failure in the garnish can't take the
+app down.
+
+**The schema check is off the hot path.** See **Database schema** — it was
+eight round trips before every request, on a database where all eight were
+no-ops.
+
+    first content on screen   2.10 s → 0.88 s
+
+**Days off screen aren't drawn.** `content-visibility: auto` on `.post` lets
+the browser skip layout and paint for the 147 days you can't see. Safe against
+the scroll arithmetic that decides which day is playing, because `.post` is
+explicitly `height: 100%` — a skipped post keeps that height instead of
+guessing at one, so `scrollHeight` is unchanged and no `contain-intrinsic-size`
+is needed to prop it up.
+
+    render() at day 75   143 ms → 54 ms
+
+What is deliberately **not** done: the feed still builds every day into the
+DOM rather than windowing a slice of it. At 150 days that is ~6,000 nodes and
+about 4MB of heap, it produces no long tasks while scrolling, and windowing a
+snap-scroller costs real complexity in exchange. `content-visibility` takes the
+paint cost off it, which was the part that hurt.
+
 ## Install on iPhone
 
 1. Open your deployed HTTPS URL in **Safari**.
@@ -226,6 +287,9 @@ Neon project **75Hard** stores:
   per-task photo. A task marked `multi` stores each shot under `id#<epoch ms>`
   so a day can hold several — the key makes one row per slot, so reusing the
   bare id would overwrite. `slot` is a text column, so this needed no migration.
+  Two renditions per row: `data` is the full frame (~1200px) and `thumb` is the
+  collage-sized one (~640px). `thumb` is nullable, because frames posted before
+  it existed have none — see **Performance**
 - `reactions` — kudos between profiles
 - `comments` — one thread per feed post, keyed by the post's owner and day,
   plus the photo `slot` the comment was written under, so a note left in the
@@ -234,10 +298,16 @@ Neon project **75Hard** stores:
 - `notifications_sent` — one row per alert delivered, keyed
   `(profile_id, day_date, kind)`, which is what stops anything ringing twice
 
-All seven are created on the first request (`CREATE TABLE IF NOT EXISTS`, in
-`api/lib/db.js`), and a `photos` table predating the `slot` column is widened
-in place at the same time. Pointing `DATABASE_URL` at an empty Neon database is
-enough — there is no migration step to run by hand.
+All seven are created in `api/lib/db.js`, and a `photos` table predating the
+`slot` or `thumb` columns is widened in place at the same time. Pointing
+`DATABASE_URL` at an empty Neon database is enough — there is no migration step
+to run by hand.
+
+That used to happen ahead of *every* request. It now happens only when a query
+actually trips over something missing: Postgres answers `42P01` (no such table)
+or `42703` (no such column), the schema is built or widened, and the query is
+retried once. A database already in shape therefore costs nothing to check, and
+a first deploy still heals itself on the one request that notices.
 
 ## Troubleshooting
 
@@ -280,7 +350,7 @@ sw.js             Offline shell cache, push handlers
 
 ## Notes
 
-- Photos are resized on-device before upload (max ~1200px, JPEG). Max 4MB after compression.
+- Photos are resized on-device before upload (max ~1200px, JPEG). Max 4MB after compression. A second, ~640px rendition goes up in the same request — see **Performance**.
 - The photo inputs deliberately omit the `capture` attribute. With it, iOS jumps straight to the rear camera and the photo library is unreachable, so a shot taken earlier can never be used. Without it, iOS offers Photo Library / Take Photo / Choose File — live capture is one extra tap, and the library and front camera stay available.
 - All day boundaries use the device's **local** date, so the day rolls over at local midnight rather than UTC.
 - `index.html` is served network-first by the service worker, so a redeploy reaches both phones instead of being pinned to a cached shell.
