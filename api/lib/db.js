@@ -43,6 +43,18 @@ async function ensureThumb(sqlClient) {
   await sqlClient`ALTER TABLE photos ADD COLUMN IF NOT EXISTS thumb bytea`;
 }
 
+/*
+ * A comment can now hang off another one. Nullable, and no foreign key: a
+ * thread that predates this simply has every row at the top level, and the
+ * handler removes a parent's replies itself rather than relying on a cascade
+ * that a migrated table wouldn't have. Adding the column is what heals an
+ * existing database — CREATE TABLE IF NOT EXISTS above leaves it untouched.
+ */
+async function ensureCommentParent(sqlClient) {
+  await sqlClient`ALTER TABLE comments ADD COLUMN IF NOT EXISTS parent_id bigint`;
+  await sqlClient`CREATE INDEX IF NOT EXISTS comments_parent_idx ON comments (parent_id)`;
+}
+
 // challenge_meta, day_tasks and photos used to be expected to already exist —
 // only `reactions` created itself. A database that had never been set up by
 // hand therefore failed every request, which the UI reported as the generic
@@ -97,11 +109,30 @@ async function createSchema(s) {
       day_date     date NOT NULL,
       slot         text NOT NULL DEFAULT 'day',
       body         text NOT NULL,
+      -- the comment this one answers, if it answers one; see ensureCommentParent
+      parent_id    bigint,
       created_at   timestamptz NOT NULL DEFAULT now()
     )
   `;
   await s`
     CREATE INDEX IF NOT EXISTS comments_thread_idx ON comments (to_profile, day_date)
+  `;
+  /*
+   * A mark left on a single comment, rather than on the day. One row per
+   * (comment, person, token), so the same person can leave two different marks
+   * on one line but never the same one twice — the primary key is the toggle.
+   */
+  await s`
+    CREATE TABLE IF NOT EXISTS comment_reactions (
+      comment_id   bigint NOT NULL,
+      from_profile text NOT NULL,
+      token        text NOT NULL,
+      created_at   timestamptz NOT NULL DEFAULT now(),
+      PRIMARY KEY (comment_id, from_profile, token)
+    )
+  `;
+  await s`
+    CREATE INDEX IF NOT EXISTS comment_reactions_cmt_idx ON comment_reactions (comment_id)
   `;
   await s`
     CREATE TABLE IF NOT EXISTS push_subscriptions (
@@ -124,6 +155,7 @@ async function createSchema(s) {
   `;
   await ensurePhotoSlot(s);
   await ensureThumb(s);
+  await ensureCommentParent(s);
 }
 
 // Memoised per warm instance, but a failure clears the memo so the next
@@ -215,4 +247,4 @@ function fail(res, err, message) {
   return res.status(500).json({ error: message });
 }
 
-module.exports = { getSql, ensurePhotoSlot, ensureSchema, connect, fail };
+module.exports = { getSql, ensurePhotoSlot, ensureCommentParent, ensureSchema, connect, fail };

@@ -33,7 +33,7 @@ if (!DEMO) {
 /* ---- demo data: day 22 of 75, both profiles active ---- */
 const TASK_IDS = ['diet', 'workout1', 'workout2', 'water', 'read'];
 const demo = { data: { sachin: {}, aarya: {} }, photos: { sachin: {}, aarya: {} },
-               reactions: [], comments: [] };
+               reactions: [], comments: [], commentReactions: [] };
 let demoCommentId = 1;
 let demoStart;
 {
@@ -104,11 +104,22 @@ let demoStart;
   const ago = (mins) => new Date(Date.now() - mins * 60000).toISOString();
   demo.comments = [
     { id: demoCommentId++, from: 'aarya', to: 'sachin', date: at(20), slot: 'day',
-      body: 'Look at the shoulders on day 21 vs day 1.', at: ago(320) },
+      body: 'Look at the shoulders on day 21 vs day 1.', parent: null, at: ago(320) },
+    // a reply and a reply to the reply, so the thread renders both levels
     { id: demoCommentId++, from: 'sachin', to: 'sachin', date: at(20), slot: 'day',
-      body: 'Barely made the second one, it was pouring.', at: ago(180) },
+      body: "Don't say that, I'll get cocky.", parent: 1, at: ago(300) },
+    { id: demoCommentId++, from: 'aarya', to: 'sachin', date: at(20), slot: 'day',
+      body: 'Too late.', parent: 1, at: ago(288) },
+    { id: demoCommentId++, from: 'sachin', to: 'sachin', date: at(20), slot: 'day',
+      body: 'Barely made the second one, it was pouring.', parent: null, at: ago(180) },
     { id: demoCommentId++, from: 'sachin', to: 'aarya', date: at(18), slot: 'workout1',
-      body: 'That hill again? Respect.', at: ago(96) }
+      body: 'That hill again? Respect.', parent: null, at: ago(96) }
+  ];
+  demo.commentReactions = [
+    { comment: 1, from: 'sachin', token: 'heart' },
+    { comment: 1, from: 'aarya', token: 'fire' },
+    { comment: 3, from: 'sachin', token: 'nod' },
+    { comment: 5, from: 'aarya', token: 'fire' }
   ];
 }
 
@@ -313,8 +324,15 @@ async function demoApi(pathname, req, res, url) {
       const b = await readBody(req);
       const body = String(b.body || '').trim();
       if (!body) return res.status(400).json({ error: 'Comment is empty' });
+      // replies are one level deep and inherit the frame their parent is on,
+      // exactly as the real handler does it
+      const parent = b.parentId == null ? null
+        : demo.comments.find((c) => c.id === Number(b.parentId) && c.to === b.to && c.date === b.date);
+      if (b.parentId != null && !parent) return res.status(404).json({ error: 'That comment is gone' });
       const c = { id: demoCommentId++, from: b.from, to: b.to, date: b.date,
-                  slot: b.slot || 'day', body, at: new Date().toISOString() };
+                  slot: parent ? parent.slot : (b.slot || 'day'), body,
+                  parent: parent ? (parent.parent ?? parent.id) : null,
+                  at: new Date().toISOString() };
       demo.comments.push(c);
       return res.status(200).json({ ok: true, comment: c });
     }
@@ -324,9 +342,29 @@ async function demoApi(pathname, req, res, url) {
       const i = demo.comments.findIndex((c) => c.id === id && c.from === from);
       if (i < 0) return res.status(404).json({ error: 'Comment not found' });
       demo.comments.splice(i, 1);
-      return res.status(200).json({ ok: true });
+      const gone = [id];
+      for (let j = demo.comments.length - 1; j >= 0; j--) {
+        if (demo.comments[j].parent === id) gone.push(demo.comments.splice(j, 1)[0].id);
+      }
+      demo.commentReactions = demo.commentReactions.filter((r) => !gone.includes(r.comment));
+      return res.status(200).json({ ok: true, removed: gone });
     }
-    return res.status(200).json({ comments: demo.comments });
+    return res.status(200).json({ comments: demo.comments, reactions: demo.commentReactions });
+  }
+  if (pathname === '/api/comment-reactions') {
+    if (req.method === 'POST') {
+      const b = await readBody(req);
+      const id = Number(b.commentId);
+      if (!demo.comments.some((c) => c.id === id)) {
+        return res.status(404).json({ error: 'That comment is gone' });
+      }
+      const i = demo.commentReactions.findIndex((r) =>
+        r.comment === id && r.from === b.from && r.token === b.token);
+      if (i >= 0) demo.commentReactions.splice(i, 1);
+      else demo.commentReactions.push({ comment: id, from: b.from, token: b.token });
+      return res.status(200).json({ ok: true, active: i < 0 });
+    }
+    return res.status(200).json({ reactions: demo.commentReactions });
   }
   if (pathname === '/api/push') {
     // demo mode has no push service; report it as unavailable

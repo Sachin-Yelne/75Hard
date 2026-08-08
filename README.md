@@ -12,7 +12,7 @@ on Today until there's something to look at.
 - **Today** — the day number set large, a five-segment rule (one per task), streak, a live countdown to local midnight, and your partner's progress underneath. Workout One, Workout Two and Read each carry an optional camera; Diet carries one you can use over and over, so snacks and dinner all land on the same day. The two workouts also take a written note, for when you would rather say what you did than photograph it. Diet starts ticked — you only touch it to record a day you didn't keep it. Every photo takes a caption: the moment one lands — any of them, not just food — a sheet asks what it is, with a prompt that fits the task ("What did you do?" for a workout, "What was it?" for a meal). Diet frames also offer a one-tap verdict: loved it, fine, regret it. Skipping is fine, and an uncaptioned frame just reads as its task, as before. Once captioned, the Diet row says what you last ate rather than the rule you're keeping. Completing all five holds a full-screen typographic moment for a second and a half, then returns you to the day.
 - **Water** is logged incrementally rather than ticked. Tap the row to open the tracker, then tap a vessel — a 16 oz bottle, a 32 oz tumbler, whatever you keep — to pour it toward the gallon. The row's own bottom hairline fills as you go, and the task checks itself at 128 oz. Keep pouring past the gallon if you want — the total and percentage carry on past 100% while the bar stays full. Undo removes the last pour. The checkbox can't be tapped: it mirrors the pour rather than setting it, so tapping it opens the tracker.
 - **Wall** — the 75-day grid for both people, with missed days, photo markers, and a milestone list. Opening a day shows its gallery, where each photo reads as its caption if it has one; tap it to write or change one, or do the same from the photo itself in the full-screen viewer. Your partner sees the captions, read-only.
-- **Feed** — one day per screen, newest first, each rendered as a collage of everything logged that day. A lone frame fills the screen; more than one tiles into a grid, and past six the last tile carries a `+N`. Tap any tile to open the full-screen viewer; inside it tap the left third to go back and anywhere else to go on, both wrapping, and swiping still works. Two actions sit under the day, on the collage and in the viewer alike: a thumb for kudos, and a bubble for comments, each carrying its count. The most recent comment reads as one line above them; tapping it opens the day's thread, where both of you can write — including on your own frame, so a reply lands where the picture is. Open a frame full screen and its own caption lies faintly over the photo, under the task it belongs to: the run you described, the meal you named. Tap it to write or change one on your own frames. A comment written in the viewer is filed against the frame on screen and carries its task as a tag. A day can also carry a song. It plays when you open the Feed, and scrolling from day to day swaps the track, fading between them; a day without one falls silent. The sleeve, title and artist read as one line on the post, and a small mark beside the date says whether you can hear it — three bars moving in time with the song, or a speaker with a cross. It announces itself whenever the answer might have changed, then settles: the bars stay at full strength, since they are worth watching and are also always a way to stop the sound, while the crossed speaker drops back to a whisper once it has said its piece. Neither leaves the frame, so a silent feed always carries its own explanation and its own way back. Tap it to mute or unmute, and the choice is remembered. On your own posts the track line is also the way in: **Add music** where there is none, **Change** where there is.
+- **Feed** — one day per screen, newest first, each rendered as a collage of everything logged that day. A lone frame fills the screen; more than one tiles into a grid, and past six the last tile carries a `+N`. Tap any tile to open the full-screen viewer; inside it tap the left third to go back and anywhere else to go on, both wrapping, and swiping still works. Two actions sit under the day, on the collage and in the viewer alike: a thumb for kudos, and a bubble for comments, each carrying its count. The most recent comment reads as one line above them; tapping it opens the day's thread, where both of you can write — including on your own frame, so a reply lands where the picture is. In the thread every line can be answered and every line can be marked. **Reply** hangs your answer off the line it belongs to, indented under it, with a rule beside the line you're answering and a chip over the composer naming it; answering an answer joins the same exchange rather than starting a third column. The **+** under a line opens five marks — love, fire, bolt, star, nod — and the row grows a strip to hold them rather than covering the words you're reacting to. What has been left shows as counted pills under the line, yours in clay; tapping one takes it back. Double-tapping a line loves it outright, the same gesture as double-tapping a post for kudos, and throws the mark up from wherever your thumb landed. Anything said since you last had the thread open carries a **New** tag in the other person's colour, and a long thread opens at the newest line with its head pinned, so the way out is never above the fold. Open a frame full screen and its own caption lies faintly over the photo, under the task it belongs to: the run you described, the meal you named. Tap it to write or change one on your own frames. A comment written in the viewer is filed against the frame on screen and carries its task as a tag. A day can also carry a song. It plays when you open the Feed, and scrolling from day to day swaps the track, fading between them; a day without one falls silent. The sleeve, title and artist read as one line on the post, and a small mark beside the date says whether you can hear it — three bars moving in time with the song, or a speaker with a cross. It announces itself whenever the answer might have changed, then settles: the bars stay at full strength, since they are worth watching and are also always a way to stop the sound, while the crossed speaker drops back to a whisper once it has said its piece. Neither leaves the frame, so a silent feed always carries its own explanation and its own way back. Tap it to mute or unmute, and the choice is remembered. On your own posts the track line is also the way in: **Add music** where there is none, **Change** where there is.
 - **Rivals** — a side-by-side table: perfect days, current and longest streaks, consistency, per-task completion rates, photos posted, kudos received.
 
 Your partner's strip at the foot of Today opens their day read-only — every task and photo visible, nothing tickable. Pick who you are on first launch (stored locally); you can switch from the settings sheet. Your own progress is always clay, your partner's sage.
@@ -33,6 +33,15 @@ glyphs — are drawn by hand rather than copied, since the library isn't in the
 repo. They follow the same spec as the rest (512 box, 32 stroke, square
 corners) and sit at the same weight; paste the real `thumbs-up` and `comment`
 paths over them if you have `svgs/` to hand.
+
+The five marks you can leave on a comment are drawn the same way, for the same
+reason the rest of the app has no emoji in it: an emoji is somebody else's
+picture, redrawn by every phone and every OS update, and it would be the one
+thing on screen not speaking in this app's voice. `heart`, `fire`, `bolt` and
+`star` are hand-drawn silhouettes; `nod` reuses the kudos thumb, because a
+plain yes already has a glyph here. What the database stores is the name of a
+mark — `heart`, `fire` — never a character, so redrawing one changes every
+reaction ever left without touching a row.
 
 The app icon is a large Anton `75` in the app's near-black on bone — the same
 face the day number uses, run dark-on-light while the app itself is
@@ -100,13 +109,17 @@ Get the connection string from the [Neon console](https://console.neon.tech) →
 
 ## Notifications (optional)
 
-Five kinds: kudos received, a comment on one of your frames, your partner
-finishing their day, your partner posting a photo, and an evening nudge if you
-still have tasks left.
+Seven kinds: kudos received, a comment on one of your frames, a reply to
+something you said, a mark left on something you said, your partner finishing
+their day, your partner posting a photo, and an evening nudge if you still have
+tasks left.
 
 Each one says what it is rather than that something happened. A photo alert
 names the task — *Aarya put up Workout One*, *Aarya logged a meal* — and a
-comment names the frame it was left on, with the comment itself as the body.
+comment names the frame it was left on, with the comment itself as the body. A
+reply and a mark both go to whoever wrote the line, which on your own post is
+your partner rather than you — *Aarya replied to your comment*, *Aarya loved
+your comment* — and both carry the line they landed on as the body.
 
 The throttle is per kind, and the kinds are chosen so the count stays sane. A
 photo rings once per **task** per day rather than once per person per day:
@@ -246,7 +259,9 @@ separate functions with nothing to say to each other, and were awaited one
 after another — three cold starts end to end. `Promise.allSettled` puts them in
 flight together, so a cold open costs the slowest rather than the sum, and each
 result is still unpacked on its own so a failure in the garnish can't take the
-app down.
+app down. Comment reactions ride along inside the comments payload rather than
+adding a fourth: a thread whose marks arrive a beat after the words they belong
+to reads as a bug, and two people's whole challenge is a few hundred rows.
 
 **The schema check is off the hot path.** See **Database schema** — it was
 eight round trips before every request, on a database where all eight were
@@ -293,13 +308,22 @@ Neon project **75Hard** stores:
 - `reactions` — kudos between profiles
 - `comments` — one thread per feed post, keyed by the post's owner and day,
   plus the photo `slot` the comment was written under, so a note left in the
-  viewer can say which frame it means. Bodies are capped at 280 characters
+  viewer can say which frame it means. Bodies are capped at 280 characters.
+  `parent_id` is the comment a reply answers, and is null at the top level.
+  It carries no foreign key: replies are flattened to one level in the handler
+  and a parent takes its replies with it explicitly, so a table widened by the
+  migration behaves exactly like one created fresh
+- `comment_reactions` — the marks left on a single comment, keyed
+  `(comment_id, from_profile, token)`. The primary key *is* the toggle: the
+  same mark twice takes it back. `token` is a name (`heart`, `fire`, `bolt`,
+  `star`, `nod`), never a character — see **Design**
 - `push_subscriptions` — one row per registered device
 - `notifications_sent` — one row per alert delivered, keyed
   `(profile_id, day_date, kind)`, which is what stops anything ringing twice
 
-All seven are created in `api/lib/db.js`, and a `photos` table predating the
-`slot` or `thumb` columns is widened in place at the same time. Pointing
+All eight are created in `api/lib/db.js`, and a `photos` table predating the
+`slot` or `thumb` columns — or a `comments` table predating `parent_id` — is
+widened in place at the same time. Pointing
 `DATABASE_URL` at an empty Neon database is enough — there is no migration step
 to run by hand.
 
@@ -336,7 +360,8 @@ api/              Vercel serverless routes
   state.js        Load/save tasks
   photos.js       Upload/view/delete pics (per slot)
   reactions.js    Kudos between profiles
-  comments.js     Feed comments, one thread per post
+  comments.js     Feed comments and replies, one thread per post
+  comment-reactions.js  Marks left on a single comment
   music.js        Track search, proxied to the iTunes catalogue (no database)
   health.js       Config/database diagnostics
   push.js         Register/unregister a device for notifications
