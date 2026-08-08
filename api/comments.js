@@ -1,4 +1,4 @@
-const { connect } = require('./lib/db');
+const { connect, fail } = require('./lib/db');
 const { notify } = require('./lib/push');
 
 const PROFILES = ['sachin', 'aarya'];
@@ -38,8 +38,7 @@ module.exports = async function handler(req, res) {
       `;
       return res.status(200).json({ comments: rows.map(shape) });
     } catch (err) {
-      console.error(err);
-      return res.status(500).json({ error: 'Failed to load comments' });
+      return fail(res, err, 'Failed to load comments');
     }
   }
 
@@ -84,8 +83,7 @@ module.exports = async function handler(req, res) {
 
       return res.status(200).json({ ok: true, comment: shape(rows[0]) });
     } catch (err) {
-      console.error(err);
-      return res.status(500).json({ error: 'Failed to save comment' });
+      return fail(res, err, 'Failed to save comment');
     }
   }
 
@@ -106,8 +104,7 @@ module.exports = async function handler(req, res) {
       }
       return res.status(200).json({ ok: true });
     } catch (err) {
-      console.error(err);
-      return res.status(500).json({ error: 'Failed to delete comment' });
+      return fail(res, err, 'Failed to delete comment');
     }
   }
 

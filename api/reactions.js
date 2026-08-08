@@ -1,4 +1,4 @@
-const { connect } = require('./lib/db');
+const { connect, fail } = require('./lib/db');
 const { notify } = require('./lib/push');
 
 const PROFILES = ['sachin', 'aarya'];
@@ -27,8 +27,7 @@ module.exports = async function handler(req, res) {
         }))
       });
     } catch (err) {
-      console.error(err);
-      return res.status(500).json({ error: 'Failed to load reactions' });
+      return fail(res, err, 'Failed to load reactions');
     }
   }
 
@@ -70,8 +69,7 @@ module.exports = async function handler(req, res) {
 
       return res.status(200).json({ ok: true, active: true });
     } catch (err) {
-      console.error(err);
-      return res.status(500).json({ error: 'Failed to save reaction' });
+      return fail(res, err, 'Failed to save reaction');
     }
   }
 

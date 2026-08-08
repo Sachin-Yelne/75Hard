@@ -33,6 +33,16 @@ async function ensurePhotoSlot(sqlClient) {
   slotMigrated = true;
 }
 
+/*
+ * A second, small rendition of each frame, for the places that draw a photo at
+ * a couple of hundred pixels. Nullable on purpose: a frame posted before this
+ * existed simply has no thumb, reads are written to fall back to the full
+ * image, and the app fills them in from the phone as it goes.
+ */
+async function ensureThumb(sqlClient) {
+  await sqlClient`ALTER TABLE photos ADD COLUMN IF NOT EXISTS thumb bytea`;
+}
+
 // challenge_meta, day_tasks and photos used to be expected to already exist —
 // only `reactions` created itself. A database that had never been set up by
 // hand therefore failed every request, which the UI reported as the generic
@@ -61,6 +71,8 @@ async function createSchema(s) {
       slot         text NOT NULL DEFAULT 'day',
       content_type text NOT NULL DEFAULT 'image/jpeg',
       data         bytea NOT NULL,
+      -- the collage-sized rendition of the same frame; see ensureThumb
+      thumb        bytea,
       updated_at   timestamptz NOT NULL DEFAULT now(),
       PRIMARY KEY (profile_id, day_date, slot)
     )
@@ -111,6 +123,7 @@ async function createSchema(s) {
     )
   `;
   await ensurePhotoSlot(s);
+  await ensureThumb(s);
 }
 
 // Memoised per warm instance, but a failure clears the memo so the next
@@ -125,16 +138,54 @@ function ensureSchema(s) {
   return schemaReady;
 }
 
+/*
+ * The schema check used to run ahead of every request. It is eight statements,
+ * each its own HTTP round trip on the serverless driver, and on a database
+ * that has been set up since the first deploy all eight are no-ops — so every
+ * cold start paid a fifth of a second to be told nothing had changed. Two
+ * people opening the app a few times a day are almost always cold, which made
+ * that the standing cost of the whole API rather than a one-off.
+ *
+ * So don't ask. Run the query, and only if Postgres says the table or column
+ * isn't there, build the schema and run it again. The happy path costs
+ * nothing, and the setup path — first deploy, or a migration that adds a
+ * column — still heals itself on the one request that trips over it.
+ */
+const MISSING = new Set([
+  '42P01',   // undefined_table
+  '42703'    // undefined_column, i.e. a migration this build expects
+]);
+const isMissingSchema = (err) =>
+  MISSING.has(err?.code) ||
+  // the driver doesn't always surface a SQLSTATE; the text is the fallback
+  /relation .* does not exist|column .* does not exist/i.test(err?.message || '');
+
+/*
+ * Wraps the tag so callers are untouched: `sql\`…\`` still returns rows. Only
+ * the first query to notice a missing table pays for the repair, and the memo
+ * in ensureSchema keeps concurrent misses from all building it at once.
+ */
+function guard(s) {
+  return async (strings, ...vals) => {
+    try {
+      return await s(strings, ...vals);
+    } catch (err) {
+      if (!isMissingSchema(err)) throw err;
+      await ensureSchema(s);
+      return s(strings, ...vals);
+    }
+  };
+}
+
 /**
  * Resolve a ready-to-use `sql` tag, or answer the request with a specific
  * error and return null. Handlers used to call getSql() at the top level,
  * outside their try/catch, so a missing DATABASE_URL crashed the function and
  * Vercel returned an opaque 500.
  */
-async function connect(res) {
-  let s;
+function connect(res) {
   try {
-    s = getSql();
+    return guard(getSql());
   } catch (err) {
     console.error(err);
     res.status(503).json({
@@ -143,19 +194,25 @@ async function connect(res) {
     });
     return null;
   }
+}
 
-  try {
-    await ensureSchema(s);
-  } catch (err) {
-    console.error(err);
-    res.status(503).json({
+/*
+ * connect() no longer touches the database, so "Neon is asleep" now surfaces
+ * when the handler's own query fails rather than before it runs. Handlers
+ * report through here so that case keeps saying what it used to say instead of
+ * being flattened into the generic 500 for its route.
+ */
+function fail(res, err, message) {
+  console.error(err);
+  const offline = /fetch failed|ECONNREFUSED|ETIMEDOUT|ENOTFOUND|terminating connection|Connection terminated/i
+    .test(err?.message || '');
+  if (offline) {
+    return res.status(503).json({
       error: 'Database unreachable — check DATABASE_URL and that Neon is awake',
       code: 'DB_UNAVAILABLE'
     });
-    return null;
   }
-
-  return s;
+  return res.status(500).json({ error: message });
 }
 
-module.exports = { getSql, ensurePhotoSlot, ensureSchema, connect };
+module.exports = { getSql, ensurePhotoSlot, ensureSchema, connect, fail };

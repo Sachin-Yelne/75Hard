@@ -1,4 +1,4 @@
-const { connect } = require('./lib/db');
+const { connect, fail } = require('./lib/db');
 const { pushReady } = require('./lib/push');
 
 const PROFILES = ['sachin', 'aarya'];
@@ -44,8 +44,7 @@ module.exports = async function handler(req, res) {
       `;
       return res.status(200).json({ ok: true });
     } catch (err) {
-      console.error(err);
-      return res.status(500).json({ error: 'Failed to register for notifications' });
+      return fail(res, err, 'Failed to register for notifications');
     }
   }
 
@@ -56,8 +55,7 @@ module.exports = async function handler(req, res) {
       await sql`DELETE FROM push_subscriptions WHERE endpoint = ${endpoint}`;
       return res.status(200).json({ ok: true });
     } catch (err) {
-      console.error(err);
-      return res.status(500).json({ error: 'Failed to unregister' });
+      return fail(res, err, 'Failed to unregister');
     }
   }
 

@@ -1,4 +1,4 @@
-const { connect } = require('./lib/db');
+const { connect, fail } = require('./lib/db');
 const { pushReady, sendTo, claimOnce } = require('./lib/push');
 
 const PROFILES = ['sachin', 'aarya'];
@@ -72,7 +72,6 @@ module.exports = async function handler(req, res) {
 
     return res.status(200).json({ ok: true, date: today, zone, results });
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: 'Nudge failed' });
+    return fail(res, err, 'Nudge failed');
   }
 };
