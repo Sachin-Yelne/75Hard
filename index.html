@@ -40,7 +40,17 @@
 
   --safe-top:env(safe-area-inset-top,0px);
   --safe-bot:env(safe-area-inset-bottom,0px);
-  --nav:calc(56px + var(--safe-bot));
+  /*
+   * The bar is two parts: the row the icons live in, and the clearance under it
+   * for the home indicator. Splitting them is what lets the bar be short — the
+   * row is sized to the icons rather than to a guess, and the footer is sized to
+   * the indicator rather than to the whole inset. The indicator is a 5pt mark
+   * with its own margin, so 10pt off a 34pt inset still clears it comfortably
+   * and hands the difference back to the photographs.
+   */
+  --nav-row:42px;
+  --nav-foot:max(6px, calc(var(--safe-bot) - 10px));
+  --nav:calc(var(--nav-row) + var(--nav-foot));
   --col:520px;
   --pad:20px;
 }
@@ -85,11 +95,9 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
 #nav{
   position:fixed;left:0;right:0;bottom:0;z-index:40;
   height:var(--nav);
-  /* The tab row is bottom-aligned rather than centred (see .tab), so this
-     padding is the whole gap under the labels — no halving. 12px off a 34px
-     inset leaves 22px, which clears the home indicator without the labels
-     floating in the middle of the bar. */
-  padding-bottom:max(8px, calc(var(--safe-bot) - 12px));
+  /* Leaves --nav-row as the content box, so a tab centres in the icon row and
+     the clearance underneath is never something the icons have to sit inside. */
+  padding-bottom:var(--nav-foot);
   display:grid;grid-template-columns:repeat(4,1fr);
   background:rgba(10,10,11,.94);
   backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
@@ -98,26 +106,29 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
   padding-right:max(0px,calc((100% - var(--col))/2));
 }
 #nav[hidden]{display:none;}
+/*
+ * The mark alone, centred. A 10px label under every icon was costing sixteen
+ * points of bar — the label, and the gap above it — to name four destinations
+ * that are drawn plainly enough and never change. Dropping it is most of why
+ * the bar is short now, and it buys the icon room to grow to a size that
+ * carries the meaning on its own.
+ */
 .tab{
-  /* bottom-aligned, so the gap under the labels is exactly #nav's padding
-     rather than half of whatever centring leaves over */
-  display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;
+  display:flex;align-items:center;justify-content:center;
   color:var(--bone-3);transition:color .18s;position:relative;
 }
-.tab .ic{width:15px;height:15px;}
-.tab span{
-  font-family:var(--cond);font-weight:600;font-size:10px;
-  letter-spacing:.16em;text-transform:uppercase;line-height:1;
-}
+.tab .ic{width:22px;height:22px;}
 .tab.on{color:var(--bone);}
+/* Which tab you're on, twice over: the icon at full strength, and a rule at
+   the top of the row. With no label to change weight, one signal was thin. */
 .tab.on::before{
   content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);
-  width:22px;height:1px;background:var(--bone);
+  width:20px;height:1px;background:var(--bone);
 }
-/* Anchored from the bottom, because the tab's contents are bottom-aligned —
-   a top offset would leave the dot floating where the icon used to be.
-   26px clears the 10px label, the 6px gap and most of the 15px icon. */
-.tab .dot{position:absolute;bottom:26px;right:calc(50% - 15px);width:4px;height:4px;background:var(--you);}
+/* Just off the icon's top-right corner: the icon is 22px centred in the row,
+   so 11px up from the middle is its top edge and 15px across clears its side. */
+.tab .dot{position:absolute;top:calc(50% - 12px);right:calc(50% - 15px);
+  width:4px;height:4px;background:var(--you);}
 
 /* ── topbar ────────────────────────────── */
 .top{display:flex;align-items:center;justify-content:space-between;padding:4px 0 14px;}
@@ -818,6 +829,26 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
   font-family:var(--cond);font-weight:700;font-size:10px;letter-spacing:.18em;
   text-transform:uppercase;color:var(--p);line-height:1;}
 .cmt-head .new::before{content:'';width:5px;height:5px;background:var(--p);flex:0 0 auto;}
+/*
+ * How you answer a line. Replying lived inside the strip a press and hold
+ * opens, beside the emoji — a fine place for it once you know the gesture is
+ * there, and no place at all until then. Answering someone is what this sheet
+ * is for, so it gets a mark that is simply always on the row.
+ *
+ * At the end of the head, where the line already has empty space: no row of its
+ * own under every comment, and nothing added to the height of one. The target
+ * is a thumb's worth of padding pulled straight back out by the same negative
+ * margin, so the head still measures the height of its text.
+ */
+.cmt-re{
+  margin:-11px -10px -11px auto;padding:11px 10px;
+  flex:0 0 auto;color:var(--bone-3);transition:color .16s;
+}
+.cmt-re svg{width:14px;height:14px;display:block;}
+.cmt-re:active{color:var(--bone);}
+/* the line the composer is pointed at says so here too, not only in the rule
+   down its side and the chip above the box */
+.cmt-row.hi > .cmt-main > .cmt-head .cmt-re{color:var(--p);}
 .cmt-body{margin:0;font-size:14px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere;}
 /* A press and hold is the way to react, so the row must not spend that gesture
    on selecting its own text or raising iOS's own callout over the top of it. */
@@ -2266,9 +2297,11 @@ function renderNav(){
   // the feed leads: it's where the app opens and the thing worth coming back to
   const tabs = [['feed','Feed'],['today','Today'],['wall','Wall'],['rivals','Rivals']];
   const badge = feedBadge();
+  // The label moved off the bar and onto the button, where a screen reader still
+  // reads it out and the four points it used to occupy go to the photographs.
   document.getElementById('nav').innerHTML = tabs.map(([id,label]) => `
-    <button class="tab ${state.tab===id?'on':''}" data-tab="${id}">
-      <span class="ic">${ICON[id]}</span><span>${label}</span>
+    <button class="tab ${state.tab===id?'on':''}" data-tab="${id}" aria-label="${label}">
+      <span class="ic">${ICON[id]}</span>
       ${id==='feed' && badge ? '<i class="dot"></i>' : ''}
     </button>`).join('');
 }
@@ -3892,6 +3925,8 @@ function openComments(prof, iso, slot = DAY_SLOT){
           <span class="when">${fmtAgo(c.at)}</span>
           ${c.parent == null && tagged(c.slot) ? `<span class="on">${slotLabel(c.slot)}</span>` : ''}
           ${!mine && new Date(c.at).getTime() > readAt ? '<span class="new">New</span>' : ''}
+          ${c.pending ? '' : `<button class="cmt-re" type="button" data-reply="${c.id}"
+            aria-label="Reply to ${mine ? 'yourself' : esc(nameOf(c.from))}">${ICON.reply}</button>`}
         </div>
         <p class="cmt-body">${esc(c.body)}</p>
         ${c.pending ? '' : `<div class="cmt-foot">${footHTML(c)}</div>`}
@@ -4149,19 +4184,26 @@ function openComments(prof, iso, slot = DAY_SLOT){
 
     /* ── binding ── */
 
+    /* Two ways in, one behaviour: the mark on the head, and the Reply still in
+       the strip for anyone who learned the hold. Tapping the line you are
+       already answering puts the composer back on the thread. */
+    const wireReply = (btn) => {
+      btn.onclick = () => {
+        const id = Number(btn.dataset.reply);
+        haptic(8);
+        closePick();
+        setReply(replyTo === id ? null : id);
+        if(replyTo != null) ta.focus();
+      };
+    };
+
     const bindFoot = (foot) => {
       foot.querySelectorAll('[data-rx]').forEach(b => {
         b.onclick = () => toggleRx(Number(b.dataset.on), b.dataset.rx);
       });
 
       const reply = foot.querySelector('[data-reply]');
-      if(reply) reply.onclick = () => {
-        const id = Number(reply.dataset.reply);
-        haptic(8);
-        closePick();
-        setReply(replyTo === id ? null : id);
-        if(replyTo != null) ta.focus();
-      };
+      if(reply) wireReply(reply);
       const rm = foot.querySelector('[data-rm]');
       if(rm) rm.onclick = () => {
         const id = Number(rm.dataset.rm);
@@ -4172,6 +4214,8 @@ function openComments(prof, iso, slot = DAY_SLOT){
 
     const bindRows = () => {
       box.querySelectorAll('.cmt-foot').forEach(bindFoot);
+      // the head's mark survives a paintFoot, so it is wired with the row
+      box.querySelectorAll('.cmt-head [data-reply]').forEach(wireReply);
     };
 
     const removeComment = (id) => {
