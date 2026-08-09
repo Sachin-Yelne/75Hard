@@ -44,12 +44,19 @@
    * The bar is two parts: the row the icons live in, and the clearance under it
    * for the home indicator. Splitting them is what lets the bar be short — the
    * row is sized to the icons rather than to a guess, and the footer is sized to
-   * the indicator rather than to the whole inset. The indicator is a 5pt mark
-   * with its own margin, so 10pt off a 34pt inset still clears it comfortably
-   * and hands the difference back to the photographs.
+   * the indicator rather than to the whole inset.
+   *
+   * Twenty off the inset, because the two ways this app gets opened were not
+   * landing in the same place. In a browser tab the toolbar covers the bottom
+   * and the inset reports 0, so the footer floors at 6 and the bar sits tight.
+   * Installed, the inset is a full 34 and the bar was inheriting all of it — a
+   * band of black under the icons half again as deep as the icons themselves,
+   * in the one mode this thing is actually used in. The home indicator is a 5pt
+   * mark sitting about 8pt up, so 14pt leaves the icons a good 24pt clear of the
+   * bottom edge and the two modes finally look like the same app.
    */
   --nav-row:42px;
-  --nav-foot:max(6px, calc(var(--safe-bot) - 10px));
+  --nav-foot:max(6px, calc(var(--safe-bot) - 20px));
   --nav:calc(var(--nav-row) + var(--nav-foot));
   --col:520px;
   --pad:20px;
@@ -350,33 +357,56 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
 .viewer-bot .slot-tag.edit{pointer-events:auto;}
 .slot-tag.edit .tx{border-bottom:1px solid rgba(255,255,255,.28);padding-bottom:3px;}
 /*
- * The scrim. Every post now has photograph behind its text rather than black,
- * so like the viewer's it ramps early: the extra stop puts real darkness where
- * the caption block *starts* — the eyebrow and the day number — instead of only
- * at the very bottom, where a gradient tuned for black underneath was leaving
- * the top two lines to wash out over a bright frame. The middle stays clear.
+ * The scrim. Every post has photograph behind its text rather than black, so
+ * like the viewer's it ramps early: the extra stop puts real darkness where the
+ * caption block *starts* rather than only at the very bottom, which is what a
+ * gradient tuned for black underneath was getting wrong — it left the day line
+ * to wash out over a bright frame.
+ *
+ * Where that stop belongs is decided by where the caption starts, so it moves
+ * down as the caption shrinks. The block is a little over a third shorter than
+ * it was, and holding the ramp where it had been would have been darkening a
+ * band of photograph with nothing written on it.
  */
 .post .shade{position:absolute;inset:0;pointer-events:none;
   background:linear-gradient(180deg,rgba(0,0,0,.58) 0%,transparent 24%,
-    transparent 48%,rgba(0,0,0,.5) 68%,rgba(0,0,0,.93) 100%);}
+    transparent 54%,rgba(0,0,0,.42) 76%,rgba(0,0,0,.92) 100%);}
 .post-top{position:absolute;top:calc(var(--safe-top) + 16px);left:var(--pad);right:var(--pad);
   display:flex;justify-content:space-between;align-items:baseline;}
 .post-top .who{font-family:var(--cond);font-weight:700;font-size:14px;letter-spacing:.2em;text-transform:uppercase;}
 .post-top .dt{font-family:var(--cond);font-weight:500;font-size:12px;letter-spacing:.14em;
   text-transform:uppercase;color:rgba(255,255,255,.6);}
-.post-bot{position:absolute;left:var(--pad);right:var(--pad);bottom:calc(var(--nav) + 22px);}
+/*
+ * The caption block, which is five things stacked over the foot of a
+ * photograph: the day, how the day went, the music, the last word said, and the
+ * two counts. All five earn their place — but stacked, each on its own full
+ * line, they were reaching far enough up the post to bury the bottom row of a
+ * three-row grid almost whole.
+ *
+ * Two of the five lines are gone without losing anything. The counts fold up
+ * beside the day number, into space that line already had and inside a height
+ * it already occupied — a glyph and a digit are small, and the number they sit
+ * beside is 50px, so the row absorbs them.
+ *
+ * The rule stays where it always was, under the day rather than under the
+ * status. Below the status reads better — it would divide what the day was
+ * from what is attached to it — but the two rows beneath it are both optional,
+ * and someone else's day with no song and nothing said yet would have ended on
+ * a hairline underlining nothing. Under the day it can never be the last thing
+ * in the block, because the status always renders.
+ */
+.post-bot{position:absolute;left:var(--pad);right:var(--pad);bottom:calc(var(--nav) + 18px);}
 /*
  * The day, said rather than stamped. It used to be a bare 74px numeral under an
  * eyebrow naming the frames — two lines of caption, and the numeral alone was
  * the tallest thing in the post. Now the label carries the word and the number
- * only has to be the number, on one line: the same statement in half the
- * height, which is half a row of photograph handed back.
+ * only has to be the number, on one line.
  */
 .post-bot .day{display:flex;align-items:baseline;gap:9px;}
 .post-bot .day .lb{font-family:var(--cond);font-weight:600;font-size:12px;
   letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.72);}
 .post-bot .day .n{font-size:50px;line-height:.82;letter-spacing:-.03em;}
-.post-bot .rule{background:rgba(255,255,255,.28);margin:13px 0 12px;}
+.post-bot .rule{background:rgba(255,255,255,.28);margin:11px 0 10px;}
 .post-bot .state{font-family:var(--cond);font-weight:600;font-size:13px;
   letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.72);}
 .post-bot .state b{color:var(--p);font-weight:600;}
@@ -514,6 +544,27 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
 .kudos .n,.cmt .n{font-family:var(--display);font-size:13px;letter-spacing:0;line-height:1;}
 .kudos.mine{background:var(--you);border-color:var(--you);color:var(--ink);}
 .kudos:disabled{opacity:.55;}
+/*
+ * On a post, the same pair unboxed and moved up beside the day number. The
+ * border was doing two jobs — saying "these are pressable" and giving the
+ * glyphs a target — and over a photograph it only ever managed the first,
+ * as two rectangles across the frame. The target survives as padding, pulled
+ * back out by an equal negative margin so the day line keeps its own height;
+ * pressable is now said by the mark, the way the reply arrow says it.
+ *
+ * Kudos given used to fill its box with clay. With no box to fill, the mark
+ * itself carries the colour, which is what a thumb turning your own colour
+ * meant in the first place.
+ */
+.post-bot .acts{margin:0 0 0 auto;align-self:center;gap:2px;}
+.post-bot .kudos,.post-bot .cmt{
+  border:none;background:none;gap:7px;
+  padding:10px 7px;margin:-10px 0;
+}
+.post-bot .kudos .ic,.post-bot .cmt .ic{width:18px;height:18px;}
+.post-bot .kudos .n,.post-bot .cmt .n{font-size:14px;}
+.post-bot .kudos.mine{color:var(--you);}
+.post-bot .kudos:active,.post-bot .cmt:active{opacity:.55;}
 /* last word on the frame, one line, tap to open the thread */
 .cmt-peek{display:flex;align-items:baseline;gap:9px;width:100%;margin-top:15px;}
 .cmt-peek .who{font-family:var(--cond);font-weight:700;font-size:11px;
@@ -2696,15 +2747,17 @@ function viewFeed(){
         </span>
       </div>
       <div class="post-bot">
-        <div class="day"><span class="lb">Day</span><span class="n num">${d}</span></div>
+        <div class="day">
+          <span class="lb">Day</span><span class="n num">${d}</span>
+          <div class="acts">
+            ${kudosHTML(o.p, o.iso, own)}
+            ${cmtHTML(o.p, o.iso)}
+          </div>
+        </div>
         <div class="rule"></div>
         <div class="state">${full ? '<b>All five complete</b>' : n + ' of ' + TASKS.length + ' complete'}</div>
         ${trackHTML(o.p, o.iso)}
         <div class="cmt-slot">${peekHTML(o.p, o.iso)}</div>
-        <div class="acts">
-          ${kudosHTML(o.p, o.iso, own)}
-          ${cmtHTML(o.p, o.iso)}
-        </div>
       </div>
     </div>`;
   }).join('')}</div>`;
