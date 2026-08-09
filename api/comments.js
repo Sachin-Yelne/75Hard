@@ -53,7 +53,8 @@ module.exports = async function handler(req, res) {
       const me = PROFILES.includes(req.query.me) ? req.query.me : '';
       const marks = await sql`
         SELECT comment_id, emoji, count(*)::int AS n,
-               bool_or(from_profile = ${me}) AS mine
+               bool_or(from_profile = ${me}) AS mine,
+               max(created_at) AS at
         FROM comment_reactions
         GROUP BY comment_id, emoji
         ORDER BY comment_id, count(*) DESC, emoji
@@ -61,8 +62,10 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({
         comments: rows.map(shape),
         // short keys: this list is the longest thing in the payload
+        // `at` is the most recent of the group — enough to sort What's new by,
+        // which is the only thing that ever asks when a reaction happened
         reactions: marks.map((r) => ({
-          c: Number(r.comment_id), e: r.emoji, n: r.n, mine: r.mine
+          c: Number(r.comment_id), e: r.emoji, n: r.n, mine: r.mine, at: r.at
         }))
       });
     } catch (err) {

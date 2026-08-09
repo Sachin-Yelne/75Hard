@@ -85,10 +85,11 @@ let demoStart;
                           waterOz: 48, waterLog: [16, 16, 16] };
   demo.data.aarya[t]  = { diet: true, workout1: true, workout2: true, water: true, read: false,
                           waterOz: 128, waterLog: [32, 32, 32, 32] };
+  const since = (mins) => new Date(Date.now() - mins * 60000).toISOString();
   demo.reactions = [
-    { from: 'aarya', to: 'sachin', date: at(20), emoji: 'kudos' },
-    { from: 'aarya', to: 'sachin', date: at(18), emoji: 'kudos' },
-    { from: 'sachin', to: 'aarya', date: at(18), emoji: 'kudos' }
+    { from: 'aarya', to: 'sachin', date: at(20), emoji: 'kudos', at: since(400) },
+    { from: 'aarya', to: 'sachin', date: at(18), emoji: 'kudos', at: since(90) },
+    { from: 'sachin', to: 'aarya', date: at(18), emoji: 'kudos', at: since(70) }
   ];
   // a couple of days carry a track, so the feed has something to play
   demo.data.sachin[at(20)].track =
@@ -117,11 +118,11 @@ let demoStart;
   ];
   // stored the way the table stores it: one row per (comment, person, emoji)
   demo.commentReactions = [
-    { comment: 1, from: 'sachin', emoji: '❤️' },
-    { comment: 1, from: 'aarya', emoji: '🔥' },
-    { comment: 3, from: 'sachin', emoji: '👍' },
-    { comment: 3, from: 'aarya', emoji: '👍' },
-    { comment: 5, from: 'aarya', emoji: '🔥' }
+    { comment: 1, from: 'sachin', emoji: '❤️', at: ago(300) },
+    { comment: 1, from: 'aarya', emoji: '🔥', at: ago(240) },
+    { comment: 3, from: 'sachin', emoji: '👍', at: ago(200) },
+    { comment: 3, from: 'aarya', emoji: '👍', at: ago(58) },
+    { comment: 5, from: 'aarya', emoji: '🔥', at: ago(20) }
   ];
 }
 
@@ -230,9 +231,10 @@ function demoRx(me) {
   const by = new Map();
   for (const r of demo.commentReactions) {
     const k = r.comment + '\u0000' + r.emoji;
-    const hit = by.get(k) || { c: r.comment, e: r.emoji, n: 0, mine: false };
+    const hit = by.get(k) || { c: r.comment, e: r.emoji, n: 0, mine: false, at: r.at };
     hit.n++;
     if (r.from === me) hit.mine = true;
+    if (r.at > hit.at) hit.at = r.at;
     by.set(k, hit);
   }
   return [...by.values()].sort((a, b) => a.c - b.c || b.n - a.n || (a.e < b.e ? -1 : 1));
@@ -267,7 +269,8 @@ async function demoApi(pathname, req, res, url) {
       const b = await readBody(req);
       const i = demo.reactions.findIndex((r) =>
         r.from === b.from && r.to === b.to && r.date === b.date && r.emoji === b.emoji);
-      if (i >= 0) demo.reactions.splice(i, 1); else demo.reactions.push(b);
+      if (i >= 0) demo.reactions.splice(i, 1);
+      else demo.reactions.push({ ...b, at: new Date().toISOString() });
       return res.status(200).json({ ok: true, active: i < 0 });
     }
     return res.status(200).json({ reactions: demo.reactions });
@@ -387,7 +390,8 @@ async function demoApi(pathname, req, res, url) {
         return res.status(409).json({ error: "That's 6 reactions on one comment — take one back first",
                                       code: 'REACTION_LIMIT' });
       }
-      demo.commentReactions.push({ comment: id, from: b.from, emoji: b.emoji });
+      demo.commentReactions.push({ comment: id, from: b.from, emoji: b.emoji,
+                                  at: new Date().toISOString() });
       return res.status(200).json({ ok: true, active: true });
     }
     return res.status(200).json({ reactions: demoRx(url.searchParams.get('me')) });

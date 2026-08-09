@@ -15,7 +15,7 @@ module.exports = async function handler(req, res) {
   if (req.method === 'GET') {
     try {
       const rows = await sql`
-        SELECT from_profile, to_profile, day_date::text AS day_date, emoji
+        SELECT from_profile, to_profile, day_date::text AS day_date, emoji, created_at
         FROM reactions
       `;
       return res.status(200).json({
@@ -23,7 +23,9 @@ module.exports = async function handler(req, res) {
           from: r.from_profile,
           to: r.to_profile,
           date: r.day_date,
-          emoji: r.emoji
+          emoji: r.emoji,
+          // when it landed, so What's new can order kudos against comments
+          at: r.created_at
         }))
       });
     } catch (err) {

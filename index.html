@@ -124,6 +124,11 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
 .top .mark{font-family:var(--cond);font-weight:700;font-size:14px;letter-spacing:.28em;text-transform:uppercase;}
 .icon-btn{width:30px;height:30px;padding:7px;color:var(--bone-2);}
 .icon-btn:active{color:var(--bone);}
+.top-acts{display:flex;align-items:center;gap:4px;}
+/* the same dot the Feed tab carries, on the corner of the bubble */
+.icon-btn.news{position:relative;}
+.icon-btn.news.on::after{content:'';position:absolute;top:4px;right:3px;
+  width:5px;height:5px;background:var(--you);}
 
 /* ── hero ──────────────────────────────── */
 .hero{padding:22px 0 0;}
@@ -714,6 +719,34 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
   flex:0 0 auto;padding:0 18px;background:var(--bone);color:var(--ink);
   font-family:var(--cond);font-weight:600;font-size:12px;letter-spacing:.16em;text-transform:uppercase;
 }
+/* ── what's new ── */
+/*
+ * One line per thing that happened, and every one of them goes somewhere. No
+ * cards: a mark in the person's colour, what they did, what it was about, and
+ * when — four columns of plain text separated by a hairline, which is how the
+ * rest of this app lists anything.
+ */
+.nw{
+  display:flex;align-items:flex-start;gap:12px;width:100%;text-align:left;
+  padding:14px 0;border-bottom:1px solid var(--rule);position:relative;
+}
+.nw:active{opacity:.6;}
+.nw .mk{flex:0 0 18px;display:grid;place-items:center;padding-top:2px;color:var(--p);}
+.nw .mk .ic{width:14px;height:14px;display:block;}
+.nw .mk .em{font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;
+  font-size:15px;line-height:1;}
+.nw .tx{flex:1;min-width:0;}
+.nw .hd{display:block;font-size:13px;line-height:1.4;color:var(--bone-2);}
+.nw .hd b{font-family:var(--cond);font-weight:700;font-size:12px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--p);margin-right:5px;}
+/* what they said, one line — the thread is one tap away for the rest */
+.nw .bd{display:block;margin-top:4px;font-size:12.5px;line-height:1.4;color:var(--bone-3);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.nw .when{flex:0 0 auto;padding-top:3px;font-family:var(--cond);font-weight:500;
+  font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--bone-3);}
+/* unseen since last time this list was open */
+.nw .dot{position:absolute;left:-11px;top:21px;width:5px;height:5px;background:var(--you);}
+
 /* ── comments sheet ── */
 /*
  * The thread is the one sheet you scroll a long way down — it opens at the
@@ -745,10 +778,13 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
   text-transform:uppercase;color:var(--bone-3);}
 .cmt-head .on{font-family:var(--cond);font-weight:600;font-size:10px;letter-spacing:.16em;
   text-transform:uppercase;color:var(--bone-3);border:1px solid var(--rule-2);padding:2px 6px;}
-/* said since you last had this thread open. Their colour, filled, because it
-   is the one thing in the sheet that should be findable without reading. */
-.cmt-head .new{font-family:var(--cond);font-weight:700;font-size:9.5px;letter-spacing:.18em;
-  text-transform:uppercase;color:var(--ink);background:var(--p);padding:3px 5px 2px;line-height:1;}
+/* Said since you last had this thread open. Their colour, and a dot in front
+   of it — a filled block was a third rectangle in a head that already has two
+   labels, and this is findable without reading either way. */
+.cmt-head .new{display:inline-flex;align-items:center;gap:5px;
+  font-family:var(--cond);font-weight:700;font-size:10px;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--p);line-height:1;}
+.cmt-head .new::before{content:'';width:5px;height:5px;background:var(--p);flex:0 0 auto;}
 .cmt-head .rm{width:12px;height:12px;color:var(--bone-3);margin-left:auto;flex-shrink:0;}
 .cmt-head .rm:active{color:var(--you);}
 .cmt-body{margin:0;font-size:13.5px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;}
@@ -769,16 +805,25 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
 .cmt-row.hi > .cmt-main::before{content:'';position:absolute;left:-11px;top:1px;bottom:1px;
   width:2px;background:var(--p);}
 
-/* the row's own footer: what has been left on it, and the two ways to answer */
-.cmt-foot{position:relative;display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:11px;}
+/*
+ * The row's own footer: what has been left on it, and the two ways to answer.
+ *
+ * Nothing in here is boxed. An outline around every count and every key turned
+ * three quiet facts into a row of little windows, and a thread is mostly quiet
+ * facts — so the emoji and the number carry themselves, and space does the
+ * separating a border was doing. What's left of a border is the one thing a
+ * border was actually for: saying which of them are yours.
+ */
+.cmt-foot{position:relative;display:flex;align-items:center;gap:2px;flex-wrap:wrap;margin-top:9px;}
 .rx-add,.pill{
-  display:inline-flex;align-items:center;justify-content:center;gap:7px;
-  height:27px;padding:0 9px;border:1px solid var(--rule-2);color:var(--bone-3);
-  transition:border-color .16s,color .16s;
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  height:30px;padding:0 8px;color:var(--bone-3);
+  transition:color .16s,opacity .16s;
 }
-.rx-add{width:27px;padding:0;}
-.rx-add .ic{width:9px;height:9px;}
-.rx-add[aria-expanded="true"]{border-color:var(--bone-2);color:var(--bone);}
+.rx-add{width:30px;padding:0;}
+.rx-add .ic{width:10px;height:10px;}
+.rx-add[aria-expanded="true"]{color:var(--bone);}
+.rx-add:active,.pill:active{opacity:.55;}
 /*
  * Emoji are the one thing on screen the app doesn't draw — they come off the
  * keyboard and are rendered by the phone, colour and all. Name the emoji faces
@@ -787,14 +832,19 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
  */
 .em{font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;
   font-size:12.5px;line-height:1;}
-.pill .em{font-size:13px;}
+.pill{margin-left:-4px;}
+.pill:first-child{margin-left:0;}
+.pill .em{font-size:15px;}
 .pill .n{font-family:var(--cond);font-weight:700;font-size:11.5px;letter-spacing:.06em;line-height:1;}
 /*
- * A mark you left reads in your own colour, never the colour of whoever wrote
- * the line — the count alone can't say whether you are one of the people in
- * it, and clay already means "you" everywhere else in the app.
+ * One you left reads in your own colour, never the colour of whoever wrote the
+ * line: the count alone can't say whether you are one of the people in it, and
+ * clay already means "you" everywhere else in the app. A hairline under the
+ * number rather than around the whole thing — enough to answer the question,
+ * quiet enough to leave the row alone.
  */
-.pill.mine{border-color:var(--you);color:var(--you);}
+.pill.mine{color:var(--you);}
+.pill.mine .n{box-shadow:0 1px 0 var(--you);}
 @keyframes rxPop{0%{transform:scale(1)}38%{transform:scale(1.3)}100%{transform:scale(1)}}
 .pill.pop{animation:rxPop .36s cubic-bezier(.2,1.1,.3,1);}
 .reply-btn{
@@ -805,39 +855,34 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
 .reply-btn:active{color:var(--bone);}
 
 /*
- * The strip: seven emoji and the way to the keyboard. A floating picker would
- * sit over the very line you are reacting to — so the row grows one strip
- * taller instead, full width, each key a thumb wide. Nothing is covered and
- * nothing can be clipped by the sheet it opens in.
+ * The strip. A floating picker would sit over the very line you are reacting
+ * to — so the row grows one strip taller instead. It is one row that scrolls
+ * sideways rather than a grid of cells: the ones you use most are already at
+ * the front, and everything else is a flick away, which is a smaller gesture
+ * than opening a panel and a much smaller one than going to the keyboard.
+ *
+ * No cells and no border. A tint against the sheet is enough to say the strip
+ * is a thing you are inside of, and the emoji are loud enough on their own.
  */
 .rx-pick{
-  flex:0 0 100%;order:9;display:flex;gap:3px;margin-top:8px;
-  padding:5px;background:var(--ink-3);border:1px solid var(--rule-2);
+  flex:0 0 100%;order:9;display:flex;gap:2px;margin-top:6px;padding:4px 2px;
+  background:var(--ink-3);
+  overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;
+  overscroll-behavior-x:contain;
 }
-@keyframes rxIn{from{opacity:0;transform:translateY(9px) scale(.55)}to{opacity:1;transform:none}}
+.rx-pick::-webkit-scrollbar{display:none;}
+@keyframes rxIn{from{opacity:0;transform:translateY(7px) scale(.6)}to{opacity:1;transform:none}}
 .rx-pick button{
-  flex:1;height:40px;display:grid;place-items:center;color:var(--bone-2);
+  flex:0 0 44px;height:42px;display:grid;place-items:center;
   font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;
-  font-size:21px;line-height:1;
-  animation:rxIn .3s cubic-bezier(.2,1.55,.35,1) both;animation-delay:calc(var(--i) * .028s);
+  font-size:23px;line-height:1;
+  /* only the first handful are on screen; staggering the rest is wasted motion */
+  animation:rxIn .28s cubic-bezier(.2,1.5,.35,1) both;
+  animation-delay:calc(min(var(--i), 8) * .026s);
 }
-/* one you have already left reads as chosen, in your own colour */
-.rx-pick button.mine{background:var(--ink);box-shadow:inset 0 0 0 1px var(--you);}
-.rx-pick button:active{opacity:.6;}
-/* The last key is a mark, not an emoji: it keeps the icon sizing, and a
-   hairline sets it apart as "and then, anything else". */
-.rx-pick .more{flex:0 0 46px;border-left:1px solid var(--rule-2);margin-left:2px;}
-.rx-pick .more .ic{width:13px;height:13px;display:block;color:var(--bone-2);}
-/* gone to the keyboard: the strip becomes the field and says what to do */
-.rx-pick.key{padding:4px;}
-.rx-key{
-  flex:1;min-width:0;height:40px;background:transparent;border:0;color:var(--bone);
-  padding:0 10px;font-family:var(--body);font-size:14px;
-}
-.rx-key:focus{outline:none;}
-.rx-key::placeholder{color:var(--bone-3);font-family:var(--cond);font-weight:600;
-  font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;}
-.rx-pick.key .x{flex:0 0 auto;width:40px;height:40px;padding:13px;color:var(--bone-3);}
+/* one you have already left reads as chosen — a rule under it, not a box */
+.rx-pick button.mine{box-shadow:0 2px 0 var(--you);}
+.rx-pick button:active{opacity:.5;}
 
 /* the double-tap's answer: a mark thrown where the thumb landed */
 @keyframes cmtBurst{
@@ -867,14 +912,14 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
 .cmt-on{margin-top:18px;}
 .cmt-on-btn{
   display:flex;align-items:center;gap:9px;width:100%;text-align:left;
-  border:1px solid var(--rule-2);padding:7px 9px;
+  border-bottom:1px solid var(--rule);padding:8px 1px;
   font-family:var(--cond);font-weight:600;font-size:10px;letter-spacing:.16em;
   text-transform:uppercase;color:var(--bone-3);
 }
 .cmt-on-btn img{width:20px;height:20px;object-fit:cover;flex:0 0 auto;}
 .cmt-on-btn .nm{color:var(--bone-2);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .cmt-on-btn .ch{margin-left:auto;padding-left:8px;color:var(--p);flex:0 0 auto;}
-.cmt-on.open .cmt-on-btn{border-color:var(--bone-3);}
+.cmt-on.open .cmt-on-btn{border-bottom-color:var(--bone-3);color:var(--bone-2);}
 /* the frames themselves, since a thumbnail settles it faster than a label */
 .cmt-pick{display:flex;gap:6px;overflow-x:auto;padding-top:6px;scrollbar-width:none;}
 .cmt-pick::-webkit-scrollbar{display:none;}
@@ -892,8 +937,8 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
  * whatever its parent was filed against, so there is nothing left to choose.
  */
 .cmt-to{
-  display:flex;align-items:center;gap:9px;margin-top:18px;padding:9px 10px;
-  border:1px solid var(--rule-2);border-left:2px solid var(--p);
+  display:flex;align-items:center;gap:9px;margin-top:18px;padding:7px 0 7px 11px;
+  border-left:2px solid var(--p);
   animation:cmtIn .24s cubic-bezier(.2,.9,.3,1) both;
 }
 .cmt-to .ic{width:11px;height:11px;color:var(--p);flex:0 0 auto;}
@@ -1334,36 +1379,37 @@ const isEmoji = s => typeof s === 'string' && !!s && (ONE_EMOJI
   ? ONE_EMOJI.test(s)
   : /\p{Extended_Pictographic}/u.test(s) && [...s].length <= 12);
 
-/* The first emoji in whatever the keyboard handed over, so a stray space or a
-   typed word before it doesn't cost you the tap. */
-function firstEmoji(str){
-  if(!str) return null;
-  let parts;
-  try{
-    parts = [...new Intl.Segmenter(undefined, { granularity:'grapheme' }).segment(str)]
-      .map(p => p.segment);
-  }catch(_){ parts = [...str]; }
-  return parts.find(isEmoji) || null;
-}
 
 /*
- * What the strip offers before you go to the keyboard for something else.
- * Seven, because that plus the keyboard key is what fits across a phone at a
- * size you can hit. Whatever you reach for climbs to the front and stays
- * there, so the row becomes the two of you rather than a default.
+ * What the strip offers. Seven or eight are on screen at a time and the rest
+ * are a flick away — one row that scrolls, rather than a panel to open or a
+ * keyboard to switch to. The order is the point: whatever you reach for climbs
+ * to the front and stays there, so within a week the visible part of the row
+ * is the two of you and the rest is a reserve you rarely need.
+ *
+ * Enough to say anything that gets said about a workout, a meal or a bad day,
+ * and short enough to stay a list rather than become a keyboard.
  */
-const RX_DEFAULT = ['❤️','🔥','💪','👏','🙌','😂','🫡'];
-const RX_SLOTS = 7;
+const RX_SET = [
+  '❤️','🔥','💪','👏','🙌','😂','🫡','👀',
+  '😮','🤝','🙏','👊','💯','⚡','🏆','⭐',
+  '😍','🥵','🥶','😅','😭','🤣','😎','🤘',
+  '🫶','✨','🎯','📈','🚀','🧊','💧','🍗',
+  '🥗','🏃','🚴','🏋️','😤','🤯','🥹','😴'
+];
+// how many of them the recents can take over
+const RX_SLOTS = 8;
 const rxRecent = () => {
   try{ return (JSON.parse(localStorage.getItem('rxRecent') || '[]') || []).filter(isEmoji); }
   catch(_){ return []; }
 };
+// the whole row: what you reach for, then everything else, nothing twice
 const rxQuick = () => {
   const seen = new Set(), out = [];
-  for(const e of [...rxRecent(), ...RX_DEFAULT]){
+  for(const e of [...rxRecent(), ...RX_SET]){
     if(seen.has(e)) continue;
     seen.add(e);
-    if(out.push(e) === RX_SLOTS) break;
+    out.push(e);
   }
   return out;
 };
@@ -1581,14 +1627,17 @@ const iGaveKudos = (to, date) => state.reactions.some(r => r.to === to && r.date
  * touched — and every question after that is a lookup.
  */
 let cmtByThread = new Map();   // `${owner}|${date}` → that day's comments, oldest first
-let rxByComment = new Map();   // comment id → [{ e, n, mine }], most-reacted first
+let rxByComment = new Map();   // comment id → [{ e, n, mine, at }], most-reacted first
+let cmtById = new Map();       // comment id → the comment, for replies and What's new
 
 function indexComments(){
   cmtByThread = new Map();
+  cmtById = new Map();
   for(const c of state.comments){
     const k = `${c.to}|${c.date}`;
     const at = cmtByThread.get(k);
     if(at) at.push(c); else cmtByThread.set(k, [c]);
+    cmtById.set(c.id, c);
   }
   rxByComment = new Map();
   for(const r of state.commentReactions){
@@ -1659,6 +1708,65 @@ function markFeedSeen(){
   localStorage.setItem('cmtSeen', String(commentsFromThem()));
   localStorage.setItem('crxSeen', String(rxToMe()));
 }
+
+/* ── what's new ── */
+/*
+ * Everything the other person has done to you, newest first. Built entirely
+ * from what the app already has in memory — there is no fourth table and no
+ * fourth request behind this, because a push notification you swiped away and
+ * a row in this list are the same event, and the event is already here.
+ *
+ * A reaction knows *when* but not *who*, because the payload is aggregated to
+ * a count. With two people on the challenge that is not a gap: a count with
+ * one of them yours leaves exactly one person it could have been.
+ */
+function activity(){
+  const you = me();
+  if(!you) return [];
+  const out = [];
+
+  for(const c of state.comments){
+    if(c.from === you) continue;
+    const parent = c.parent == null ? null : cmtById.get(c.parent);
+    // Yours either because it landed on your day or because it answers
+    // something you said. A reply to their own line, in your thread, is still
+    // your business — it is a conversation happening under your photograph.
+    const mine = parent && parent.from === you;
+    if(!mine && c.to !== you) continue;
+    out.push({ kind: mine ? 'reply' : parent ? 'answer' : 'comment',
+               at: c.at, who: c.from,
+               body: c.body, prof: c.to, date: c.date, slot: c.slot });
+  }
+
+  for(const r of state.commentReactions){
+    if(r.n - (r.mine ? 1 : 0) <= 0) continue;   // only yours on it
+    const c = cmtById.get(r.c);
+    if(!c || c.from !== you) continue;
+    out.push({ kind:'reaction', at: r.at, who: them(), emoji: r.e,
+               body: c.body, prof: c.to, date: c.date, slot: c.slot });
+  }
+
+  for(const k of state.reactions){
+    if(k.to !== you || k.from === you) continue;
+    out.push({ kind:'kudos', at: k.at || `${k.date}T12:00:00Z`, who: k.from,
+               prof: k.to, date: k.date, slot: DAY_SLOT });
+  }
+
+  return out
+    .sort((a, b) => new Date(b.at) - new Date(a.at))
+    // a feed is 75 days long; a list of what happened is not
+    .slice(0, 40);
+}
+
+const NEWS_SEEN = 'newsSeen';
+const newsUnread = () => {
+  const seen = localStorage.getItem(NEWS_SEEN) || '';
+  return activity().filter(a => String(a.at) > seen).length;
+};
+const markNewsSeen = () => {
+  const top = activity()[0];
+  if(top) localStorage.setItem(NEWS_SEEN, String(top.at));
+};
 
 /* ═══════════ fx ═══════════ */
 function haptic(ms = 10){ if(navigator.vibrate) try{ navigator.vibrate(ms); }catch(_){} }
@@ -2233,11 +2341,24 @@ function viewToday(){
   </div>`;
 }
 
-const topbar = () => `
+/*
+ * The bubble is what this app already means by "something was said" — it is
+ * the feed's comment glyph — so What's new gets that rather than a bell it
+ * would have to teach you. A clay dot when there is something you haven't
+ * seen, the same dot the Feed tab uses.
+ */
+const topbar = () => {
+  const n = newsUnread();
+  return `
   <div class="top">
     <span class="mark">Project 75</span>
-    <button class="icon-btn" id="gearBtn">${ICON.gear}</button>
+    <span class="top-acts">
+      <button class="icon-btn news${n ? ' on' : ''}" id="newsBtn"
+        aria-label="${n ? `What's new (${n})` : "What's new"}">${ICON.comment}</button>
+      <button class="icon-btn" id="gearBtn">${ICON.gear}</button>
+    </span>
   </div>`;
+};
 
 /*
  * One task row, shared by Today and the day sheet.
@@ -2627,6 +2748,9 @@ function wire(){
 
   const gear = el.querySelector('#gearBtn');
   if(gear) gear.onclick = openSettings;
+
+  const news = el.querySelector('#newsBtn');
+  if(news) news.onclick = openNews;
 
   el.querySelectorAll('[data-goto]').forEach(b => {
     b.onclick = () => { state.tab = b.dataset.goto; render(); };
@@ -3530,6 +3654,75 @@ function dropCaption(prof, iso, slot){
   return hit;
 }
 
+/* ── what's new ── */
+/*
+ * Everything the other person has done to you, in one list, newest first. The
+ * push notification and the row in here are the same event — this is where it
+ * lives once you've swiped the alert away, or once you've been away for a day
+ * and never had one.
+ *
+ * Every row goes somewhere: tapping one opens the thread it came from, on the
+ * frame it was left against, which is the only thing you ever want next.
+ */
+function openNews(){
+  const items = activity();
+  // what counted as new is stamped before the list is drawn, so this reading
+  // shows the dots and the next one doesn't
+  const seen = localStorage.getItem(NEWS_SEEN) || '';
+  markNewsSeen();
+
+  const WHAT = {
+    reply:    () => 'replied to your comment',
+    answer:   a => `replied in your Day ${dayIndex(a.date)} thread`,
+    comment:  a => `commented on Day ${dayIndex(a.date)}`,
+    reaction: () => 'reacted to your comment',
+    kudos:    a => `sent kudos on Day ${dayIndex(a.date)}`
+  };
+
+  const row = a => `
+    <button class="nw" data-prof="${a.prof}" data-date="${a.date}"
+      data-slot="${esc(a.slot || DAY_SLOT)}" data-who="${whoAttr(a.who)}">
+      <span class="mk">${a.kind === 'reaction'
+        ? `<span class="em">${esc(a.emoji)}</span>`
+        : `<span class="ic">${a.kind === 'kudos' ? ICON.thumb : ICON.comment}</span>`}</span>
+      <span class="tx">
+        <span class="hd">
+          <b>${a.who === me() ? 'You' : esc(nameOf(a.who))}</b> ${WHAT[a.kind](a)}
+        </span>
+        ${a.body ? `<span class="bd">${esc(a.body)}</span>` : ''}
+      </span>
+      <span class="when">${fmtAgo(a.at)}</span>
+      ${String(a.at) > seen ? '<span class="dot"></span>' : ''}
+    </button>`;
+
+  openSheet(`
+    <div class="cmt-sheet" data-who="you">
+      <div class="sheet-head">
+        <div>
+          <div class="t">What's new</div>
+          <div class="s">${items.length ? `From ${nameOf(them())}` : 'Nothing yet'}</div>
+        </div>
+        <button class="icon-btn" id="x">${ICON.close}</button>
+      </div>
+      <div class="nw-list">
+        ${items.length ? items.map(row).join('')
+          : `<div class="cmt-none">Nothing from ${nameOf(them())} yet</div>`}
+      </div>
+    </div>`, sheet => {
+    sheet.querySelector('#x').onclick = closeSheet;
+    sheet.querySelectorAll('.nw').forEach(b => {
+      b.onclick = () => {
+        const { prof, date, slot } = b.dataset;
+        haptic(8);
+        // straight into the conversation it came from, on the right frame
+        openComments(prof, date, slot);
+      };
+    });
+    // the dot on the bubble goes as soon as the list has been looked at
+    render();
+  });
+}
+
 /* ── comments ── */
 /*
  * A thread, opened over the post it belongs to. Three things happen in here:
@@ -3557,11 +3750,10 @@ function openComments(prof, iso, slot = DAY_SLOT){
   const canPick = slots.length > 1;
   const targetName = () => slots.includes(target) ? slotLabel(target) : 'The whole day';
 
-  // the line being answered, the row whose strip is open, and whether that
-  // strip has gone to the keyboard: all three are this sheet's business only
+  // the line being answered and the row whose strip is open: both are this
+  // sheet's business only, and neither outlives it
   let replyTo = null;
   let picking = null;
-  let keying = false;
 
   /*
    * What counts as new is whatever arrived since you last had this thread
@@ -3578,27 +3770,12 @@ function openComments(prof, iso, slot = DAY_SLOT){
 
   /* ── the thread ── */
 
-  /*
-   * The strip of emoji on offer: the seven you reach for most, and then the
-   * keyboard for everything else. There is no way for a web page to open the
-   * emoji keyboard directly on iOS, so the last key focuses a field and says
-   * plainly what to do — the first emoji that arrives is the reaction, and the
-   * strip closes behind it.
-   */
-  const pickHTML = (c) => keying ? `
-    <div class="rx-pick key">
-      <input class="rx-key" type="text" inputmode="text" autocomplete="off"
-        autocapitalize="off" spellcheck="false" maxlength="16" data-key="${c.id}"
-        placeholder="Tap the emoji key">
-      <button class="x" type="button" data-unkey="1" aria-label="Back to the usual ones">
-        ${ICON.close}</button>
-    </div>` : `
+  /* The strip of emoji on offer, in one row you can flick through. */
+  const pickHTML = (c) => `
     <div class="rx-pick">
       ${rxQuick().map((e, i) => `
         <button style="--i:${i}" type="button" data-rx="${esc(e)}" data-on="${c.id}"
           class="${iReacted(c.id, e) ? 'mine' : ''}" aria-label="React ${esc(e)}">${esc(e)}</button>`).join('')}
-      <button style="--i:${RX_SLOTS}" type="button" class="more" data-key="${c.id}"
-        aria-label="Any other emoji"><span class="ic">${ICON.plus}</span></button>
     </div>`;
 
   // The reactions on one line, plus the two ways to answer it. Drawn on its own
@@ -3758,7 +3935,6 @@ function openComments(prof, iso, slot = DAY_SLOT){
       if(picking == null) return;
       const id = picking;
       picking = null;
-      keying = false;
       const foot = footEl(id);
       if(!foot) return;
       foot.querySelector('.rx-pick')?.remove();
@@ -3860,32 +4036,6 @@ function openComments(prof, iso, slot = DAY_SLOT){
         paintFoot(id);
       };
 
-      /* Over to the keyboard, and back. The field is focused on the way in so
-         the keyboard is already up — one switch away from the emoji. */
-      const key = foot.querySelector('[data-key]');
-      if(key && key.tagName !== 'INPUT') key.onclick = () => {
-        keying = true;
-        haptic(8);
-        paintFoot(Number(key.dataset.key));
-        footEl(Number(key.dataset.key))?.querySelector('.rx-key')?.focus();
-      };
-      const back = foot.querySelector('[data-unkey]');
-      if(back) back.onclick = () => {
-        const id = picking;
-        keying = false;
-        paintFoot(id);
-      };
-      const field = foot.querySelector('input.rx-key');
-      if(field) field.oninput = () => {
-        const e = firstEmoji(field.value);
-        if(!e){
-          // something that isn't an emoji: keep the field honest and wait
-          if(field.value.trim()) field.value = '';
-          return;
-        }
-        field.blur();
-        toggleRx(Number(field.dataset.key), e);
-      };
       const reply = foot.querySelector('[data-reply]');
       if(reply) reply.onclick = () => {
         const id = Number(reply.dataset.reply);

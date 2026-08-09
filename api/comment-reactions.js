@@ -59,14 +59,15 @@ module.exports = async function handler(req, res) {
       const me = PROFILES.includes(req.query.me) ? req.query.me : '';
       const rows = await sql`
         SELECT comment_id, emoji, count(*)::int AS n,
-               bool_or(from_profile = ${me}) AS mine
+               bool_or(from_profile = ${me}) AS mine,
+               max(created_at) AS at
         FROM comment_reactions
         GROUP BY comment_id, emoji
         ORDER BY comment_id, count(*) DESC, emoji
       `;
       return res.status(200).json({
         reactions: rows.map((r) => ({
-          c: Number(r.comment_id), e: r.emoji, n: r.n, mine: r.mine
+          c: Number(r.comment_id), e: r.emoji, n: r.n, mine: r.mine, at: r.at
         }))
       });
     } catch (err) {
