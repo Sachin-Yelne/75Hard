@@ -40,20 +40,29 @@ module.exports = async function handler(req, res) {
         ORDER BY created_at, id
       `;
       /*
-       * The marks left on those comments ride along rather than costing a
-       * second request. Two people's whole challenge is a few hundred rows at
-       * the very most, and a thread is worthless without them: a reaction that
-       * arrives a beat after the words it belongs to reads as a bug.
+       * The reactions on those comments ride along rather than costing a
+       * second request: a thread whose reactions arrive a beat after the words
+       * they belong to reads as a bug.
+       *
+       * Aggregated here rather than in the browser. A row per person per emoji
+       * is the finest the table goes, but nothing on screen is that fine — a
+       * pill is one emoji, a count, and whether you are in it. Grouping in
+       * Postgres collapses the rows before they cross the wire and saves the
+       * client a scan of the whole list per pill drawn.
        */
+      const me = PROFILES.includes(req.query.me) ? req.query.me : '';
       const marks = await sql`
-        SELECT comment_id, from_profile, token FROM comment_reactions
+        SELECT comment_id, emoji, count(*)::int AS n,
+               bool_or(from_profile = ${me}) AS mine
+        FROM comment_reactions
+        GROUP BY comment_id, emoji
+        ORDER BY comment_id, count(*) DESC, emoji
       `;
       return res.status(200).json({
         comments: rows.map(shape),
+        // short keys: this list is the longest thing in the payload
         reactions: marks.map((r) => ({
-          comment: Number(r.comment_id),
-          from: r.from_profile,
-          token: r.token
+          c: Number(r.comment_id), e: r.emoji, n: r.n, mine: r.mine
         }))
       });
     } catch (err) {

@@ -779,7 +779,15 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
 .rx-add{width:27px;padding:0;}
 .rx-add .ic{width:9px;height:9px;}
 .rx-add[aria-expanded="true"]{border-color:var(--bone-2);color:var(--bone);}
-.pill .ic{width:12px;height:12px;}
+/*
+ * Emoji are the one thing on screen the app doesn't draw — they come off the
+ * keyboard and are rendered by the phone, colour and all. Name the emoji faces
+ * explicitly so they don't fall back to the text font and arrive as tofu, and
+ * keep them a shade under the label size: they are loud enough already.
+ */
+.em{font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;
+  font-size:12.5px;line-height:1;}
+.pill .em{font-size:13px;}
 .pill .n{font-family:var(--cond);font-weight:700;font-size:11.5px;letter-spacing:.06em;line-height:1;}
 /*
  * A mark you left reads in your own colour, never the colour of whoever wrote
@@ -797,10 +805,10 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
 .reply-btn:active{color:var(--bone);}
 
 /*
- * The five marks. A floating picker would sit over the very line you are
- * reacting to — so the row grows one strip taller instead, full width, each
- * mark a thumb wide. Nothing is covered and nothing can be clipped by the
- * sheet it opens in.
+ * The strip: seven emoji and the way to the keyboard. A floating picker would
+ * sit over the very line you are reacting to — so the row grows one strip
+ * taller instead, full width, each key a thumb wide. Nothing is covered and
+ * nothing can be clipped by the sheet it opens in.
  */
 .rx-pick{
   flex:0 0 100%;order:9;display:flex;gap:3px;margin-top:8px;
@@ -809,11 +817,27 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
 @keyframes rxIn{from{opacity:0;transform:translateY(9px) scale(.55)}to{opacity:1;transform:none}}
 .rx-pick button{
   flex:1;height:40px;display:grid;place-items:center;color:var(--bone-2);
+  font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;
+  font-size:21px;line-height:1;
   animation:rxIn .3s cubic-bezier(.2,1.55,.35,1) both;animation-delay:calc(var(--i) * .028s);
 }
-.rx-pick button .ic{width:17px;height:17px;}
-.rx-pick button.mine{color:var(--you);background:var(--ink);}
-.rx-pick button:active{color:var(--bone);}
+/* one you have already left reads as chosen, in your own colour */
+.rx-pick button.mine{background:var(--ink);box-shadow:inset 0 0 0 1px var(--you);}
+.rx-pick button:active{opacity:.6;}
+/* The last key is a mark, not an emoji: it keeps the icon sizing, and a
+   hairline sets it apart as "and then, anything else". */
+.rx-pick .more{flex:0 0 46px;border-left:1px solid var(--rule-2);margin-left:2px;}
+.rx-pick .more .ic{width:13px;height:13px;display:block;color:var(--bone-2);}
+/* gone to the keyboard: the strip becomes the field and says what to do */
+.rx-pick.key{padding:4px;}
+.rx-key{
+  flex:1;min-width:0;height:40px;background:transparent;border:0;color:var(--bone);
+  padding:0 10px;font-family:var(--body);font-size:14px;
+}
+.rx-key:focus{outline:none;}
+.rx-key::placeholder{color:var(--bone-3);font-family:var(--cond);font-weight:600;
+  font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;}
+.rx-pick.key .x{flex:0 0 auto;width:40px;height:40px;padding:13px;color:var(--bone-3);}
 
 /* the double-tap's answer: a mark thrown where the thumb landed */
 @keyframes cmtBurst{
@@ -821,9 +845,12 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
   28%{transform:translate(-50%,-50%) scale(1.15);opacity:1}
   100%{transform:translate(-50%,-150%) scale(1.4);opacity:0}
 }
-/* clay, because the mark being thrown is yours, whoever's line it lands on */
-.cmt-burst{position:absolute;z-index:6;pointer-events:none;width:40px;height:40px;color:var(--you);
-  animation:cmtBurst .78s cubic-bezier(.2,.8,.3,1) forwards;}
+.cmt-burst{
+  position:absolute;z-index:6;pointer-events:none;
+  font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;
+  font-size:36px;line-height:1;
+  animation:cmtBurst .78s cubic-bezier(.2,.8,.3,1) forwards;
+}
 /* a line you just wrote arrives rather than appearing */
 @keyframes cmtIn{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
 .cmt-row.in{animation:cmtIn .34s cubic-bezier(.2,.9,.3,1) both;}
@@ -1060,18 +1087,6 @@ const ICON = {
   close:'<svg viewBox="0 0 384 512" aria-hidden="true"><path d="M192 233.4L59.5 100.9 36.9 123.5 169.4 256 36.9 388.5l22.6 22.6L192 278.6 324.5 411.1l22.6-22.6L214.6 256 347.1 123.5l-22.6-22.6L192 233.4z"/></svg>',
   thumb:'<svg viewBox="0 0 512 512" aria-hidden="true"><path d="M208 48L256 48L256 208L464 208L464 432L432 464L176 464L176 80ZM208 93L208 432L419 432L432 419L432 240L224 240L224 80ZM32 240L144 240L144 464L32 464ZM64 272L64 432L112 432L112 272Z"/></svg>',
   comment:'<svg viewBox="0 0 512 512" aria-hidden="true"><path d="M16 64L496 64L496 384L128 384L16 464L16 64ZM48 96L48 402L118 352L464 352L464 96L48 96Z"/></svg>',
-  /*
-   * The five marks you can leave on a single comment, drawn to the same spec
-   * as the rest — solid silhouettes in a 512 box, square corners, no joins.
-   * Marks rather than emoji on purpose: an emoji is somebody else's picture,
-   * redrawn by every phone, and this app has spent its whole design budget on
-   * not looking like every other app. `nod` reuses the kudos thumb, which is
-   * already what a plain yes looks like here.
-   */
-  heart:'<svg viewBox="0 0 512 512" aria-hidden="true"><path d="M256 448L64 256L64 160L128 96L208 96L256 144L304 96L384 96L448 160L448 256Z"/></svg>',
-  fire:'<svg viewBox="0 0 512 512" aria-hidden="true"><path d="M256 16L336 184L400 144L432 288L432 352L336 464L176 464L80 352L80 296L176 184L192 264L216 120Z"/></svg>',
-  bolt:'<svg viewBox="0 0 512 512" aria-hidden="true"><path d="M288 32L96 288L224 288L160 480L416 224L288 224Z"/></svg>',
-  star:'<svg viewBox="0 0 512 512" aria-hidden="true"><path d="M256 24L310 182L477 184L344 284L392 444L256 348L120 444L169 284L35 184L202 182Z"/></svg>',
   /* an arrow that turns back on itself — the one shape everyone reads as "reply" */
   reply:'<svg viewBox="0 0 512 512" aria-hidden="true"><path d="M176 96L176 176L352 176L416 240L416 400L368 400L368 256L336 224L176 224L176 304L48 200Z"/></svg>',
   plus:'<svg viewBox="0 0 512 512" aria-hidden="true"><path d="M232 96L280 96L280 232L416 232L416 280L280 280L280 416L232 416L232 280L96 280L96 232L232 232Z"/></svg>',
@@ -1144,8 +1159,10 @@ const api = {
     if(!r.ok) throw new Error('music');
     return r.json();
   },
-  async getComments(){
-    const r = await fetch('/api/comments');
+  /* `me` is who's asking: the reactions come back aggregated, with a `mine`
+     flag the server works out, so the browser never sees who left what. */
+  async getComments(me){
+    const r = await fetch(`/api/comments?me=${encodeURIComponent(me || '')}`);
     if(!r.ok) throw new Error('comments');
     return r.json();
   },
@@ -1163,13 +1180,15 @@ const api = {
     if(!r.ok) throw new Error('uncomment');
     return r.json();
   },
-  /* A mark on one line of a thread. Sending the same one twice takes it back —
-     the server's primary key is the toggle, so this never needs to say which. */
-  async reactToComment(from, commentId, token){
+  /* An emoji on one line of a thread. Sending the same one twice takes it back
+     — the server's primary key is the toggle, so this never says which way.
+     The server's own words carry through: the one refusal worth reading is
+     "that's enough reactions on one comment". */
+  async reactToComment(from, commentId, emoji){
     const r = await fetch('/api/comment-reactions', { method:'POST',
       headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ from, commentId, token }) });
-    if(!r.ok) throw new Error('creact');
+      body: JSON.stringify({ from, commentId, emoji }) });
+    if(!r.ok) throw new Error(await reason(r, 'Reaction failed'));
     return r.json();
   },
   async uploadPhoto(profileId, date, slot, contentType, dataBase64, thumbBase64){
@@ -1297,6 +1316,63 @@ function fmtAgo(ts){
 /* Comments are the only free text in the app — never interpolate one raw. */
 const esc = s => String(s).replace(/[&<>"']/g,
   c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+
+/* ── emoji ── */
+/*
+ * A reaction is whatever comes off the keyboard, so "is this one emoji" is the
+ * only rule there is — and it has to be the same rule the server applies, or
+ * the thread shows something the database refused.
+ *
+ * `\p{RGI_Emoji}` under the v flag is that test: one well-formed emoji, skin
+ * tones, keycaps, flags and family sequences included; not text, not two of
+ * them. Older engines don't know the flag, so fall back to a coarser shape
+ * check and let the server have the final word.
+ */
+let ONE_EMOJI = null;
+try{ ONE_EMOJI = new RegExp('^\\p{RGI_Emoji}$', 'v'); }catch(_){}
+const isEmoji = s => typeof s === 'string' && !!s && (ONE_EMOJI
+  ? ONE_EMOJI.test(s)
+  : /\p{Extended_Pictographic}/u.test(s) && [...s].length <= 12);
+
+/* The first emoji in whatever the keyboard handed over, so a stray space or a
+   typed word before it doesn't cost you the tap. */
+function firstEmoji(str){
+  if(!str) return null;
+  let parts;
+  try{
+    parts = [...new Intl.Segmenter(undefined, { granularity:'grapheme' }).segment(str)]
+      .map(p => p.segment);
+  }catch(_){ parts = [...str]; }
+  return parts.find(isEmoji) || null;
+}
+
+/*
+ * What the strip offers before you go to the keyboard for something else.
+ * Seven, because that plus the keyboard key is what fits across a phone at a
+ * size you can hit. Whatever you reach for climbs to the front and stays
+ * there, so the row becomes the two of you rather than a default.
+ */
+const RX_DEFAULT = ['❤️','🔥','💪','👏','🙌','😂','🫡'];
+const RX_SLOTS = 7;
+const rxRecent = () => {
+  try{ return (JSON.parse(localStorage.getItem('rxRecent') || '[]') || []).filter(isEmoji); }
+  catch(_){ return []; }
+};
+const rxQuick = () => {
+  const seen = new Set(), out = [];
+  for(const e of [...rxRecent(), ...RX_DEFAULT]){
+    if(seen.has(e)) continue;
+    seen.add(e);
+    if(out.push(e) === RX_SLOTS) break;
+  }
+  return out;
+};
+function rememberRx(e){
+  try{
+    localStorage.setItem('rxRecent',
+      JSON.stringify([e, ...rxRecent().filter(x => x !== e)].slice(0, RX_SLOTS)));
+  }catch(_){}
+}
 
 /* ═══════════ selectors ═══════════ */
 const entryOf = (p, iso) => state.data[p]?.[iso] || {};
@@ -1493,40 +1569,84 @@ const kudosCount = (to, date) => state.reactions.filter(r => r.to === to && r.da
 const iGaveKudos = (to, date) => state.reactions.some(r => r.to === to && r.date === date && r.from === me());
 
 /* ── comments ── */
+/*
+ * Both lists are read far more often than they change, and always by the same
+ * two keys — a thread by (owner, day), a comment's reactions by its id. Asked
+ * as a filter, each question is a scan: the feed asks two per post across 75
+ * posts, and a thread asks one per reaction pill it draws, so a repaint used
+ * to walk the whole history a few hundred times over.
+ *
+ * So walk it once instead. These are rebuilt in a single pass whenever either
+ * list changes — which is on load, and on the one comment or reaction you just
+ * touched — and every question after that is a lookup.
+ */
+let cmtByThread = new Map();   // `${owner}|${date}` → that day's comments, oldest first
+let rxByComment = new Map();   // comment id → [{ e, n, mine }], most-reacted first
+
+function indexComments(){
+  cmtByThread = new Map();
+  for(const c of state.comments){
+    const k = `${c.to}|${c.date}`;
+    const at = cmtByThread.get(k);
+    if(at) at.push(c); else cmtByThread.set(k, [c]);
+  }
+  rxByComment = new Map();
+  for(const r of state.commentReactions){
+    const at = rxByComment.get(r.c);
+    if(at) at.push(r); else rxByComment.set(r.c, [r]);
+  }
+}
+
+// One shared empty result for every miss, rather than a fresh [] per question.
+// Nothing ever writes through a selector, so there is nothing to share wrongly.
+const NONE = Object.freeze([]);
+
 // A thread belongs to a post — one person's photos on one day. Either of you can
 // write in it, so replies on your own frame land in the same place.
-const commentsOn = (to, date) => state.comments.filter(c => c.to === to && c.date === date);
+const commentsOn = (to, date) => cmtByThread.get(`${to}|${date}`) || NONE;
 const commentCount = (to, date) => commentsOn(to, date).length;
-const lastCommentOn = (to, date) => commentsOn(to, date).slice(-1)[0] || null;
+const lastCommentOn = (to, date) => { const l = commentsOn(to, date); return l[l.length - 1] || null; };
 
 /*
- * The marks that can be left on one line of a thread. Order is the order they
- * sit in the picker, and it is deliberate: love first because it is the one
- * the double-tap sends, then the two that mean "go on", then the two quiet ones.
- * `nod` borrows the kudos thumb — a plain yes already has a glyph here.
+ * A comment's reactions, already counted. The server sends one entry per
+ * (comment, emoji) — the shape a pill is drawn from — ordered by how many
+ * people left it, so a row draws them the same way on both phones.
  */
-const REACTS = [
-  { t:'heart', ic:'heart', lb:'Love' },
-  { t:'fire',  ic:'fire',  lb:'Fire' },
-  { t:'bolt',  ic:'bolt',  lb:'Bolt' },
-  { t:'star',  ic:'star',  lb:'Star' },
-  { t:'nod',   ic:'thumb', lb:'Nod'  }
-];
-const rxCount = (id, token) =>
-  state.commentReactions.filter(r => r.comment === id && r.token === token).length;
-const iReacted = (id, token) =>
-  state.commentReactions.some(r => r.comment === id && r.token === token && r.from === me());
-// what a comment carries, in picker order, so a row draws its marks the same
-// way every time rather than in whatever order they happened to arrive
-const rxOn = id => REACTS.filter(r => rxCount(id, r.t)).map(r => r.t);
+const rxOn = id => rxByComment.get(id) || NONE;
+const rxAt = (id, emoji) => rxOn(id).find(r => r.e === emoji) || null;
+const iReacted = (id, emoji) => !!rxAt(id, emoji)?.mine;
+
+/*
+ * Move a count without asking the server again. `mine` is the only thing the
+ * aggregate loses, and it is the only thing this needs to set: with two people
+ * on the challenge, everyone else's share of a count is whatever is left.
+ */
+function bumpRx(id, emoji, on){
+  const list = state.commentReactions;
+  const i = list.findIndex(r => r.c === id && r.e === emoji);
+  if(on){
+    if(i < 0) list.push({ c:id, e:emoji, n:1, mine:true });
+    else { list[i].n++; list[i].mine = true; }
+  }else if(i >= 0){
+    list[i].n--;
+    list[i].mine = false;
+    if(list[i].n <= 0) list.splice(i, 1);
+  }
+  indexComments();
+}
 
 /* The feed dot: kudos landed on you, anything the other person has said, or a
-   mark they left on something you said. */
+   reaction they left on something you said. */
 const kudosToMe = () => state.reactions.filter(r => r.to === me() && r.from !== me()).length;
 const commentsFromThem = () => state.comments.filter(c => c.from !== me()).length;
+// their share of a count is the count less your own one, if you are in it
 const rxToMe = () => {
-  const mine = new Set(state.comments.filter(c => c.from === me()).map(c => c.id));
-  return state.commentReactions.filter(r => r.from !== me() && mine.has(r.comment)).length;
+  let n = 0;
+  for(const c of state.comments){
+    if(c.from !== me()) continue;
+    for(const r of rxOn(c.id)) n += r.n - (r.mine ? 1 : 0);
+  }
+  return n;
 };
 const seenCount = k => Number(localStorage.getItem(k) || 0);
 function feedBadge(){
@@ -2025,7 +2145,8 @@ function renderPicker(){
       state.me = b.dataset.pick;
       localStorage.setItem('me', state.me);
       haptic(14);
-      checkIn().finally(render);
+      // who you are decides which reactions read as yours — see reloadComments
+      Promise.allSettled([checkIn(), reloadComments()]).then(render);
     };
   });
 }
@@ -3436,10 +3557,11 @@ function openComments(prof, iso, slot = DAY_SLOT){
   const canPick = slots.length > 1;
   const targetName = () => slots.includes(target) ? slotLabel(target) : 'The whole day';
 
-  // the line being answered and the row whose marks are on offer: both are
-  // this sheet's business only, and neither outlives it
+  // the line being answered, the row whose strip is open, and whether that
+  // strip has gone to the keyboard: all three are this sheet's business only
   let replyTo = null;
   let picking = null;
+  let keying = false;
 
   /*
    * What counts as new is whatever arrived since you last had this thread
@@ -3456,23 +3578,40 @@ function openComments(prof, iso, slot = DAY_SLOT){
 
   /* ── the thread ── */
 
-  // The marks on one line, plus the two ways to answer it. Drawn on its own so
-  // a reaction can repaint one footer rather than the whole conversation.
+  /*
+   * The strip of emoji on offer: the seven you reach for most, and then the
+   * keyboard for everything else. There is no way for a web page to open the
+   * emoji keyboard directly on iOS, so the last key focuses a field and says
+   * plainly what to do — the first emoji that arrives is the reaction, and the
+   * strip closes behind it.
+   */
+  const pickHTML = (c) => keying ? `
+    <div class="rx-pick key">
+      <input class="rx-key" type="text" inputmode="text" autocomplete="off"
+        autocapitalize="off" spellcheck="false" maxlength="16" data-key="${c.id}"
+        placeholder="Tap the emoji key">
+      <button class="x" type="button" data-unkey="1" aria-label="Back to the usual ones">
+        ${ICON.close}</button>
+    </div>` : `
+    <div class="rx-pick">
+      ${rxQuick().map((e, i) => `
+        <button style="--i:${i}" type="button" data-rx="${esc(e)}" data-on="${c.id}"
+          class="${iReacted(c.id, e) ? 'mine' : ''}" aria-label="React ${esc(e)}">${esc(e)}</button>`).join('')}
+      <button style="--i:${RX_SLOTS}" type="button" class="more" data-key="${c.id}"
+        aria-label="Any other emoji"><span class="ic">${ICON.plus}</span></button>
+    </div>`;
+
+  // The reactions on one line, plus the two ways to answer it. Drawn on its own
+  // so a reaction can repaint one footer rather than the whole conversation.
   const footHTML = (c) => `
-    ${rxOn(c.id).map(t => {
-      const r = REACTS.find(x => x.t === t), n = rxCount(c.id, t), mine = iReacted(c.id, t);
-      return `<button class="pill${mine ? ' mine' : ''}" data-rx="${t}" data-on="${c.id}"
-        aria-pressed="${mine}" aria-label="${r.lb} (${n})">
-        <span class="ic">${ICON[r.ic]}</span><span class="n">${n}</span></button>`;
-    }).join('')}
+    ${rxOn(c.id).map(r => `
+      <button class="pill${r.mine ? ' mine' : ''}" data-rx="${esc(r.e)}" data-on="${c.id}"
+        aria-pressed="${r.mine}" aria-label="${esc(r.e)} ${r.n}">
+        <span class="em">${esc(r.e)}</span><span class="n">${r.n}</span></button>`).join('')}
     <button class="rx-add" data-add="${c.id}" aria-expanded="${picking === c.id}"
-      aria-label="Leave a mark"><span class="ic">${ICON.plus}</span></button>
+      aria-label="Add a reaction"><span class="ic">${ICON.plus}</span></button>
     <button class="reply-btn" data-reply="${c.id}">Reply</button>
-    ${picking === c.id ? `
-      <div class="rx-pick">${REACTS.map((r, i) => `
-        <button style="--i:${i}" data-rx="${r.t}" data-on="${c.id}"
-          class="${iReacted(c.id, r.t) ? 'mine' : ''}" aria-label="${r.lb}">
-          <span class="ic">${ICON[r.ic]}</span></button>`).join('')}</div>` : ''}`;
+    ${picking === c.id ? pickHTML(c) : ''}`;
 
   const rowHTML = (c, kids) => {
     const mine = c.from === me();
@@ -3619,13 +3758,14 @@ function openComments(prof, iso, slot = DAY_SLOT){
       if(picking == null) return;
       const id = picking;
       picking = null;
+      keying = false;
       const foot = footEl(id);
       if(!foot) return;
       foot.querySelector('.rx-pick')?.remove();
       foot.querySelector('.rx-add')?.setAttribute('aria-expanded', 'false');
     };
 
-    // `pop` is the mark that just landed: the count it belongs to is worth a
+    // `pop` is the emoji that just landed: the count it belongs to is worth a
     // beat of movement, which is the whole difference between a number that
     // changed and a number you saw change.
     const paintFoot = (id, pop) => {
@@ -3633,43 +3773,47 @@ function openComments(prof, iso, slot = DAY_SLOT){
       if(!c || !foot) return;
       foot.innerHTML = footHTML(c);
       bindFoot(foot);
-      if(pop) foot.querySelector(`.pill[data-rx="${pop}"]`)?.classList.add('pop');
-    };
-
-    const toggleRx = async (id, token) => {
-      if(!live(id)) return;
-      const had = iReacted(id, token);
-      haptic(had ? 6 : 12);
-
-      const add = () => state.commentReactions.push({ comment:id, from:me(), token });
-      const drop = () => { state.commentReactions = state.commentReactions.filter(
-        r => !(r.comment === id && r.from === me() && r.token === token)); };
-
-      if(had) drop(); else add();
-      closePick();
-      paintFoot(id, had ? null : token);
-
-      try{
-        await api.reactToComment(me(), id, token);
-        markFeedSeen();
-      }catch(_){
-        if(had) add(); else drop();
-        paintFoot(id);
-        toast('Reaction failed');
+      if(pop){
+        [...foot.querySelectorAll('.pill')]
+          .find(p => p.dataset.rx === pop)?.classList.add('pop');
       }
     };
 
-    /* The double tap sends the first mark in the list, where every app that
-       has ever had a double tap sends it. It only ever adds — taking one back
-       is what the pill under the line is for — but it answers either way,
-       because a gesture that does nothing visible reads as a broken one. */
+    const toggleRx = async (id, emoji) => {
+      if(!live(id) || !isEmoji(emoji)) return;
+      const had = iReacted(id, emoji);
+      haptic(had ? 6 : 12);
+
+      // the count moves now and the server catches up; putting one back is
+      // the same call with the flag the other way
+      bumpRx(id, emoji, !had);
+      if(!had) rememberRx(emoji);
+      closePick();
+      paintFoot(id, had ? null : emoji);
+
+      try{
+        await api.reactToComment(me(), id, emoji);
+        markFeedSeen();
+      }catch(err){
+        bumpRx(id, emoji, had);
+        paintFoot(id);
+        // the server's own words: the cap is the one refusal worth reading
+        toast(err?.message || 'Reaction failed');
+      }
+    };
+
+    /* The double tap sends a heart, where every app that has ever had a double
+       tap sends it. It only ever adds — taking one back is what the pill under
+       the line is for — but it answers either way, because a gesture that does
+       nothing visible reads as a broken one. */
+    const DOUBLE_TAP = '❤️';
     const burst = (row, e) => {
       const r = row.getBoundingClientRect();
       const b = document.createElement('div');
       b.className = 'cmt-burst';
       b.style.left = `${e.clientX - r.left}px`;
       b.style.top = `${e.clientY - r.top}px`;
-      b.innerHTML = ICON.heart;
+      b.textContent = DOUBLE_TAP;
       row.appendChild(b);
       setTimeout(() => b.remove(), 800);
     };
@@ -3685,14 +3829,14 @@ function openComments(prof, iso, slot = DAY_SLOT){
         tapAt = 0; tapRow = null;
         if(!live(id)) return;
         burst(row, e);
-        if(!iReacted(id, 'heart')) toggleRx(id, 'heart');
+        if(!iReacted(id, DOUBLE_TAP)) toggleRx(id, DOUBLE_TAP);
         else haptic(8);
         return;
       }
       tapAt = now; tapRow = row;
     });
 
-    /* Anywhere else is a way out of the picker — including the line under it,
+    /* Anywhere else is a way out of the strip — including the line under it,
        which is why this listens on the way down rather than on the way up. */
     sheet.addEventListener('click', e => {
       if(picking == null) return;
@@ -3714,6 +3858,33 @@ function openComments(prof, iso, slot = DAY_SLOT){
         haptic(8);
         picking = id;
         paintFoot(id);
+      };
+
+      /* Over to the keyboard, and back. The field is focused on the way in so
+         the keyboard is already up — one switch away from the emoji. */
+      const key = foot.querySelector('[data-key]');
+      if(key && key.tagName !== 'INPUT') key.onclick = () => {
+        keying = true;
+        haptic(8);
+        paintFoot(Number(key.dataset.key));
+        footEl(Number(key.dataset.key))?.querySelector('.rx-key')?.focus();
+      };
+      const back = foot.querySelector('[data-unkey]');
+      if(back) back.onclick = () => {
+        const id = picking;
+        keying = false;
+        paintFoot(id);
+      };
+      const field = foot.querySelector('input.rx-key');
+      if(field) field.oninput = () => {
+        const e = firstEmoji(field.value);
+        if(!e){
+          // something that isn't an emoji: keep the field honest and wait
+          if(field.value.trim()) field.value = '';
+          return;
+        }
+        field.blur();
+        toggleRx(Number(field.dataset.key), e);
       };
       const reply = foot.querySelector('[data-reply]');
       if(reply) reply.onclick = () => {
@@ -3761,6 +3932,11 @@ function openComments(prof, iso, slot = DAY_SLOT){
     };
 
     const repaint = (justAdded) => {
+      // every path in here mutates state.comments directly — posting a line,
+      // taking one back, putting one back after a failure — and the thread is
+      // drawn from the index, not the array. Rebuild first or the sheet draws
+      // the conversation as it was one edit ago.
+      indexComments();
       box.innerHTML = thread();
       bindRows();
       paintAbove(false);
@@ -4038,6 +4214,8 @@ function openSettings(){
       localStorage.setItem('me', state.me);
       closeSheet(); render();
       toast(`Tracking as ${nameOf(state.me)}`);
+      // the reactions that read as yours are the other person's now
+      reloadComments().then(render);
     };
     wireAlerts(sheet.querySelector('#alerts'));
   });
@@ -4143,7 +4321,7 @@ async function wireAlerts(btn){
  */
 async function loadState(){
   const [core, reactions, comments] = await Promise.allSettled([
-    api.getState(), api.getReactions(), api.getComments()
+    api.getState(), api.getReactions(), api.getComments(me())
   ]);
 
   if(core.status === 'fulfilled'){
@@ -4164,6 +4342,23 @@ async function loadState(){
   // as a bug rather than as a second request
   state.comments  = comments.status === 'fulfilled' ? (comments.value.comments || []) : [];
   state.commentReactions = comments.status === 'fulfilled' ? (comments.value.reactions || []) : [];
+  indexComments();
+}
+
+/*
+ * The reactions payload is scoped to whoever is asking — `mine` is worked out
+ * server-side — so becoming someone else means asking again. That happens
+ * twice in the life of the app: the first time you say who you are, and the
+ * settings sheet's swap. One small request, at the only two moments it can
+ * possibly be wrong.
+ */
+async function reloadComments(){
+  try{
+    const r = await api.getComments(me());
+    state.comments = r.comments || [];
+    state.commentReactions = r.reactions || [];
+    indexComments();
+  }catch(_){ /* leave the thread as it was; the next load will catch up */ }
 }
 
 /*

@@ -115,11 +115,13 @@ let demoStart;
     { id: demoCommentId++, from: 'sachin', to: 'aarya', date: at(18), slot: 'workout1',
       body: 'That hill again? Respect.', parent: null, at: ago(96) }
   ];
+  // stored the way the table stores it: one row per (comment, person, emoji)
   demo.commentReactions = [
-    { comment: 1, from: 'sachin', token: 'heart' },
-    { comment: 1, from: 'aarya', token: 'fire' },
-    { comment: 3, from: 'sachin', token: 'nod' },
-    { comment: 5, from: 'aarya', token: 'fire' }
+    { comment: 1, from: 'sachin', emoji: '❤️' },
+    { comment: 1, from: 'aarya', emoji: '🔥' },
+    { comment: 3, from: 'sachin', emoji: '👍' },
+    { comment: 3, from: 'aarya', emoji: '👍' },
+    { comment: 5, from: 'aarya', emoji: '🔥' }
   ];
 }
 
@@ -221,6 +223,20 @@ function shimRes(res) {
 
 const MIME = { '.html':'text/html; charset=utf-8', '.js':'text/javascript', '.json':'application/json',
                '.png':'image/png', '.svg':'image/svg+xml', '.ico':'image/x-icon' };
+
+/* The aggregate the real handler builds in SQL: one row per (comment, emoji)
+   with a count and whether the person asking is in it. */
+function demoRx(me) {
+  const by = new Map();
+  for (const r of demo.commentReactions) {
+    const k = r.comment + '\u0000' + r.emoji;
+    const hit = by.get(k) || { c: r.comment, e: r.emoji, n: 0, mine: false };
+    hit.n++;
+    if (r.from === me) hit.mine = true;
+    by.set(k, hit);
+  }
+  return [...by.values()].sort((a, b) => a.c - b.c || b.n - a.n || (a.e < b.e ? -1 : 1));
+}
 
 /* ---- demo API ---- */
 async function demoApi(pathname, req, res, url) {
@@ -349,7 +365,8 @@ async function demoApi(pathname, req, res, url) {
       demo.commentReactions = demo.commentReactions.filter((r) => !gone.includes(r.comment));
       return res.status(200).json({ ok: true, removed: gone });
     }
-    return res.status(200).json({ comments: demo.comments, reactions: demo.commentReactions });
+    return res.status(200).json({
+      comments: demo.comments, reactions: demoRx(url.searchParams.get('me')) });
   }
   if (pathname === '/api/comment-reactions') {
     if (req.method === 'POST') {
@@ -359,12 +376,21 @@ async function demoApi(pathname, req, res, url) {
         return res.status(404).json({ error: 'That comment is gone' });
       }
       const i = demo.commentReactions.findIndex((r) =>
-        r.comment === id && r.from === b.from && r.token === b.token);
-      if (i >= 0) demo.commentReactions.splice(i, 1);
-      else demo.commentReactions.push({ comment: id, from: b.from, token: b.token });
-      return res.status(200).json({ ok: true, active: i < 0 });
+        r.comment === id && r.from === b.from && r.emoji === b.emoji);
+      if (i >= 0) {
+        demo.commentReactions.splice(i, 1);
+        return res.status(200).json({ ok: true, active: false });
+      }
+      // the same cap the real handler applies inside its insert
+      const held = demo.commentReactions.filter((r) => r.comment === id && r.from === b.from).length;
+      if (held >= 6) {
+        return res.status(409).json({ error: "That's 6 reactions on one comment — take one back first",
+                                      code: 'REACTION_LIMIT' });
+      }
+      demo.commentReactions.push({ comment: id, from: b.from, emoji: b.emoji });
+      return res.status(200).json({ ok: true, active: true });
     }
-    return res.status(200).json({ reactions: demo.commentReactions });
+    return res.status(200).json({ reactions: demoRx(url.searchParams.get('me')) });
   }
   if (pathname === '/api/push') {
     // demo mode has no push service; report it as unavailable

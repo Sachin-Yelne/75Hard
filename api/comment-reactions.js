@@ -5,15 +5,44 @@ const PROFILES = ['sachin', 'aarya'];
 const NAMES = { sachin: 'Sachin', aarya: 'Aarya' };
 
 /*
- * The marks you can leave on a single line of a thread. Tokens, not emoji:
- * the app draws each one as a glyph in its own icon set, so what gets stored
- * is the name of a mark rather than a character whose picture changes with
- * whatever font the phone happens to render it in.
+ * A reaction is whatever came off the phone's emoji keyboard, so the server
+ * can't hold a list of what's allowed — it can only say "that is one emoji".
+ *
+ * `\p{RGI_Emoji}` with the v flag is exactly that test: it matches one
+ * well-formed emoji, including the awkward ones (skin tones, keycaps, flags,
+ * and ZWJ sequences like a four-person family), and rejects plain text, an
+ * empty string, and two emoji stuck together. Without it a reaction would be a
+ * second comment field with no length limit and no escaping story.
+ *
+ * The regex needs a runtime new enough to know the v flag; where it isn't,
+ * fall back to a coarser shape test rather than letting anything through.
  */
-const TOKENS = ['heart', 'fire', 'bolt', 'star', 'nod'];
-const SAID = {
-  heart: 'loved', fire: 'fired up', bolt: 'charged', star: 'starred', nod: 'nodded at'
-};
+let ONE_EMOJI = null;
+try {
+  ONE_EMOJI = new RegExp('^\\p{RGI_Emoji}$', 'v');
+} catch (_) { /* older runtime — the fallback below carries it */ }
+
+// A family-of-four ZWJ sequence is 25 bytes; nothing legitimate is longer.
+const MAX_BYTES = 32;
+
+function isEmoji(value) {
+  if (typeof value !== 'string' || !value) return false;
+  if (Buffer.byteLength(value, 'utf8') > MAX_BYTES) return false;
+  if (ONE_EMOJI) return ONE_EMOJI.test(value);
+  // Coarse fallback: pictographic content only, and short enough to be one.
+  return /\p{Extended_Pictographic}/u.test(value) &&
+    /^[\p{Extended_Pictographic}\p{Emoji_Component}‍️]+$/u.test(value) &&
+    [...value].length <= 12;
+}
+
+/*
+ * How many different emoji one person may leave on one comment. The five drawn
+ * marks this replaced were their own limit — there were only five. Anything off
+ * a keyboard is unbounded, and a row per tap with nothing stopping it is how a
+ * two-person table grows to thousands of rows nobody asked for. Six is more
+ * than anyone means and still a number.
+ */
+const MAX_PER_PERSON = 6;
 
 module.exports = async function handler(req, res) {
   // comment_reactions is part of the shared schema connect() ensures.
@@ -21,13 +50,23 @@ module.exports = async function handler(req, res) {
   if (!sql) return;
 
   if (req.method === 'GET') {
+    /*
+     * Aggregated, the same way the thread reads it: one row per (comment,
+     * emoji) with a count, rather than one row per person. `me` is who is
+     * asking, which is the only thing an individual row was still carrying.
+     */
     try {
-      const rows = await sql`SELECT comment_id, from_profile, token FROM comment_reactions`;
+      const me = PROFILES.includes(req.query.me) ? req.query.me : '';
+      const rows = await sql`
+        SELECT comment_id, emoji, count(*)::int AS n,
+               bool_or(from_profile = ${me}) AS mine
+        FROM comment_reactions
+        GROUP BY comment_id, emoji
+        ORDER BY comment_id, count(*) DESC, emoji
+      `;
       return res.status(200).json({
         reactions: rows.map((r) => ({
-          comment: Number(r.comment_id),
-          from: r.from_profile,
-          token: r.token
+          c: Number(r.comment_id), e: r.emoji, n: r.n, mine: r.mine
         }))
       });
     } catch (err) {
@@ -37,14 +76,14 @@ module.exports = async function handler(req, res) {
 
   if (req.method === 'POST') {
     try {
-      const { from, commentId, token } = req.body || {};
+      const { from, commentId, emoji } = req.body || {};
       const id = Number(commentId);
-      if (!PROFILES.includes(from) || !Number.isInteger(id) || !TOKENS.includes(token)) {
-        return res.status(400).json({ error: 'from, commentId and a supported reaction are required' });
+      if (!PROFILES.includes(from) || !Number.isInteger(id) || !isEmoji(emoji)) {
+        return res.status(400).json({ error: 'from, commentId and one emoji are required' });
       }
 
       // The comment is looked up before anything is written: it says who to
-      // tell, and a mark on a line that has since been deleted is a row that
+      // tell, and a reaction on a line that has since been deleted is a row
       // nothing will ever clean up.
       const found = await sql`
         SELECT id, from_profile, day_date::text AS day_date, body
@@ -55,34 +94,50 @@ module.exports = async function handler(req, res) {
       }
       const comment = found[0];
 
-      // The primary key is the toggle: the same mark twice takes it back.
+      // The primary key is the toggle: the same emoji twice takes it back.
       const existing = await sql`
         DELETE FROM comment_reactions
-        WHERE comment_id = ${id} AND from_profile = ${from} AND token = ${token}
-        RETURNING token
+        WHERE comment_id = ${id} AND from_profile = ${from} AND emoji = ${emoji}
+        RETURNING emoji
       `;
       if (existing.length) {
         return res.status(200).json({ ok: true, active: false });
       }
 
-      await sql`
-        INSERT INTO comment_reactions (comment_id, from_profile, token)
-        VALUES (${id}, ${from}, ${token})
+      /*
+       * The cap is applied inside the insert rather than by reading first and
+       * writing second — two phones tapping at once would both pass a separate
+       * check. No row back means the cap is full, since the delete above has
+       * already ruled out a conflict.
+       */
+      const added = await sql`
+        INSERT INTO comment_reactions (comment_id, from_profile, emoji)
+        SELECT ${id}, ${from}, ${emoji}
+        WHERE (
+          SELECT count(*) FROM comment_reactions
+          WHERE comment_id = ${id} AND from_profile = ${from}
+        ) < ${MAX_PER_PERSON}
         ON CONFLICT DO NOTHING
+        RETURNING emoji
       `;
+      if (!added.length) {
+        return res.status(409).json({
+          error: `That's ${MAX_PER_PERSON} reactions on one comment — take one back first`,
+          code: 'REACTION_LIMIT'
+        });
+      }
 
       /*
-       * Told once per (comment, mark), which is what the claim key buys:
-       * taking a mark back and leaving it again is a fidget, not news.
-       * Reacting to your own words never rings anything.
+       * Told once per (comment, emoji), which is what the claim key buys:
+       * taking one back and leaving it again is a fidget, not news. Reacting
+       * to your own words never rings anything.
        */
       if (comment.from_profile !== from) {
-        const said = SAID[token] || 'reacted to';
         await notify(sql, {
           to: comment.from_profile,
           date: comment.day_date,
-          kind: `creact:${from}:${id}:${token}`,
-          title: `${NAMES[from] || from} ${said} your comment`,
+          kind: `creact:${from}:${id}:${emoji}`,
+          title: `${NAMES[from] || from} reacted ${emoji} to your comment`,
           body: comment.body.length > 120 ? `${comment.body.slice(0, 119)}…` : comment.body
         });
       }
