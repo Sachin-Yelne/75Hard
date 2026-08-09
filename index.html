@@ -768,16 +768,24 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
   margin:0 calc(var(--pad) * -1) 4px;
   padding:20px var(--pad) 16px;
 }
-.cmt-row{padding:15px 0;border-bottom:1px solid var(--rule);position:relative;}
-.cmt-row:first-child{padding-top:5px;}
+/*
+ * A comment is a name, a line, and sometimes a reaction. It used to be all of
+ * that plus a row of its own for a Reply button, which on a thread of
+ * three-word answers meant most of the sheet was space around the words rather
+ * than the words. Reply and Delete moved into the hold, so a line that carries
+ * nothing takes the height of a line.
+ */
+.cmt-row{padding:12px 0;border-bottom:1px solid var(--rule);position:relative;}
+.cmt-row:first-child{padding-top:4px;}
 .cmt-row.pending{opacity:.45;}
-.cmt-head{display:flex;align-items:center;gap:10px;margin-bottom:7px;}
+.cmt-head{display:flex;align-items:center;gap:9px;margin-bottom:4px;}
 .cmt-head .who{font-family:var(--cond);font-weight:700;font-size:12px;
   letter-spacing:.18em;text-transform:uppercase;}
 .cmt-head .when{font-family:var(--cond);font-weight:500;font-size:11px;letter-spacing:.14em;
   text-transform:uppercase;color:var(--bone-3);}
+/* which frame it was left on — a label, not a badge */
 .cmt-head .on{font-family:var(--cond);font-weight:600;font-size:10px;letter-spacing:.16em;
-  text-transform:uppercase;color:var(--bone-3);border:1px solid var(--rule-2);padding:2px 6px;}
+  text-transform:uppercase;color:var(--bone-3);}
 /* Said since you last had this thread open. Their colour, and a dot in front
    of it — a filled block was a third rectangle in a head that already has two
    labels, and this is findable without reading either way. */
@@ -785,9 +793,7 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
   font-family:var(--cond);font-weight:700;font-size:10px;letter-spacing:.18em;
   text-transform:uppercase;color:var(--p);line-height:1;}
 .cmt-head .new::before{content:'';width:5px;height:5px;background:var(--p);flex:0 0 auto;}
-.cmt-head .rm{width:12px;height:12px;color:var(--bone-3);margin-left:auto;flex-shrink:0;}
-.cmt-head .rm:active{color:var(--you);}
-.cmt-body{margin:0;font-size:13.5px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;}
+.cmt-body{margin:0;font-size:14px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere;}
 /* A press and hold is the way to react, so the row must not spend that gesture
    on selecting its own text or raising iOS's own callout over the top of it. */
 .cmt-main{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;}
@@ -797,11 +803,11 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
  * hairline is the thread: draw a second rule under each reply as well and a
  * three-line exchange starts to look like a spreadsheet.
  */
-.cmt-kids{margin:13px 0 2px 2px;padding-left:15px;border-left:1px solid var(--rule-2);}
+.cmt-kids{margin:11px 0 0 1px;padding-left:14px;border-left:1px solid var(--rule-2);}
 .cmt-kids .cmt-row{padding:0;border-bottom:none;}
-.cmt-kids .cmt-row + .cmt-row{margin-top:14px;}
+.cmt-kids .cmt-row + .cmt-row{margin-top:12px;}
 .cmt-kids .cmt-head .who{font-size:11px;}
-.cmt-kids .cmt-body{font-size:13px;}
+.cmt-kids .cmt-body{font-size:13.5px;}
 /* The line the composer is currently pointed at — the comment itself, not the
    exchange hanging off it, which is why it marks the row's own block. */
 .cmt-main{position:relative;}
@@ -815,7 +821,9 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
  * for. Reacting is a press and hold on the line itself, so the footer only
  * ever carries things that actually happened.
  */
-.cmt-foot{position:relative;display:flex;align-items:center;gap:1px;flex-wrap:wrap;margin-top:8px;}
+.cmt-foot{position:relative;display:flex;align-items:center;gap:1px;flex-wrap:wrap;margin-top:6px;}
+/* most lines carry nothing, and an empty row should cost nothing */
+.cmt-foot:empty{display:none;}
 .pill{
   display:inline-flex;align-items:center;justify-content:center;
   height:28px;padding:0 3px;
@@ -842,12 +850,6 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
 .pill.mine{box-shadow:0 2px 0 var(--you);}
 @keyframes rxPop{0%{transform:scale(1)}38%{transform:scale(1.3)}100%{transform:scale(1)}}
 .pill.pop{animation:rxPop .36s cubic-bezier(.2,1.1,.3,1);}
-.reply-btn{
-  margin-left:auto;padding:7px 0 7px 12px;
-  font-family:var(--cond);font-weight:600;font-size:11px;letter-spacing:.16em;
-  text-transform:uppercase;color:var(--bone-2);
-}
-.reply-btn:active{color:var(--bone);}
 
 /*
  * The strip. A floating picker would sit over the very line you are reacting
@@ -860,11 +862,29 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
  * is a thing you are inside of, and the emoji are loud enough on their own.
  */
 .rx-pick{
-  flex:0 0 100%;order:9;display:flex;gap:2px;margin-top:6px;padding:4px 2px;
-  background:var(--ink-3);
+  display:flex;gap:2px;padding:4px 2px;min-width:0;
   overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;
   overscroll-behavior-x:contain;
 }
+/*
+ * Everything holding a line offers: the emoji, then what you can do to it.
+ *
+ * `min-width:0` is doing real work. A flex item won't shrink below the width
+ * of its own content by default, and this one wraps a forty-key row — so
+ * without it the bar takes the width of every emoji laid end to end, drags the
+ * whole comment out to four screens wide, and the row that was supposed to
+ * scroll never does.
+ */
+.rx-bar{flex:0 0 100%;min-width:0;order:9;margin-top:7px;background:var(--ink-3);}
+.rx-acts{display:flex;gap:2px;border-top:1px solid var(--rule);}
+.rx-acts button{
+  flex:1;min-width:0;padding:11px 0;text-align:center;
+  font-family:var(--cond);font-weight:600;font-size:11.5px;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--bone-2);
+}
+.rx-acts button:active{color:var(--bone);}
+.rx-acts .rm{color:var(--bone-3);}
+.rx-acts .rm:active{color:var(--you);}
 .rx-pick::-webkit-scrollbar{display:none;}
 @keyframes rxIn{from{opacity:0;transform:translateY(7px) scale(.6)}to{opacity:1;transform:none}}
 .rx-pick button{
@@ -3764,12 +3784,27 @@ function openComments(prof, iso, slot = DAY_SLOT){
 
   /* ── the thread ── */
 
-  /* The strip of emoji on offer, in one row you can flick through. */
+  /*
+   * What holding a line offers: the emoji in one row you can flick through,
+   * and under them the things you can do to it.
+   *
+   * Reply and Delete live here rather than under every comment. Standing
+   * controls cost a line of their own on every single row — on a thread of
+   * three-word answers that was more furniture than conversation — and both
+   * are things you do to a particular line, which is exactly what holding one
+   * says you are about to do.
+   */
   const pickHTML = (c) => `
-    <div class="rx-pick">
-      ${rxQuick().map((e, i) => `
-        <button style="--i:${i}" type="button" data-rx="${esc(e)}" data-on="${c.id}"
-          class="${iReacted(c.id, e) ? 'mine' : ''}" aria-label="React ${esc(e)}">${esc(e)}</button>`).join('')}
+    <div class="rx-bar">
+      <div class="rx-pick">
+        ${rxQuick().map((e, i) => `
+          <button style="--i:${i}" type="button" data-rx="${esc(e)}" data-on="${c.id}"
+            class="${iReacted(c.id, e) ? 'mine' : ''}" aria-label="React ${esc(e)}">${esc(e)}</button>`).join('')}
+      </div>
+      <div class="rx-acts">
+        <button type="button" data-reply="${c.id}">Reply</button>
+        ${c.from === me() ? `<button type="button" class="rm" data-rm="${c.id}">Delete</button>` : ''}
+      </div>
     </div>`;
 
   /*
@@ -3785,7 +3820,6 @@ function openComments(prof, iso, slot = DAY_SLOT){
       <button class="pill${r.mine && i === 0 ? ' mine' : ''}" data-rx="${esc(r.e)}"
         data-on="${c.id}" aria-pressed="${r.mine}" aria-label="${esc(r.e)}"
         >${esc(r.e)}</button>`)).join('')}
-    <button class="reply-btn" data-reply="${c.id}">Reply</button>
     ${picking === c.id ? pickHTML(c) : ''}`;
 
   const rowHTML = (c, kids) => {
@@ -3799,8 +3833,6 @@ function openComments(prof, iso, slot = DAY_SLOT){
           <span class="when">${fmtAgo(c.at)}</span>
           ${c.parent == null && tagged(c.slot) ? `<span class="on">${slotLabel(c.slot)}</span>` : ''}
           ${!mine && new Date(c.at).getTime() > readAt ? '<span class="new">New</span>' : ''}
-          ${mine && !c.pending
-            ? `<button class="rm" data-rm="${c.id}" aria-label="Delete comment">${ICON.close}</button>` : ''}
         </div>
         <p class="cmt-body">${esc(c.body)}</p>
         ${c.pending ? '' : `<div class="cmt-foot">${footHTML(c)}</div>`}
@@ -4067,45 +4099,49 @@ function openComments(prof, iso, slot = DAY_SLOT){
       if(reply) reply.onclick = () => {
         const id = Number(reply.dataset.reply);
         haptic(8);
+        closePick();
         setReply(replyTo === id ? null : id);
         if(replyTo != null) ta.focus();
+      };
+      const rm = foot.querySelector('[data-rm]');
+      if(rm) rm.onclick = () => {
+        const id = Number(rm.dataset.rm);
+        closePick();
+        removeComment(id);
       };
     };
 
     const bindRows = () => {
       box.querySelectorAll('.cmt-foot').forEach(bindFoot);
-      box.querySelectorAll('[data-rm]').forEach(b => {
-        b.onclick = async () => {
-          const id = Number(b.dataset.rm);
-          const kids = state.comments.filter(c => c.parent === id).length;
-          if(!confirm(kids
-            ? `Delete this comment and ${kids === 1 ? 'its reply' : `its ${kids} replies`}?`
-            : 'Delete this comment?')) return;
+    };
 
-          // A comment takes its answers with it, so the whole set is snapped
-          // rather than spliced — putting three rows back in their old places
-          // by hand is how an undo ends up with the thread out of order.
-          const hadC = state.comments.slice();
-          const hadR = state.commentReactions.slice();
-          const gone = new Set(state.comments
-            .filter(c => c.id === id || c.parent === id).map(c => c.id));
-          state.comments = state.comments.filter(c => !gone.has(c.id));
-          state.commentReactions = state.commentReactions.filter(r => !gone.has(r.comment));
-          if(gone.has(replyTo)) replyTo = null;
-          if(gone.has(picking)) picking = null;
+    const removeComment = (id) => {
+      const kids = state.comments.filter(c => c.parent === id).length;
+      if(!confirm(kids
+        ? `Delete this comment and ${kids === 1 ? 'its reply' : `its ${kids} replies`}?`
+        : 'Delete this comment?')) return;
+
+      // A comment takes its answers with it, so the whole set is snapped
+      // rather than spliced — putting three rows back in their old places
+      // by hand is how an undo ends up with the thread out of order.
+      const hadC = state.comments.slice();
+      const hadR = state.commentReactions.slice();
+      const gone = new Set(state.comments
+        .filter(c => c.id === id || c.parent === id).map(c => c.id));
+      state.comments = state.comments.filter(c => !gone.has(c.id));
+      state.commentReactions = state.commentReactions.filter(r => !gone.has(r.c));
+      if(gone.has(replyTo)) replyTo = null;
+      if(gone.has(picking)) picking = null;
+      repaint();
+
+      api.deleteComment(id, me())
+        .then(() => toast('Comment removed'))
+        .catch(() => {
+          state.comments = hadC;
+          state.commentReactions = hadR;
           repaint();
-
-          try{
-            await api.deleteComment(id, me());
-            toast('Comment removed');
-          }catch(_){
-            state.comments = hadC;
-            state.commentReactions = hadR;
-            repaint();
-            toast('Delete failed');
-          }
-        };
-      });
+          toast('Delete failed');
+        });
     };
 
     const repaint = (justAdded) => {
