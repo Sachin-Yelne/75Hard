@@ -338,8 +338,16 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
 /* your own meal: the caption is the way in to naming it */
 .viewer-bot .slot-tag.edit{pointer-events:auto;}
 .slot-tag.edit .tx{border-bottom:1px solid rgba(255,255,255,.28);padding-bottom:3px;}
+/*
+ * The scrim. Every post now has photograph behind its text rather than black,
+ * so like the viewer's it ramps early: the extra stop puts real darkness where
+ * the caption block *starts* — the eyebrow and the day number — instead of only
+ * at the very bottom, where a gradient tuned for black underneath was leaving
+ * the top two lines to wash out over a bright frame. The middle stays clear.
+ */
 .post .shade{position:absolute;inset:0;pointer-events:none;
-  background:linear-gradient(180deg,rgba(0,0,0,.55) 0%,transparent 26%,transparent 42%,rgba(0,0,0,.88) 100%);}
+  background:linear-gradient(180deg,rgba(0,0,0,.58) 0%,transparent 24%,
+    transparent 44%,rgba(0,0,0,.5) 64%,rgba(0,0,0,.93) 100%);}
 .post-top{position:absolute;top:calc(var(--safe-top) + 16px);left:var(--pad);right:var(--pad);
   display:flex;justify-content:space-between;align-items:baseline;}
 .post-top .who{font-family:var(--cond);font-weight:700;font-size:14px;letter-spacing:.2em;text-transform:uppercase;}
@@ -515,21 +523,28 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
 .feed-empty p{font-size:12.5px;color:var(--bone-3);line-height:1.6;margin:0;}
 
 /* collage: the whole day at once, one tile per frame.
-   Square tiles centred in the post — stretching them to fill a phone-shaped
-   post turns a six-up into six tall slivers. */
-.collage{
-  position:absolute;inset:0;display:grid;gap:2px;align-content:center;
-  /* centre in the space the caption block leaves, not the whole post */
-  padding:calc(var(--safe-top) + 46px) 0 calc(var(--nav) + 150px);
-}
-.tile{position:relative;overflow:hidden;background:#000;padding:0;aspect-ratio:1;}
+ *
+ * The grid fills the post rather than sitting inside it. Square tiles centred
+ * in a phone-shaped screen left a band of black above them and another below —
+ * on a six-frame day the photographs, which are the whole reason to open this
+ * tab, were using about a third of the screen and the rest was nothing. The
+ * tracks are fractions now, so the frames take the room instead, and what
+ * shapes a tile is how many there are rather than a fixed square (see COLLAGE).
+ *
+ * Corner to corner, at every count. Stopping the grid above the caption only
+ * moved the black band rather than removing it, and put a hard line across the
+ * middle of the post where the photographs gave out. The caption rides on the
+ * frames instead, exactly as it always has over a lone one — the scrim is what
+ * makes that readable, and the bottom band of a post is text territory on any
+ * day, which is the fact the row fractions are chosen against.
+ */
+.collage{position:absolute;inset:0;display:grid;gap:2px;}
+.tile{position:relative;overflow:hidden;background:#000;padding:0;min-width:0;min-height:0;}
 .tile img{width:100%;height:100%;object-fit:cover;display:block;}
 .tile:active{opacity:.72;}
-/* a lone frame still fills the screen, as it always did */
-.collage.single{align-content:stretch;}
-.collage.single .tile{aspect-ratio:auto;height:100%;}
-/* three reads better as one wide frame over a pair than as an orphan row */
-.collage.three .tile:first-child{grid-column:span 2;aspect-ratio:2.02;}
+/* the lead frame, on the counts that don't divide evenly into their grid */
+.tile.w2{grid-column:span 2;}
+.tile.w3{grid-column:span 3;}
 .tile .more{
   position:absolute;inset:0;display:grid;place-items:center;
   background:rgba(0,0,0,.58);
@@ -2535,11 +2550,42 @@ function cells(p, ti){
 }
 
 /* ── feed ── */
-// One column for a lone frame, two up to four, three beyond that.
-const collageCols = n => n === 1 ? 1 : n <= 4 ? 2 : 3;
-// A post is a tall phone screen; past six tiles they'd shrink to slivers, so
-// the sixth carries a +N and the viewer holds the rest.
-const TILE_CAP = 6;
+/*
+ * One layout per frame count, because a day of six photographs is a different
+ * picture from a day of three and neither is served by the same grid.
+ *
+ * `cols` and `rows` are handed straight to the grid — fractions, so the whole
+ * height of the post gets divided up rather than a block of squares being
+ * parked in the middle of it. `spans[i]` is how many columns tile i takes, and
+ * it is there for the counts that leave a remainder: five in two columns is two
+ * pairs and an orphan, so the first frame opens the post across the full width
+ * and the rest fall in behind it. Counts that fill their grid — 2, 4, 6, 9 —
+ * need no such help and get a plain one.
+ *
+ * The row fractions are the only judgement here, and they are made against the
+ * fact that the caption block covers the bottom third of the post. An even
+ * split is right almost everywhere; a lead frame is given a little extra only
+ * where it opens a three-row grid, since there the rows beneath it are clear
+ * of the text anyway and can afford it.
+ */
+const COLLAGE = {
+  1:{ cols:1, rows:'1fr',            spans:[]  },
+  2:{ cols:1, rows:'1fr 1fr',        spans:[]  },
+  3:{ cols:2, rows:'1.1fr 1fr',      spans:[2] },
+  4:{ cols:2, rows:'1fr 1fr',        spans:[]  },
+  5:{ cols:2, rows:'1fr 1fr 1fr',    spans:[2] },
+  6:{ cols:2, rows:'1fr 1fr 1fr',    spans:[]  },
+  7:{ cols:3, rows:'1.25fr 1fr 1fr', spans:[3] },
+  8:{ cols:3, rows:'1.25fr 1fr 1fr', spans:[2] },
+  9:{ cols:3, rows:'1fr 1fr 1fr',    spans:[]  },
+};
+/*
+ * Nine, where it used to be six. A grid that fills the post has room for three
+ * rows of three at a size the old centred block couldn't give six, and days
+ * with more than six frames are the common ones — meals alone can run to four.
+ * Past nine the last tile carries a +N and the viewer holds the rest.
+ */
+const TILE_CAP = 9;
 
 /* Every day either of you photographed, newest first, yours ahead on a tie.
    Shared with the launch decision, so "is there a feed to open into" and "what
@@ -2579,19 +2625,24 @@ function viewFeed(){
       ${(() => {
         const shown = o.slots.slice(0, TILE_CAP);
         const over = n2 - shown.length;
-        /* A lone frame is drawn across the whole screen and wants every pixel
-           it has. Everything from two tiles up is a grid cell a couple of
-           hundred points wide, where the small rendition is indistinguishable
-           and roughly a twentieth of the weight. */
-        const size = shown.length === 1 ? undefined : THUMB;
+        const g = COLLAGE[shown.length];
         return `
-      <div class="collage${shown.length===1?' single':''}${shown.length===3?' three':''}"
-           style="grid-template-columns:repeat(${collageCols(shown.length)},1fr)">
-        ${shown.map((s, i) => `
-          <button class="tile" data-tile="${i}" aria-label="${slotLabel(s)}">
+      <div class="collage"
+           style="grid-template-columns:repeat(${g.cols},1fr);grid-template-rows:${g.rows}">
+        ${shown.map((s, i) => {
+          const span = g.spans[i] || 1;
+          /* Which rendition a tile has earned. The small one is 640px, which
+             covers a tile up to about 210pt at 3x — every cell in a two- or
+             three-column row, and roughly a twentieth of the weight. A tile
+             holding most of the width is past that, so it gets the full image:
+             the lone frame, the pair, and the wide one that opens an odd count. */
+          const size = span / g.cols >= .6 ? undefined : THUMB;
+          return `
+          <button class="tile${span > 1 ? ` w${span}` : ''}" data-tile="${i}" aria-label="${slotLabel(s)}">
             <img src="${api.photoUrl(o.p, o.iso, s, size)}" alt="${slotLabel(s)}" loading="lazy" draggable="false">
             ${over && i === shown.length - 1 ? `<span class="more">+${over}</span>` : ''}
-          </button>`).join('')}
+          </button>`;
+        }).join('')}
       </div>`;
       })()}
       <div class="shade"></div>
