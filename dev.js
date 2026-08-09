@@ -33,7 +33,7 @@ if (!DEMO) {
 /* ---- demo data: day 22 of 75, both profiles active ---- */
 const TASK_IDS = ['diet', 'workout1', 'workout2', 'water', 'read'];
 const demo = { data: { sachin: {}, aarya: {} }, photos: { sachin: {}, aarya: {} },
-               reactions: [], comments: [] };
+               reactions: [], comments: [], commentReactions: [] };
 let demoCommentId = 1;
 let demoStart;
 {
@@ -85,10 +85,11 @@ let demoStart;
                           waterOz: 48, waterLog: [16, 16, 16] };
   demo.data.aarya[t]  = { diet: true, workout1: true, workout2: true, water: true, read: false,
                           waterOz: 128, waterLog: [32, 32, 32, 32] };
+  const since = (mins) => new Date(Date.now() - mins * 60000).toISOString();
   demo.reactions = [
-    { from: 'aarya', to: 'sachin', date: at(20), emoji: 'kudos' },
-    { from: 'aarya', to: 'sachin', date: at(18), emoji: 'kudos' },
-    { from: 'sachin', to: 'aarya', date: at(18), emoji: 'kudos' }
+    { from: 'aarya', to: 'sachin', date: at(20), emoji: 'kudos', at: since(400) },
+    { from: 'aarya', to: 'sachin', date: at(18), emoji: 'kudos', at: since(90) },
+    { from: 'sachin', to: 'aarya', date: at(18), emoji: 'kudos', at: since(70) }
   ];
   // a couple of days carry a track, so the feed has something to play
   demo.data.sachin[at(20)].track =
@@ -104,11 +105,24 @@ let demoStart;
   const ago = (mins) => new Date(Date.now() - mins * 60000).toISOString();
   demo.comments = [
     { id: demoCommentId++, from: 'aarya', to: 'sachin', date: at(20), slot: 'day',
-      body: 'Look at the shoulders on day 21 vs day 1.', at: ago(320) },
+      body: 'Look at the shoulders on day 21 vs day 1.', parent: null, at: ago(320) },
+    // a reply and a reply to the reply, so the thread renders both levels
     { id: demoCommentId++, from: 'sachin', to: 'sachin', date: at(20), slot: 'day',
-      body: 'Barely made the second one, it was pouring.', at: ago(180) },
+      body: "Don't say that, I'll get cocky.", parent: 1, at: ago(300) },
+    { id: demoCommentId++, from: 'aarya', to: 'sachin', date: at(20), slot: 'day',
+      body: 'Too late.', parent: 1, at: ago(288) },
+    { id: demoCommentId++, from: 'sachin', to: 'sachin', date: at(20), slot: 'day',
+      body: 'Barely made the second one, it was pouring.', parent: null, at: ago(180) },
     { id: demoCommentId++, from: 'sachin', to: 'aarya', date: at(18), slot: 'workout1',
-      body: 'That hill again? Respect.', at: ago(96) }
+      body: 'That hill again? Respect.', parent: null, at: ago(96) }
+  ];
+  // stored the way the table stores it: one row per (comment, person, emoji)
+  demo.commentReactions = [
+    { comment: 1, from: 'sachin', emoji: '❤️', at: ago(300) },
+    { comment: 1, from: 'aarya', emoji: '🔥', at: ago(240) },
+    { comment: 3, from: 'sachin', emoji: '👍', at: ago(200) },
+    { comment: 3, from: 'aarya', emoji: '👍', at: ago(58) },
+    { comment: 5, from: 'aarya', emoji: '🔥', at: ago(20) }
   ];
 }
 
@@ -211,6 +225,21 @@ function shimRes(res) {
 const MIME = { '.html':'text/html; charset=utf-8', '.js':'text/javascript', '.json':'application/json',
                '.png':'image/png', '.svg':'image/svg+xml', '.ico':'image/x-icon' };
 
+/* The aggregate the real handler builds in SQL: one row per (comment, emoji)
+   with a count and whether the person asking is in it. */
+function demoRx(me) {
+  const by = new Map();
+  for (const r of demo.commentReactions) {
+    const k = r.comment + '\u0000' + r.emoji;
+    const hit = by.get(k) || { c: r.comment, e: r.emoji, n: 0, mine: false, at: r.at };
+    hit.n++;
+    if (r.from === me) hit.mine = true;
+    if (r.at > hit.at) hit.at = r.at;
+    by.set(k, hit);
+  }
+  return [...by.values()].sort((a, b) => a.c - b.c || b.n - a.n || (a.e < b.e ? -1 : 1));
+}
+
 /* ---- demo API ---- */
 async function demoApi(pathname, req, res, url) {
   if (pathname === '/api/state') {
@@ -240,7 +269,8 @@ async function demoApi(pathname, req, res, url) {
       const b = await readBody(req);
       const i = demo.reactions.findIndex((r) =>
         r.from === b.from && r.to === b.to && r.date === b.date && r.emoji === b.emoji);
-      if (i >= 0) demo.reactions.splice(i, 1); else demo.reactions.push(b);
+      if (i >= 0) demo.reactions.splice(i, 1);
+      else demo.reactions.push({ ...b, at: new Date().toISOString() });
       return res.status(200).json({ ok: true, active: i < 0 });
     }
     return res.status(200).json({ reactions: demo.reactions });
@@ -313,8 +343,15 @@ async function demoApi(pathname, req, res, url) {
       const b = await readBody(req);
       const body = String(b.body || '').trim();
       if (!body) return res.status(400).json({ error: 'Comment is empty' });
+      // replies are one level deep and inherit the frame their parent is on,
+      // exactly as the real handler does it
+      const parent = b.parentId == null ? null
+        : demo.comments.find((c) => c.id === Number(b.parentId) && c.to === b.to && c.date === b.date);
+      if (b.parentId != null && !parent) return res.status(404).json({ error: 'That comment is gone' });
       const c = { id: demoCommentId++, from: b.from, to: b.to, date: b.date,
-                  slot: b.slot || 'day', body, at: new Date().toISOString() };
+                  slot: parent ? parent.slot : (b.slot || 'day'), body,
+                  parent: parent ? (parent.parent ?? parent.id) : null,
+                  at: new Date().toISOString() };
       demo.comments.push(c);
       return res.status(200).json({ ok: true, comment: c });
     }
@@ -324,9 +361,40 @@ async function demoApi(pathname, req, res, url) {
       const i = demo.comments.findIndex((c) => c.id === id && c.from === from);
       if (i < 0) return res.status(404).json({ error: 'Comment not found' });
       demo.comments.splice(i, 1);
-      return res.status(200).json({ ok: true });
+      const gone = [id];
+      for (let j = demo.comments.length - 1; j >= 0; j--) {
+        if (demo.comments[j].parent === id) gone.push(demo.comments.splice(j, 1)[0].id);
+      }
+      demo.commentReactions = demo.commentReactions.filter((r) => !gone.includes(r.comment));
+      return res.status(200).json({ ok: true, removed: gone });
     }
-    return res.status(200).json({ comments: demo.comments });
+    return res.status(200).json({
+      comments: demo.comments, reactions: demoRx(url.searchParams.get('me')) });
+  }
+  if (pathname === '/api/comment-reactions') {
+    if (req.method === 'POST') {
+      const b = await readBody(req);
+      const id = Number(b.commentId);
+      if (!demo.comments.some((c) => c.id === id)) {
+        return res.status(404).json({ error: 'That comment is gone' });
+      }
+      const i = demo.commentReactions.findIndex((r) =>
+        r.comment === id && r.from === b.from && r.emoji === b.emoji);
+      if (i >= 0) {
+        demo.commentReactions.splice(i, 1);
+        return res.status(200).json({ ok: true, active: false });
+      }
+      // the same cap the real handler applies inside its insert
+      const held = demo.commentReactions.filter((r) => r.comment === id && r.from === b.from).length;
+      if (held >= 6) {
+        return res.status(409).json({ error: "That's 6 reactions on one comment — take one back first",
+                                      code: 'REACTION_LIMIT' });
+      }
+      demo.commentReactions.push({ comment: id, from: b.from, emoji: b.emoji,
+                                  at: new Date().toISOString() });
+      return res.status(200).json({ ok: true, active: true });
+    }
+    return res.status(200).json({ reactions: demoRx(url.searchParams.get('me')) });
   }
   if (pathname === '/api/push') {
     // demo mode has no push service; report it as unavailable

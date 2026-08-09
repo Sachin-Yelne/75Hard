@@ -124,6 +124,11 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
 .top .mark{font-family:var(--cond);font-weight:700;font-size:14px;letter-spacing:.28em;text-transform:uppercase;}
 .icon-btn{width:30px;height:30px;padding:7px;color:var(--bone-2);}
 .icon-btn:active{color:var(--bone);}
+.top-acts{display:flex;align-items:center;gap:4px;}
+/* the same dot the Feed tab carries, on the corner of the bubble */
+.icon-btn.news{position:relative;}
+.icon-btn.news.on::after{content:'';position:absolute;top:4px;right:3px;
+  width:5px;height:5px;background:var(--you);}
 
 /* ── hero ──────────────────────────────── */
 .hero{padding:22px 0 0;}
@@ -714,8 +719,56 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
   flex:0 0 auto;padding:0 18px;background:var(--bone);color:var(--ink);
   font-family:var(--cond);font-weight:600;font-size:12px;letter-spacing:.16em;text-transform:uppercase;
 }
+/* ── what's new ── */
+/*
+ * One line per thing that happened, and every one of them goes somewhere. No
+ * cards: a mark in the person's colour, what they did, what it was about, and
+ * when — four columns of plain text separated by a hairline, which is how the
+ * rest of this app lists anything.
+ */
+.nw{
+  display:flex;align-items:flex-start;gap:12px;width:100%;text-align:left;
+  padding:14px 0;border-bottom:1px solid var(--rule);position:relative;
+}
+.nw:active{opacity:.6;}
+.nw .mk{flex:0 0 18px;display:grid;place-items:center;padding-top:2px;color:var(--p);}
+.nw .mk .ic{width:14px;height:14px;display:block;}
+.nw .mk .em{font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;
+  font-size:15px;line-height:1;}
+.nw .tx{flex:1;min-width:0;}
+.nw .hd{display:block;font-size:13px;line-height:1.4;color:var(--bone-2);}
+.nw .hd b{font-family:var(--cond);font-weight:700;font-size:12px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--p);margin-right:5px;}
+/* what they said, one line — the thread is one tap away for the rest */
+.nw .bd{display:block;margin-top:4px;font-size:12.5px;line-height:1.4;color:var(--bone-3);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.nw .when{flex:0 0 auto;padding-top:3px;font-family:var(--cond);font-weight:500;
+  font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--bone-3);}
+/* unseen since last time this list was open */
+.nw .dot{position:absolute;left:-11px;top:21px;width:5px;height:5px;background:var(--you);}
+
 /* ── comments sheet ── */
-.cmt-row{padding:15px 0;border-bottom:1px solid var(--rule);}
+/*
+ * The thread is the one sheet you scroll a long way down — it opens at the
+ * newest line, which on a busy day is well past where the title used to be.
+ * So its head stays put: the way out of a conversation shouldn't be somewhere
+ * above the fold. Scoped to this sheet, since every other one is short enough
+ * to read in a screen.
+ */
+/*
+ * The pull-up cancels the sheet's own top padding and the head carries it
+ * instead; the matching -20px offset is because a sticky box stops at the
+ * scroller's *content* edge, which that padding had pushed 20px down. Both
+ * numbers are the sheet's padding, and together they leave the head sitting
+ * in exactly the same place stuck as unstuck.
+ */
+.cmt-sheet{margin-top:-20px;}
+.cmt-sheet .sheet-head{
+  position:sticky;top:-20px;z-index:5;background:var(--ink-2);
+  margin:0 calc(var(--pad) * -1) 4px;
+  padding:20px var(--pad) 16px;
+}
+.cmt-row{padding:15px 0;border-bottom:1px solid var(--rule);position:relative;}
 .cmt-row:first-child{padding-top:5px;}
 .cmt-row.pending{opacity:.45;}
 .cmt-head{display:flex;align-items:center;gap:10px;margin-bottom:7px;}
@@ -725,9 +778,122 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
   text-transform:uppercase;color:var(--bone-3);}
 .cmt-head .on{font-family:var(--cond);font-weight:600;font-size:10px;letter-spacing:.16em;
   text-transform:uppercase;color:var(--bone-3);border:1px solid var(--rule-2);padding:2px 6px;}
+/* Said since you last had this thread open. Their colour, and a dot in front
+   of it — a filled block was a third rectangle in a head that already has two
+   labels, and this is findable without reading either way. */
+.cmt-head .new{display:inline-flex;align-items:center;gap:5px;
+  font-family:var(--cond);font-weight:700;font-size:10px;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--p);line-height:1;}
+.cmt-head .new::before{content:'';width:5px;height:5px;background:var(--p);flex:0 0 auto;}
 .cmt-head .rm{width:12px;height:12px;color:var(--bone-3);margin-left:auto;flex-shrink:0;}
 .cmt-head .rm:active{color:var(--you);}
 .cmt-body{margin:0;font-size:13.5px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;}
+/* A press and hold is the way to react, so the row must not spend that gesture
+   on selecting its own text or raising iOS's own callout over the top of it. */
+.cmt-main{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;}
+
+/*
+ * Replies hang off the line they answer, one level deep. The indent's own
+ * hairline is the thread: draw a second rule under each reply as well and a
+ * three-line exchange starts to look like a spreadsheet.
+ */
+.cmt-kids{margin:13px 0 2px 2px;padding-left:15px;border-left:1px solid var(--rule-2);}
+.cmt-kids .cmt-row{padding:0;border-bottom:none;}
+.cmt-kids .cmt-row + .cmt-row{margin-top:14px;}
+.cmt-kids .cmt-head .who{font-size:11px;}
+.cmt-kids .cmt-body{font-size:13px;}
+/* The line the composer is currently pointed at — the comment itself, not the
+   exchange hanging off it, which is why it marks the row's own block. */
+.cmt-main{position:relative;}
+.cmt-row.hi > .cmt-main::before{content:'';position:absolute;left:-11px;top:1px;bottom:1px;
+  width:2px;background:var(--p);}
+
+/*
+ * The row's own footer: what has been left on it, and the way to answer it.
+ *
+ * Nothing in here is boxed, and nothing in here is a button you didn't ask
+ * for. Reacting is a press and hold on the line itself, so the footer only
+ * ever carries things that actually happened.
+ */
+.cmt-foot{position:relative;display:flex;align-items:center;gap:1px;flex-wrap:wrap;margin-top:8px;}
+.pill{
+  display:inline-flex;align-items:center;justify-content:center;
+  height:28px;padding:0 3px;
+  transition:opacity .16s;
+}
+.pill:active{opacity:.55;}
+/*
+ * Emoji are the one thing on screen the app doesn't draw — they come off the
+ * keyboard and are rendered by the phone, colour and all. Name the emoji faces
+ * explicitly so they don't fall back to the text font and arrive as tofu.
+ */
+.em{font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;
+  font-size:12.5px;line-height:1;}
+/* a pair sits slightly over itself, the way two of anything stacks */
+.pill + .pill{margin-left:-7px;}
+.pill{font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;
+  font-size:17px;line-height:1;}
+.pill .n{font-family:var(--cond);font-weight:700;font-size:11.5px;letter-spacing:.06em;line-height:1;}
+/*
+ * One you left carries a clay hairline under it. With two people and no count,
+ * that is the whole answer to "am I in this" — and where you have both left
+ * the same one, the pair reads as two badges with only the first marked.
+ */
+.pill.mine{box-shadow:0 2px 0 var(--you);}
+@keyframes rxPop{0%{transform:scale(1)}38%{transform:scale(1.3)}100%{transform:scale(1)}}
+.pill.pop{animation:rxPop .36s cubic-bezier(.2,1.1,.3,1);}
+.reply-btn{
+  margin-left:auto;padding:7px 0 7px 12px;
+  font-family:var(--cond);font-weight:600;font-size:11px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--bone-2);
+}
+.reply-btn:active{color:var(--bone);}
+
+/*
+ * The strip. A floating picker would sit over the very line you are reacting
+ * to — so the row grows one strip taller instead. It is one row that scrolls
+ * sideways rather than a grid of cells: the ones you use most are already at
+ * the front, and everything else is a flick away, which is a smaller gesture
+ * than opening a panel and a much smaller one than going to the keyboard.
+ *
+ * No cells and no border. A tint against the sheet is enough to say the strip
+ * is a thing you are inside of, and the emoji are loud enough on their own.
+ */
+.rx-pick{
+  flex:0 0 100%;order:9;display:flex;gap:2px;margin-top:6px;padding:4px 2px;
+  background:var(--ink-3);
+  overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;
+  overscroll-behavior-x:contain;
+}
+.rx-pick::-webkit-scrollbar{display:none;}
+@keyframes rxIn{from{opacity:0;transform:translateY(7px) scale(.6)}to{opacity:1;transform:none}}
+.rx-pick button{
+  flex:0 0 44px;height:42px;display:grid;place-items:center;
+  font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;
+  font-size:23px;line-height:1;
+  /* only the first handful are on screen; staggering the rest is wasted motion */
+  animation:rxIn .28s cubic-bezier(.2,1.5,.35,1) both;
+  animation-delay:calc(min(var(--i), 8) * .026s);
+}
+/* one you have already left reads as chosen — a rule under it, not a box */
+.rx-pick button.mine{box-shadow:0 2px 0 var(--you);}
+.rx-pick button:active{opacity:.5;}
+
+/* the double-tap's answer: a mark thrown where the thumb landed */
+@keyframes cmtBurst{
+  0%{transform:translate(-50%,-50%) scale(.35);opacity:0}
+  28%{transform:translate(-50%,-50%) scale(1.15);opacity:1}
+  100%{transform:translate(-50%,-150%) scale(1.4);opacity:0}
+}
+.cmt-burst{
+  position:absolute;z-index:6;pointer-events:none;
+  font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;
+  font-size:36px;line-height:1;
+  animation:cmtBurst .78s cubic-bezier(.2,.8,.3,1) forwards;
+}
+/* a line you just wrote arrives rather than appearing */
+@keyframes cmtIn{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
+.cmt-row.in{animation:cmtIn .34s cubic-bezier(.2,.9,.3,1) both;}
 .cmt-none{border:1px solid var(--rule);padding:34px 0;text-align:center;
   font-family:var(--cond);font-weight:500;font-size:12px;letter-spacing:.16em;
   text-transform:uppercase;color:var(--bone-3);}
@@ -741,14 +907,14 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
 .cmt-on{margin-top:18px;}
 .cmt-on-btn{
   display:flex;align-items:center;gap:9px;width:100%;text-align:left;
-  border:1px solid var(--rule-2);padding:7px 9px;
+  border-bottom:1px solid var(--rule);padding:8px 1px;
   font-family:var(--cond);font-weight:600;font-size:10px;letter-spacing:.16em;
   text-transform:uppercase;color:var(--bone-3);
 }
 .cmt-on-btn img{width:20px;height:20px;object-fit:cover;flex:0 0 auto;}
 .cmt-on-btn .nm{color:var(--bone-2);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .cmt-on-btn .ch{margin-left:auto;padding-left:8px;color:var(--p);flex:0 0 auto;}
-.cmt-on.open .cmt-on-btn{border-color:var(--bone-3);}
+.cmt-on.open .cmt-on-btn{border-bottom-color:var(--bone-3);color:var(--bone-2);}
 /* the frames themselves, since a thumbnail settles it faster than a label */
 .cmt-pick{display:flex;gap:6px;overflow-x:auto;padding-top:6px;scrollbar-width:none;}
 .cmt-pick::-webkit-scrollbar{display:none;}
@@ -760,8 +926,26 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
 .cmt-pick .fr.day{font-family:var(--cond);font-weight:600;font-size:10px;
   letter-spacing:.14em;text-transform:uppercase;color:var(--bone-3);}
 .cmt-pick .fr.on{opacity:1;border-color:var(--bone);}
+/*
+ * Who you are answering, kept in front of you while you type it. It replaces
+ * the frame chip rather than sitting beside it: a reply is filed against
+ * whatever its parent was filed against, so there is nothing left to choose.
+ */
+.cmt-to{
+  display:flex;align-items:center;gap:9px;margin-top:18px;padding:7px 0 7px 11px;
+  border-left:2px solid var(--p);
+  animation:cmtIn .24s cubic-bezier(.2,.9,.3,1) both;
+}
+.cmt-to .ic{width:11px;height:11px;color:var(--p);flex:0 0 auto;}
+.cmt-to .lb{font-family:var(--cond);font-weight:600;font-size:10px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--bone-2);flex:0 0 auto;}
+.cmt-to .tx{flex:1;min-width:0;font-size:12px;color:var(--bone-3);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.cmt-to .x{width:11px;height:11px;color:var(--bone-3);flex:0 0 auto;}
+.cmt-to .x:active{color:var(--bone);}
 .cmt-form{display:flex;align-items:flex-end;gap:8px;margin-top:18px;}
-.cmt-on + .cmt-form{margin-top:10px;}   /* the chip already carries the gap */
+/* whichever chip is above the composer already carries the gap */
+.cmt-above:not(:empty) + .cmt-form{margin-top:10px;}
 .cmt-form textarea{
   flex:1;min-width:0;resize:none;overflow-y:auto;max-height:116px;
   background:var(--ink-3);border:1px solid var(--rule-2);color:var(--bone);
@@ -943,6 +1127,8 @@ const ICON = {
   close:'<svg viewBox="0 0 384 512" aria-hidden="true"><path d="M192 233.4L59.5 100.9 36.9 123.5 169.4 256 36.9 388.5l22.6 22.6L192 278.6 324.5 411.1l22.6-22.6L214.6 256 347.1 123.5l-22.6-22.6L192 233.4z"/></svg>',
   thumb:'<svg viewBox="0 0 512 512" aria-hidden="true"><path d="M208 48L256 48L256 208L464 208L464 432L432 464L176 464L176 80ZM208 93L208 432L419 432L432 419L432 240L224 240L224 80ZM32 240L144 240L144 464L32 464ZM64 272L64 432L112 432L112 272Z"/></svg>',
   comment:'<svg viewBox="0 0 512 512" aria-hidden="true"><path d="M16 64L496 64L496 384L128 384L16 464L16 64ZM48 96L48 402L118 352L464 352L464 96L48 96Z"/></svg>',
+  /* an arrow that turns back on itself — the one shape everyone reads as "reply" */
+  reply:'<svg viewBox="0 0 512 512" aria-hidden="true"><path d="M176 96L176 176L352 176L416 240L416 400L368 400L368 256L336 224L176 224L176 304L48 200Z"/></svg>',
   /* The silent face of the sound chip; the audible one is the moving bars, not
      a glyph. Drawn as strokes rather than the filled outlines the rest of the
      set uses: at 13px a speaker's cone closes up into a blob when filled, and
@@ -1012,15 +1198,18 @@ const api = {
     if(!r.ok) throw new Error('music');
     return r.json();
   },
-  async getComments(){
-    const r = await fetch('/api/comments');
+  /* `me` is who's asking: the reactions come back aggregated, with a `mine`
+     flag the server works out, so the browser never sees who left what. */
+  async getComments(me){
+    const r = await fetch(`/api/comments?me=${encodeURIComponent(me || '')}`);
     if(!r.ok) throw new Error('comments');
     return r.json();
   },
-  async addComment(from, to, date, slot, body){
+  // parentId is the comment being answered, or null for a new line in the thread
+  async addComment(from, to, date, slot, body, parentId = null){
     const r = await fetch('/api/comments', { method:'POST',
       headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ from, to, date, slot, body }) });
+      body: JSON.stringify({ from, to, date, slot, body, parentId }) });
     if(!r.ok) throw new Error('comment');
     return r.json();
   },
@@ -1028,6 +1217,18 @@ const api = {
     const r = await fetch(`/api/comments?id=${encodeURIComponent(id)}&from=${encodeURIComponent(from)}`,
       { method:'DELETE' });
     if(!r.ok) throw new Error('uncomment');
+    return r.json();
+  },
+  /* An emoji on one line of a thread. Sending the same one twice takes it back
+     — the server's primary key is the toggle, so this never says which way.
+     The server's own words carry through: the one refusal worth reading is
+     "that's enough reactions on one comment". */
+  async reactToComment(from, commentId, emoji){
+    const r = await fetch('/api/comment-reactions', { method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ from, commentId, emoji }) });
+    if(!r.ok) throw new Error(await reason(r, 'Reaction failed'));
+    return r.json();
   },
   async uploadPhoto(profileId, date, slot, contentType, dataBase64, thumbBase64){
     const r = await fetch(photoQuery(profileId, date, slot),
@@ -1066,8 +1267,11 @@ const state = {
   // ['sachin|2026-08-02|day', …] — frames still carrying only the full image
   needThumb:[],
   reactions:[],
-  // [{ id, from, to, date, slot, body, at }] — one thread per feed post
+  // [{ id, from, to, date, slot, body, parent, at }] — one thread per feed post,
+  // `parent` naming the comment a reply answers (null at the top level)
   comments:[],
+  // [{ comment, from, token }] — the marks left on individual comments
+  commentReactions:[],
   me: localStorage.getItem('me') || null,
   tab:'today',
   wallView:'both',
@@ -1151,6 +1355,64 @@ function fmtAgo(ts){
 /* Comments are the only free text in the app — never interpolate one raw. */
 const esc = s => String(s).replace(/[&<>"']/g,
   c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+
+/* ── emoji ── */
+/*
+ * A reaction is whatever comes off the keyboard, so "is this one emoji" is the
+ * only rule there is — and it has to be the same rule the server applies, or
+ * the thread shows something the database refused.
+ *
+ * `\p{RGI_Emoji}` under the v flag is that test: one well-formed emoji, skin
+ * tones, keycaps, flags and family sequences included; not text, not two of
+ * them. Older engines don't know the flag, so fall back to a coarser shape
+ * check and let the server have the final word.
+ */
+let ONE_EMOJI = null;
+try{ ONE_EMOJI = new RegExp('^\\p{RGI_Emoji}$', 'v'); }catch(_){}
+const isEmoji = s => typeof s === 'string' && !!s && (ONE_EMOJI
+  ? ONE_EMOJI.test(s)
+  : /\p{Extended_Pictographic}/u.test(s) && [...s].length <= 12);
+
+
+/*
+ * What the strip offers. Seven or eight are on screen at a time and the rest
+ * are a flick away — one row that scrolls, rather than a panel to open or a
+ * keyboard to switch to. The order is the point: whatever you reach for climbs
+ * to the front and stays there, so within a week the visible part of the row
+ * is the two of you and the rest is a reserve you rarely need.
+ *
+ * Enough to say anything that gets said about a workout, a meal or a bad day,
+ * and short enough to stay a list rather than become a keyboard.
+ */
+const RX_SET = [
+  '❤️','🔥','💪','👏','🙌','😂','🫡','👀',
+  '😮','🤝','🙏','👊','💯','⚡','🏆','⭐',
+  '😍','🥵','🥶','😅','😭','🤣','😎','🤘',
+  '🫶','✨','🎯','📈','🚀','🧊','💧','🍗',
+  '🥗','🏃','🚴','🏋️','😤','🤯','🥹','😴'
+];
+// how many of them the recents can take over
+const RX_SLOTS = 8;
+const rxRecent = () => {
+  try{ return (JSON.parse(localStorage.getItem('rxRecent') || '[]') || []).filter(isEmoji); }
+  catch(_){ return []; }
+};
+// the whole row: what you reach for, then everything else, nothing twice
+const rxQuick = () => {
+  const seen = new Set(), out = [];
+  for(const e of [...rxRecent(), ...RX_SET]){
+    if(seen.has(e)) continue;
+    seen.add(e);
+    out.push(e);
+  }
+  return out;
+};
+function rememberRx(e){
+  try{
+    localStorage.setItem('rxRecent',
+      JSON.stringify([e, ...rxRecent().filter(x => x !== e)].slice(0, RX_SLOTS)));
+  }catch(_){}
+}
 
 /* ═══════════ selectors ═══════════ */
 const entryOf = (p, iso) => state.data[p]?.[iso] || {};
@@ -1347,23 +1609,158 @@ const kudosCount = (to, date) => state.reactions.filter(r => r.to === to && r.da
 const iGaveKudos = (to, date) => state.reactions.some(r => r.to === to && r.date === date && r.from === me());
 
 /* ── comments ── */
+/*
+ * Both lists are read far more often than they change, and always by the same
+ * two keys — a thread by (owner, day), a comment's reactions by its id. Asked
+ * as a filter, each question is a scan: the feed asks two per post across 75
+ * posts, and a thread asks one per reaction pill it draws, so a repaint used
+ * to walk the whole history a few hundred times over.
+ *
+ * So walk it once instead. These are rebuilt in a single pass whenever either
+ * list changes — which is on load, and on the one comment or reaction you just
+ * touched — and every question after that is a lookup.
+ */
+let cmtByThread = new Map();   // `${owner}|${date}` → that day's comments, oldest first
+let rxByComment = new Map();   // comment id → [{ e, n, mine, at }], most-reacted first
+let cmtById = new Map();       // comment id → the comment, for replies and What's new
+
+function indexComments(){
+  cmtByThread = new Map();
+  cmtById = new Map();
+  for(const c of state.comments){
+    const k = `${c.to}|${c.date}`;
+    const at = cmtByThread.get(k);
+    if(at) at.push(c); else cmtByThread.set(k, [c]);
+    cmtById.set(c.id, c);
+  }
+  rxByComment = new Map();
+  for(const r of state.commentReactions){
+    const at = rxByComment.get(r.c);
+    if(at) at.push(r); else rxByComment.set(r.c, [r]);
+  }
+}
+
+// One shared empty result for every miss, rather than a fresh [] per question.
+// Nothing ever writes through a selector, so there is nothing to share wrongly.
+const NONE = Object.freeze([]);
+
 // A thread belongs to a post — one person's photos on one day. Either of you can
 // write in it, so replies on your own frame land in the same place.
-const commentsOn = (to, date) => state.comments.filter(c => c.to === to && c.date === date);
+const commentsOn = (to, date) => cmtByThread.get(`${to}|${date}`) || NONE;
 const commentCount = (to, date) => commentsOn(to, date).length;
-const lastCommentOn = (to, date) => commentsOn(to, date).slice(-1)[0] || null;
+const lastCommentOn = (to, date) => { const l = commentsOn(to, date); return l[l.length - 1] || null; };
 
-/* The feed dot: kudos landed on you, or anything the other person has said. */
+/*
+ * A comment's reactions, already counted. The server sends one entry per
+ * (comment, emoji) — the shape a pill is drawn from — ordered by how many
+ * people left it, so a row draws them the same way on both phones.
+ */
+const rxOn = id => rxByComment.get(id) || NONE;
+const rxAt = (id, emoji) => rxOn(id).find(r => r.e === emoji) || null;
+const iReacted = (id, emoji) => !!rxAt(id, emoji)?.mine;
+
+/*
+ * Move a count without asking the server again. `mine` is the only thing the
+ * aggregate loses, and it is the only thing this needs to set: with two people
+ * on the challenge, everyone else's share of a count is whatever is left.
+ */
+function bumpRx(id, emoji, on){
+  const list = state.commentReactions;
+  const i = list.findIndex(r => r.c === id && r.e === emoji);
+  if(on){
+    if(i < 0) list.push({ c:id, e:emoji, n:1, mine:true });
+    else { list[i].n++; list[i].mine = true; }
+  }else if(i >= 0){
+    list[i].n--;
+    list[i].mine = false;
+    if(list[i].n <= 0) list.splice(i, 1);
+  }
+  indexComments();
+}
+
+/* The feed dot: kudos landed on you, anything the other person has said, or a
+   reaction they left on something you said. */
 const kudosToMe = () => state.reactions.filter(r => r.to === me() && r.from !== me()).length;
 const commentsFromThem = () => state.comments.filter(c => c.from !== me()).length;
+// their share of a count is the count less your own one, if you are in it
+const rxToMe = () => {
+  let n = 0;
+  for(const c of state.comments){
+    if(c.from !== me()) continue;
+    for(const r of rxOn(c.id)) n += r.n - (r.mine ? 1 : 0);
+  }
+  return n;
+};
 const seenCount = k => Number(localStorage.getItem(k) || 0);
 function feedBadge(){
-  return kudosToMe() > seenCount('kudosSeen') || commentsFromThem() > seenCount('cmtSeen');
+  return kudosToMe() > seenCount('kudosSeen')
+      || commentsFromThem() > seenCount('cmtSeen')
+      || rxToMe() > seenCount('crxSeen');
 }
 function markFeedSeen(){
   localStorage.setItem('kudosSeen', String(kudosToMe()));
   localStorage.setItem('cmtSeen', String(commentsFromThem()));
+  localStorage.setItem('crxSeen', String(rxToMe()));
 }
+
+/* ── what's new ── */
+/*
+ * Everything the other person has done to you, newest first. Built entirely
+ * from what the app already has in memory — there is no fourth table and no
+ * fourth request behind this, because a push notification you swiped away and
+ * a row in this list are the same event, and the event is already here.
+ *
+ * A reaction knows *when* but not *who*, because the payload is aggregated to
+ * a count. With two people on the challenge that is not a gap: a count with
+ * one of them yours leaves exactly one person it could have been.
+ */
+function activity(){
+  const you = me();
+  if(!you) return [];
+  const out = [];
+
+  for(const c of state.comments){
+    if(c.from === you) continue;
+    const parent = c.parent == null ? null : cmtById.get(c.parent);
+    // Yours either because it landed on your day or because it answers
+    // something you said. A reply to their own line, in your thread, is still
+    // your business — it is a conversation happening under your photograph.
+    const mine = parent && parent.from === you;
+    if(!mine && c.to !== you) continue;
+    out.push({ kind: mine ? 'reply' : parent ? 'answer' : 'comment',
+               at: c.at, who: c.from,
+               body: c.body, prof: c.to, date: c.date, slot: c.slot });
+  }
+
+  for(const r of state.commentReactions){
+    if(r.n - (r.mine ? 1 : 0) <= 0) continue;   // only yours on it
+    const c = cmtById.get(r.c);
+    if(!c || c.from !== you) continue;
+    out.push({ kind:'reaction', at: r.at, who: them(), emoji: r.e,
+               body: c.body, prof: c.to, date: c.date, slot: c.slot });
+  }
+
+  for(const k of state.reactions){
+    if(k.to !== you || k.from === you) continue;
+    out.push({ kind:'kudos', at: k.at || `${k.date}T12:00:00Z`, who: k.from,
+               prof: k.to, date: k.date, slot: DAY_SLOT });
+  }
+
+  return out
+    .sort((a, b) => new Date(b.at) - new Date(a.at))
+    // a feed is 75 days long; a list of what happened is not
+    .slice(0, 40);
+}
+
+const NEWS_SEEN = 'newsSeen';
+const newsUnread = () => {
+  const seen = localStorage.getItem(NEWS_SEEN) || '';
+  return activity().filter(a => String(a.at) > seen).length;
+};
+const markNewsSeen = () => {
+  const top = activity()[0];
+  if(top) localStorage.setItem(NEWS_SEEN, String(top.at));
+};
 
 /* ═══════════ fx ═══════════ */
 function haptic(ms = 10){ if(navigator.vibrate) try{ navigator.vibrate(ms); }catch(_){} }
@@ -1850,7 +2247,8 @@ function renderPicker(){
       state.me = b.dataset.pick;
       localStorage.setItem('me', state.me);
       haptic(14);
-      checkIn().finally(render);
+      // who you are decides which reactions read as yours — see reloadComments
+      Promise.allSettled([checkIn(), reloadComments()]).then(render);
     };
   });
 }
@@ -1937,11 +2335,24 @@ function viewToday(){
   </div>`;
 }
 
-const topbar = () => `
+/*
+ * The bubble is what this app already means by "something was said" — it is
+ * the feed's comment glyph — so What's new gets that rather than a bell it
+ * would have to teach you. A clay dot when there is something you haven't
+ * seen, the same dot the Feed tab uses.
+ */
+const topbar = () => {
+  const n = newsUnread();
+  return `
   <div class="top">
     <span class="mark">Project 75</span>
-    <button class="icon-btn" id="gearBtn">${ICON.gear}</button>
+    <span class="top-acts">
+      <button class="icon-btn news${n ? ' on' : ''}" id="newsBtn"
+        aria-label="${n ? `What's new (${n})` : "What's new"}">${ICON.comment}</button>
+      <button class="icon-btn" id="gearBtn">${ICON.gear}</button>
+    </span>
   </div>`;
+};
 
 /*
  * One task row, shared by Today and the day sheet.
@@ -2331,6 +2742,9 @@ function wire(){
 
   const gear = el.querySelector('#gearBtn');
   if(gear) gear.onclick = openSettings;
+
+  const news = el.querySelector('#newsBtn');
+  if(news) news.onclick = openNews;
 
   el.querySelectorAll('[data-goto]').forEach(b => {
     b.onclick = () => { state.tab = b.dataset.goto; render(); };
@@ -3234,7 +3648,81 @@ function dropCaption(prof, iso, slot){
   return hit;
 }
 
+/* ── what's new ── */
+/*
+ * Everything the other person has done to you, in one list, newest first. The
+ * push notification and the row in here are the same event — this is where it
+ * lives once you've swiped the alert away, or once you've been away for a day
+ * and never had one.
+ *
+ * Every row goes somewhere: tapping one opens the thread it came from, on the
+ * frame it was left against, which is the only thing you ever want next.
+ */
+function openNews(){
+  const items = activity();
+  // what counted as new is stamped before the list is drawn, so this reading
+  // shows the dots and the next one doesn't
+  const seen = localStorage.getItem(NEWS_SEEN) || '';
+  markNewsSeen();
+
+  const WHAT = {
+    reply:    () => 'replied to your comment',
+    answer:   a => `replied in your Day ${dayIndex(a.date)} thread`,
+    comment:  a => `commented on Day ${dayIndex(a.date)}`,
+    reaction: () => 'reacted to your comment',
+    kudos:    a => `sent kudos on Day ${dayIndex(a.date)}`
+  };
+
+  const row = a => `
+    <button class="nw" data-prof="${a.prof}" data-date="${a.date}"
+      data-slot="${esc(a.slot || DAY_SLOT)}" data-who="${whoAttr(a.who)}">
+      <span class="mk">${a.kind === 'reaction'
+        ? `<span class="em">${esc(a.emoji)}</span>`
+        : `<span class="ic">${a.kind === 'kudos' ? ICON.thumb : ICON.comment}</span>`}</span>
+      <span class="tx">
+        <span class="hd">
+          <b>${a.who === me() ? 'You' : esc(nameOf(a.who))}</b> ${WHAT[a.kind](a)}
+        </span>
+        ${a.body ? `<span class="bd">${esc(a.body)}</span>` : ''}
+      </span>
+      <span class="when">${fmtAgo(a.at)}</span>
+      ${String(a.at) > seen ? '<span class="dot"></span>' : ''}
+    </button>`;
+
+  openSheet(`
+    <div class="cmt-sheet" data-who="you">
+      <div class="sheet-head">
+        <div>
+          <div class="t">What's new</div>
+          <div class="s">${items.length ? `From ${nameOf(them())}` : 'Nothing yet'}</div>
+        </div>
+        <button class="icon-btn" id="x">${ICON.close}</button>
+      </div>
+      <div class="nw-list">
+        ${items.length ? items.map(row).join('')
+          : `<div class="cmt-none">Nothing from ${nameOf(them())} yet</div>`}
+      </div>
+    </div>`, sheet => {
+    sheet.querySelector('#x').onclick = closeSheet;
+    sheet.querySelectorAll('.nw').forEach(b => {
+      b.onclick = () => {
+        const { prof, date, slot } = b.dataset;
+        haptic(8);
+        // straight into the conversation it came from, on the right frame
+        openComments(prof, date, slot);
+      };
+    });
+    // the dot on the bubble goes as soon as the list has been looked at
+    render();
+  });
+}
+
 /* ── comments ── */
+/*
+ * A thread, opened over the post it belongs to. Three things happen in here:
+ * you read what has been said, you answer one particular line of it, and you
+ * leave a mark on a line without saying anything at all.
+ */
 function openComments(prof, iso, slot = DAY_SLOT){
   const own = prof === me();
   const slots = slotsFor(prof, iso);
@@ -3256,26 +3744,88 @@ function openComments(prof, iso, slot = DAY_SLOT){
   const canPick = slots.length > 1;
   const targetName = () => slots.includes(target) ? slotLabel(target) : 'The whole day';
 
+  // the line being answered and the row whose strip is open: both are this
+  // sheet's business only, and neither outlives it
+  let replyTo = null;
+  let picking = null;
+
+  /*
+   * What counts as new is whatever arrived since you last had this thread
+   * open. Stamped on the way in rather than on the way out, so the marks stay
+   * up for this reading and are gone by the next one — which is the only
+   * behaviour a "New" tag can have without lying to you.
+   */
+  const readKey = `cmtRead:${prof}:${iso}`;
+  const readAt = Number(localStorage.getItem(readKey) || 0);
+  localStorage.setItem(readKey, String(Date.now()));
+
+  const find = id => state.comments.find(c => c.id === id);
+  const live = id => Number.isInteger(id);   // a line still in flight has no id
+
+  /* ── the thread ── */
+
+  /* The strip of emoji on offer, in one row you can flick through. */
+  const pickHTML = (c) => `
+    <div class="rx-pick">
+      ${rxQuick().map((e, i) => `
+        <button style="--i:${i}" type="button" data-rx="${esc(e)}" data-on="${c.id}"
+          class="${iReacted(c.id, e) ? 'mine' : ''}" aria-label="React ${esc(e)}">${esc(e)}</button>`).join('')}
+    </div>`;
+
+  /*
+   * The reactions on one line, and the way to answer it.
+   *
+   * One badge per person rather than one badge and a number. There are two of
+   * you: a count can only ever say 1 or 2, which is a digit doing the work a
+   * second copy of the emoji does better and quieter. Yours carries the clay
+   * hairline, so a pair still says which one you left.
+   */
+  const footHTML = (c) => `
+    ${rxOn(c.id).flatMap(r => Array.from({ length: r.n }, (_, i) => `
+      <button class="pill${r.mine && i === 0 ? ' mine' : ''}" data-rx="${esc(r.e)}"
+        data-on="${c.id}" aria-pressed="${r.mine}" aria-label="${esc(r.e)}"
+        >${esc(r.e)}</button>`)).join('')}
+    <button class="reply-btn" data-reply="${c.id}">Reply</button>
+    ${picking === c.id ? pickHTML(c) : ''}`;
+
+  const rowHTML = (c, kids) => {
+    const mine = c.from === me();
+    return `
+    <article class="cmt-row${c.pending ? ' pending' : ''}${replyTo === c.id ? ' hi' : ''}"
+             data-id="${c.id}" data-who="${whoAttr(c.from)}">
+      <div class="cmt-main">
+        <div class="cmt-head">
+          <span class="who ${mine ? 'c-a' : 'c-b'}">${mine ? 'You' : nameOf(c.from)}</span>
+          <span class="when">${fmtAgo(c.at)}</span>
+          ${c.parent == null && tagged(c.slot) ? `<span class="on">${slotLabel(c.slot)}</span>` : ''}
+          ${!mine && new Date(c.at).getTime() > readAt ? '<span class="new">New</span>' : ''}
+          ${mine && !c.pending
+            ? `<button class="rm" data-rm="${c.id}" aria-label="Delete comment">${ICON.close}</button>` : ''}
+        </div>
+        <p class="cmt-body">${esc(c.body)}</p>
+        ${c.pending ? '' : `<div class="cmt-foot">${footHTML(c)}</div>`}
+      </div>
+      ${kids && kids.length ? `<div class="cmt-kids">${kids.map(k => rowHTML(k)).join('')}</div>` : ''}
+    </article>`;
+  };
+
   const thread = () => {
     const list = commentsOn(prof, iso);
     if(!list.length){
       return `<div class="cmt-none">${own ? 'Nothing said yet' : 'Say the first thing'}</div>`;
     }
-    return list.map(c => `
-      <div class="cmt-row ${c.pending ? 'pending' : ''}">
-        <div class="cmt-head">
-          <span class="who ${c.from === me() ? 'c-a' : 'c-b'}">${c.from === me() ? 'You' : nameOf(c.from)}</span>
-          <span class="when">${fmtAgo(c.at)}</span>
-          ${tagged(c.slot) ? `<span class="on">${slotLabel(c.slot)}</span>` : ''}
-          ${c.from === me() && !c.pending
-            ? `<button class="rm" data-rm="${c.id}" aria-label="Delete comment">${ICON.close}</button>` : ''}
-        </div>
-        <p class="cmt-body">${esc(c.body)}</p>
-      </div>`).join('');
+    // Replies are one level deep: an answer to an answer joins the same
+    // exchange rather than starting a third column. A reply whose parent has
+    // since been deleted reads as a line of its own rather than disappearing.
+    const here = id => list.some(c => c.id === id);
+    return list
+      .filter(c => c.parent == null || !here(c.parent))
+      .map(c => rowHTML(c, list.filter(k => k.parent === c.id)))
+      .join('');
   };
 
   openSheet(`
-    <div data-who="${whoAttr(prof)}">
+    <div class="cmt-sheet" data-who="${whoAttr(prof)}">
       <div class="sheet-head">
         <div>
           <div class="t">Comments</div>
@@ -3286,12 +3836,10 @@ function openComments(prof, iso, slot = DAY_SLOT){
 
       <div id="thread">${thread()}</div>
 
-      ${canPick ? `<div class="cmt-on" id="onBox"></div>` : ''}
+      <div class="cmt-above" id="above"></div>
 
       <form class="cmt-form" id="cForm">
-        <textarea id="cInput" rows="1" maxlength="280" enterkeyhint="enter"
-          placeholder="${own ? (canPick ? 'Add a note' : 'Add a note to this frame')
-                             : `Say something to ${nameOf(prof)}`}"></textarea>
+        <textarea id="cInput" rows="1" maxlength="280" enterkeyhint="enter"></textarea>
         <button class="cmt-send" id="cSend" type="submit">Post</button>
       </form>
     </div>`, sheet => {
@@ -3299,58 +3847,260 @@ function openComments(prof, iso, slot = DAY_SLOT){
     const box = sheet.querySelector('#thread');
     const ta  = sheet.querySelector('#cInput');
     const send = sheet.querySelector('#cSend');
-    const onBox = sheet.querySelector('#onBox');
+    const above = sheet.querySelector('#above');
+
+    const rowEl = id => box.querySelector(`[data-id="${id}"]`);
+    const footEl = id => {
+      const row = rowEl(id);
+      return row && row.querySelector(':scope > .cmt-main > .cmt-foot');
+    };
+
+    /* ── the chip above the composer ── */
 
     /*
      * The chip, and the frames behind it. Closed it is one quiet line; open it
      * is the day's photos at thumbnail size, which settles "which one is that"
      * faster than any label could. Picking closes it again — one tap, done.
+     *
+     * It is gone entirely while you are answering someone: a reply is filed
+     * against whatever its parent was filed against, so there would be nothing
+     * for it to change.
      */
-    const paintOn = (open) => {
-      if(!onBox) return;
-      const shot = slots.includes(target);
-      onBox.classList.toggle('open', !!open);
-      onBox.innerHTML = `
-        <button class="cmt-on-btn" type="button" aria-expanded="${!!open}">
-          <span>On</span>
-          ${shot ? `<img src="${api.photoUrl(prof, iso, target, THUMB)}" alt="">` : ''}
-          <span class="nm">${esc(targetName())}</span>
-          <span class="ch">${open ? 'Close' : 'Change'}</span>
-        </button>
-        ${open ? `<div class="cmt-pick">${picks.map(s => {
-          const on = s === target ? ' on' : '';
-          return slots.includes(s)
-            ? `<button class="fr${on}" type="button" data-pick="${esc(s)}" aria-label="${slotLabel(s)}">
-                 <img src="${api.photoUrl(prof, iso, s, THUMB)}" alt="" loading="lazy"></button>`
-            : `<button class="fr day${on}" type="button" data-pick="${esc(s)}">Day</button>`;
-        }).join('')}</div>` : ''}`;
+    const paintAbove = (open) => {
+      const to = replyTo == null ? null : find(replyTo);
+      if(replyTo != null && !to) replyTo = null;
 
-      onBox.querySelector('.cmt-on-btn').onclick = () => paintOn(!open);
-      onBox.querySelectorAll('[data-pick]').forEach(b => {
+      if(to){
+        const you = to.from === me();
+        above.innerHTML = `
+          <div class="cmt-to" data-who="${whoAttr(to.from)}">
+            <span class="ic">${ICON.reply}</span>
+            <span class="lb">Replying to ${you ? 'yourself' : esc(nameOf(to.from))}</span>
+            <span class="tx">${esc(to.body)}</span>
+            <button class="x" type="button" id="unreply" aria-label="Cancel reply">${ICON.close}</button>
+          </div>`;
+        above.querySelector('#unreply').onclick = () => { setReply(null); ta.focus(); };
+        ta.placeholder = you ? 'Add to what you said' : `Reply to ${nameOf(to.from)}`;
+        return;
+      }
+
+      ta.placeholder = own ? (canPick ? 'Add a note' : 'Add a note to this frame')
+                           : `Say something to ${nameOf(prof)}`;
+      if(!canPick){ above.innerHTML = ''; return; }
+
+      const shot = slots.includes(target);
+      above.innerHTML = `
+        <div class="cmt-on${open ? ' open' : ''}">
+          <button class="cmt-on-btn" type="button" aria-expanded="${!!open}">
+            <span>On</span>
+            ${shot ? `<img src="${api.photoUrl(prof, iso, target, THUMB)}" alt="">` : ''}
+            <span class="nm">${esc(targetName())}</span>
+            <span class="ch">${open ? 'Close' : 'Change'}</span>
+          </button>
+          ${open ? `<div class="cmt-pick">${picks.map(s => {
+            const on = s === target ? ' on' : '';
+            return slots.includes(s)
+              ? `<button class="fr${on}" type="button" data-pick="${esc(s)}" aria-label="${slotLabel(s)}">
+                   <img src="${api.photoUrl(prof, iso, s, THUMB)}" alt="" loading="lazy"></button>`
+              : `<button class="fr day${on}" type="button" data-pick="${esc(s)}">Day</button>`;
+          }).join('')}</div>` : ''}
+        </div>`;
+
+      above.querySelector('.cmt-on-btn').onclick = () => paintAbove(!open);
+      above.querySelectorAll('[data-pick]').forEach(b => {
         b.onclick = () => {
           target = b.dataset.pick;
           haptic(8);
-          paintOn(false);
+          paintAbove(false);
           ta.focus();
         };
       });
     };
-    paintOn(false);
+
+    /* Answering a line marks it, so the sheet always says what the composer is
+       pointed at — the chip above it and the rule beside the line agree. */
+    const setReply = (id) => {
+      const was = replyTo;
+      replyTo = id;
+      if(was != null) rowEl(was)?.classList.remove('hi');
+      if(id != null) rowEl(id)?.classList.add('hi');
+      paintAbove(false);
+    };
+
+    /* ── marks ── */
+
+    const closePick = () => {
+      if(picking == null) return;
+      const id = picking;
+      picking = null;
+      const foot = footEl(id);
+      if(!foot) return;
+      foot.querySelector('.rx-pick')?.remove();
+    };
+
+    // `pop` is the emoji that just landed: the count it belongs to is worth a
+    // beat of movement, which is the whole difference between a number that
+    // changed and a number you saw change.
+    const paintFoot = (id, pop) => {
+      const c = find(id), foot = footEl(id);
+      if(!c || !foot) return;
+      foot.innerHTML = footHTML(c);
+      bindFoot(foot);
+      if(pop){
+        [...foot.querySelectorAll('.pill')]
+          .find(p => p.dataset.rx === pop)?.classList.add('pop');
+      }
+    };
+
+    const toggleRx = async (id, emoji) => {
+      if(!live(id) || !isEmoji(emoji)) return;
+      const had = iReacted(id, emoji);
+      haptic(had ? 6 : 12);
+
+      // the count moves now and the server catches up; putting one back is
+      // the same call with the flag the other way
+      bumpRx(id, emoji, !had);
+      if(!had) rememberRx(emoji);
+      closePick();
+      paintFoot(id, had ? null : emoji);
+
+      try{
+        await api.reactToComment(me(), id, emoji);
+        markFeedSeen();
+      }catch(err){
+        bumpRx(id, emoji, had);
+        paintFoot(id);
+        // the server's own words: the cap is the one refusal worth reading
+        toast(err?.message || 'Reaction failed');
+      }
+    };
+
+    /* The double tap sends a heart, where every app that has ever had a double
+       tap sends it. It only ever adds — taking one back is what the pill under
+       the line is for — but it answers either way, because a gesture that does
+       nothing visible reads as a broken one. */
+    const DOUBLE_TAP = '❤️';
+    const burst = (row, e) => {
+      const r = row.getBoundingClientRect();
+      const b = document.createElement('div');
+      b.className = 'cmt-burst';
+      b.style.left = `${e.clientX - r.left}px`;
+      b.style.top = `${e.clientY - r.top}px`;
+      b.textContent = DOUBLE_TAP;
+      row.appendChild(b);
+      setTimeout(() => b.remove(), 800);
+    };
+
+    /*
+     * Press and hold a line to react to it, the way you would a message. There
+     * is no button for this on purpose: a plus under every comment was a
+     * permanent piece of furniture for something you do occasionally, and the
+     * gesture is one the phone has already taught you.
+     *
+     * A drag is a scroll, not a hold, so any real movement calls it off — and
+     * the release that opens the strip must not also read as the tap that
+     * closes it again, which is what `openedAt` is for.
+     */
+    let holdT = null, from = null, held = false, openedAt = 0;
+    const dropHold = () => { clearTimeout(holdT); holdT = null; from = null; };
+
+    box.addEventListener('pointerdown', e => {
+      if(e.target.closest('button')) return;
+      const row = e.target.closest('.cmt-row');
+      if(!row) return;
+      const id = Number(row.dataset.id);
+      if(!live(id)) return;
+      held = false;
+      from = { x:e.clientX, y:e.clientY };
+      holdT = setTimeout(() => {
+        holdT = null;
+        held = true;
+        haptic(14);
+        closePick();
+        picking = id;
+        openedAt = Date.now();
+        paintFoot(id);
+      }, 420);
+    });
+    box.addEventListener('pointermove', e => {
+      if(!from) return;
+      if(Math.abs(e.clientX - from.x) > 10 || Math.abs(e.clientY - from.y) > 10) dropHold();
+    });
+    ['pointerup','pointercancel','pointerleave'].forEach(t => box.addEventListener(t, dropHold));
+
+    let tapAt = 0, tapRow = null;
+    box.addEventListener('click', e => {
+      if(held){ held = false; return; }   // the release that opened the strip
+      if(e.target.closest('button')) return;
+      const row = e.target.closest('.cmt-row');
+      if(!row) return;
+      const id = Number(row.dataset.id);
+      const now = Date.now();
+      if(row === tapRow && now - tapAt < 400){
+        tapAt = 0; tapRow = null;
+        if(!live(id)) return;
+        burst(row, e);
+        if(!iReacted(id, DOUBLE_TAP)) toggleRx(id, DOUBLE_TAP);
+        else haptic(8);
+        return;
+      }
+      tapAt = now; tapRow = row;
+    });
+
+    /* Anywhere else is a way out of the strip — including the line under it,
+       which is why this listens on the way down rather than on the way up. */
+    sheet.addEventListener('click', e => {
+      if(picking == null) return;
+      if(Date.now() - openedAt < 500) return;
+      if(e.target.closest('.rx-pick')) return;
+      closePick();
+    }, true);
+
+    /* ── binding ── */
+
+    const bindFoot = (foot) => {
+      foot.querySelectorAll('[data-rx]').forEach(b => {
+        b.onclick = () => toggleRx(Number(b.dataset.on), b.dataset.rx);
+      });
+
+      const reply = foot.querySelector('[data-reply]');
+      if(reply) reply.onclick = () => {
+        const id = Number(reply.dataset.reply);
+        haptic(8);
+        setReply(replyTo === id ? null : id);
+        if(replyTo != null) ta.focus();
+      };
+    };
 
     const bindRows = () => {
-      sheet.querySelectorAll('[data-rm]').forEach(b => {
+      box.querySelectorAll('.cmt-foot').forEach(bindFoot);
+      box.querySelectorAll('[data-rm]').forEach(b => {
         b.onclick = async () => {
           const id = Number(b.dataset.rm);
-          if(!confirm('Delete this comment?')) return;
-          const i = state.comments.findIndex(c => c.id === id);
-          if(i < 0) return;
-          const [gone] = state.comments.splice(i, 1);
+          const kids = state.comments.filter(c => c.parent === id).length;
+          if(!confirm(kids
+            ? `Delete this comment and ${kids === 1 ? 'its reply' : `its ${kids} replies`}?`
+            : 'Delete this comment?')) return;
+
+          // A comment takes its answers with it, so the whole set is snapped
+          // rather than spliced — putting three rows back in their old places
+          // by hand is how an undo ends up with the thread out of order.
+          const hadC = state.comments.slice();
+          const hadR = state.commentReactions.slice();
+          const gone = new Set(state.comments
+            .filter(c => c.id === id || c.parent === id).map(c => c.id));
+          state.comments = state.comments.filter(c => !gone.has(c.id));
+          state.commentReactions = state.commentReactions.filter(r => !gone.has(r.comment));
+          if(gone.has(replyTo)) replyTo = null;
+          if(gone.has(picking)) picking = null;
           repaint();
+
           try{
             await api.deleteComment(id, me());
             toast('Comment removed');
           }catch(_){
-            state.comments.splice(i, 0, gone);
+            state.comments = hadC;
+            state.commentReactions = hadR;
             repaint();
             toast('Delete failed');
           }
@@ -3358,9 +4108,16 @@ function openComments(prof, iso, slot = DAY_SLOT){
       });
     };
 
-    const repaint = () => {
+    const repaint = (justAdded) => {
+      // every path in here mutates state.comments directly — posting a line,
+      // taking one back, putting one back after a failure — and the thread is
+      // drawn from the index, not the array. Rebuild first or the sheet draws
+      // the conversation as it was one edit ago.
+      indexComments();
       box.innerHTML = thread();
       bindRows();
+      paintAbove(false);
+      if(justAdded != null) rowEl(justAdded)?.classList.add('in');
       paintComments(prof, iso);   // the feed and viewer are live behind the sheet
     };
 
@@ -3371,10 +4128,16 @@ function openComments(prof, iso, slot = DAY_SLOT){
 
     sheet.querySelector('#x').onclick = closeSheet;
     bindRows();
+    paintAbove(false);
     grow();
     send.disabled = true;
     ta.addEventListener('input', () => { grow(); send.disabled = !ta.value.trim(); });
     watchKeyboard();
+    markFeedSeen();
+
+    // A conversation is read from the bottom: land on the newest line and the
+    // composer, not on something said four days ago.
+    requestAnimationFrame(() => { sheet.scrollTop = sheet.scrollHeight; });
 
     sheet.querySelector('#cForm').onsubmit = async e => {
       e.preventDefault();
@@ -3383,26 +4146,38 @@ function openComments(prof, iso, slot = DAY_SLOT){
       ta.value = ''; grow(); send.disabled = true;
       haptic(10);
 
-      // optimistic: the line appears now, the id arrives with the response
-      // `target`, not the slot the sheet opened on — the chip may have moved it
-      const on = target;
+      /*
+       * Optimistic: the line appears now, the id arrives with the response.
+       * A reply carries its parent's frame rather than `target` — the chip is
+       * hidden while answering precisely because that choice isn't yours here.
+       * Root of the exchange, not the line tapped: the server flattens a reply
+       * to a reply the same way, and the thread has to agree with it before
+       * the response comes back.
+       */
+      const to = replyTo == null ? null : find(replyTo);
+      const parent = to ? (to.parent == null ? to.id : to.parent) : null;
+      const on = to ? to.slot : target;
+
       const pending = { id:`t${Date.now()}`, from:me(), to:prof, date:iso, slot:on,
-                        body, at:new Date().toISOString(), pending:true };
+                        body, parent, at:new Date().toISOString(), pending:true };
       state.comments.push(pending);
-      repaint();
+      setReply(null);
+      repaint(pending.id);
       sheet.scrollTo({ top:sheet.scrollHeight, behavior:'smooth' });
 
       try{
-        const r = await api.addComment(me(), prof, iso, on, body);
+        const r = await api.addComment(me(), prof, iso, on, body, parent);
         const i = state.comments.indexOf(pending);
-        if(i >= 0) state.comments.splice(i, 1, r.comment || { ...pending, pending:false });
+        const saved = r.comment || { ...pending, pending:false };
+        if(i >= 0) state.comments.splice(i, 1, saved);
         markFeedSeen();
-        repaint();
+        repaint(saved.id);
       }catch(_){
         const i = state.comments.indexOf(pending);
         if(i >= 0) state.comments.splice(i, 1);
         repaint();
         ta.value = body; grow(); send.disabled = false;
+        if(parent) setReply(to.id);
         toast('Comment failed');
       }
     };
@@ -3616,6 +4391,8 @@ function openSettings(){
       localStorage.setItem('me', state.me);
       closeSheet(); render();
       toast(`Tracking as ${nameOf(state.me)}`);
+      // the reactions that read as yours are the other person's now
+      reloadComments().then(render);
     };
     wireAlerts(sheet.querySelector('#alerts'));
   });
@@ -3721,7 +4498,7 @@ async function wireAlerts(btn){
  */
 async function loadState(){
   const [core, reactions, comments] = await Promise.allSettled([
-    api.getState(), api.getReactions(), api.getComments()
+    api.getState(), api.getReactions(), api.getComments(me())
   ]);
 
   if(core.status === 'fulfilled'){
@@ -3738,7 +4515,27 @@ async function loadState(){
   }
 
   state.reactions = reactions.status === 'fulfilled' ? (reactions.value.reactions || []) : [];
+  // one payload carries both: a thread whose marks arrive a beat later reads
+  // as a bug rather than as a second request
   state.comments  = comments.status === 'fulfilled' ? (comments.value.comments || []) : [];
+  state.commentReactions = comments.status === 'fulfilled' ? (comments.value.reactions || []) : [];
+  indexComments();
+}
+
+/*
+ * The reactions payload is scoped to whoever is asking — `mine` is worked out
+ * server-side — so becoming someone else means asking again. That happens
+ * twice in the life of the app: the first time you say who you are, and the
+ * settings sheet's swap. One small request, at the only two moments it can
+ * possibly be wrong.
+ */
+async function reloadComments(){
+  try{
+    const r = await api.getComments(me());
+    state.comments = r.comments || [];
+    state.commentReactions = r.reactions || [];
+    indexComments();
+  }catch(_){ /* leave the thread as it was; the next load will catch up */ }
 }
 
 /*

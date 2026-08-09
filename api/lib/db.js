@@ -43,6 +43,52 @@ async function ensureThumb(sqlClient) {
   await sqlClient`ALTER TABLE photos ADD COLUMN IF NOT EXISTS thumb bytea`;
 }
 
+/*
+ * A comment can now hang off another one. Nullable, and no foreign key: a
+ * thread that predates this simply has every row at the top level, and the
+ * handler removes a parent's replies itself rather than relying on a cascade
+ * that a migrated table wouldn't have. Adding the column is what heals an
+ * existing database — CREATE TABLE IF NOT EXISTS above leaves it untouched.
+ */
+async function ensureCommentParent(sqlClient) {
+  await sqlClient`ALTER TABLE comments ADD COLUMN IF NOT EXISTS parent_id bigint`;
+  await sqlClient`CREATE INDEX IF NOT EXISTS comments_parent_idx ON comments (parent_id)`;
+}
+
+/*
+ * Comment reactions started out holding the *name* of one of five drawn marks
+ * ('heart', 'fire', …). They now hold whatever emoji came off the keyboard, so
+ * the column is renamed to say so and the five names it may already contain
+ * are converted to the characters they stood for. Each name maps to a distinct
+ * emoji, and no row can already hold one, so the update can't collide with the
+ * primary key.
+ *
+ * The separate index on comment_id goes at the same time: the primary key is
+ * (comment_id, from_profile, emoji), so its own index already answers every
+ * lookup by comment. A second copy of the same leading column costs a write on
+ * every reaction and buys nothing.
+ */
+async function ensureCommentEmoji(sqlClient) {
+  const legacy = await sqlClient`
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'comment_reactions' AND column_name = 'token'
+  `;
+  if (legacy.length) {
+    await sqlClient`ALTER TABLE comment_reactions RENAME COLUMN token TO emoji`;
+    await sqlClient`
+      UPDATE comment_reactions SET emoji = CASE emoji
+        WHEN 'heart' THEN '❤️'
+        WHEN 'fire'  THEN '🔥'
+        WHEN 'bolt'  THEN '⚡'
+        WHEN 'star'  THEN '⭐'
+        WHEN 'nod'   THEN '👍'
+        ELSE emoji END
+      WHERE emoji IN ('heart', 'fire', 'bolt', 'star', 'nod')
+    `;
+  }
+  await sqlClient`DROP INDEX IF EXISTS comment_reactions_cmt_idx`;
+}
+
 // challenge_meta, day_tasks and photos used to be expected to already exist —
 // only `reactions` created itself. A database that had never been set up by
 // hand therefore failed every request, which the UI reported as the generic
@@ -97,11 +143,35 @@ async function createSchema(s) {
       day_date     date NOT NULL,
       slot         text NOT NULL DEFAULT 'day',
       body         text NOT NULL,
+      -- the comment this one answers, if it answers one; see ensureCommentParent
+      parent_id    bigint,
       created_at   timestamptz NOT NULL DEFAULT now()
     )
   `;
   await s`
     CREATE INDEX IF NOT EXISTS comments_thread_idx ON comments (to_profile, day_date)
+  `;
+  /*
+   * A reaction left on a single comment, rather than on the day. One row per
+   * (comment, person, emoji), so the same person can leave two different ones
+   * on a line but never the same one twice — the primary key is the toggle,
+   * and its index is also the only one the table needs: every read starts from
+   * a comment id, which leads the key.
+   *
+   * The emoji is stored as the character itself rather than an id into a
+   * dictionary table. It is at most a couple of dozen bytes — a family-of-four
+   * sequence is the worst case — which is smaller than the foreign key plus
+   * the dictionary row it would point at, and it means a reaction can be read
+   * without a join.
+   */
+  await s`
+    CREATE TABLE IF NOT EXISTS comment_reactions (
+      comment_id   bigint NOT NULL,
+      from_profile text NOT NULL,
+      emoji        text NOT NULL,
+      created_at   timestamptz NOT NULL DEFAULT now(),
+      PRIMARY KEY (comment_id, from_profile, emoji)
+    )
   `;
   await s`
     CREATE TABLE IF NOT EXISTS push_subscriptions (
@@ -124,6 +194,8 @@ async function createSchema(s) {
   `;
   await ensurePhotoSlot(s);
   await ensureThumb(s);
+  await ensureCommentParent(s);
+  await ensureCommentEmoji(s);
 }
 
 // Memoised per warm instance, but a failure clears the memo so the next
@@ -215,4 +287,7 @@ function fail(res, err, message) {
   return res.status(500).json({ error: message });
 }
 
-module.exports = { getSql, ensurePhotoSlot, ensureSchema, connect, fail };
+module.exports = {
+  getSql, ensurePhotoSlot, ensureCommentParent, ensureCommentEmoji,
+  ensureSchema, connect, fail
+};
