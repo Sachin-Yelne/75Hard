@@ -829,6 +829,26 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
   font-family:var(--cond);font-weight:700;font-size:10px;letter-spacing:.18em;
   text-transform:uppercase;color:var(--p);line-height:1;}
 .cmt-head .new::before{content:'';width:5px;height:5px;background:var(--p);flex:0 0 auto;}
+/*
+ * How you answer a line. Replying lived inside the strip a press and hold
+ * opens, beside the emoji — a fine place for it once you know the gesture is
+ * there, and no place at all until then. Answering someone is what this sheet
+ * is for, so it gets a mark that is simply always on the row.
+ *
+ * At the end of the head, where the line already has empty space: no row of its
+ * own under every comment, and nothing added to the height of one. The target
+ * is a thumb's worth of padding pulled straight back out by the same negative
+ * margin, so the head still measures the height of its text.
+ */
+.cmt-re{
+  margin:-11px -10px -11px auto;padding:11px 10px;
+  flex:0 0 auto;color:var(--bone-3);transition:color .16s;
+}
+.cmt-re svg{width:14px;height:14px;display:block;}
+.cmt-re:active{color:var(--bone);}
+/* the line the composer is pointed at says so here too, not only in the rule
+   down its side and the chip above the box */
+.cmt-row.hi > .cmt-main > .cmt-head .cmt-re{color:var(--p);}
 .cmt-body{margin:0;font-size:14px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere;}
 /* A press and hold is the way to react, so the row must not spend that gesture
    on selecting its own text or raising iOS's own callout over the top of it. */
@@ -3905,6 +3925,8 @@ function openComments(prof, iso, slot = DAY_SLOT){
           <span class="when">${fmtAgo(c.at)}</span>
           ${c.parent == null && tagged(c.slot) ? `<span class="on">${slotLabel(c.slot)}</span>` : ''}
           ${!mine && new Date(c.at).getTime() > readAt ? '<span class="new">New</span>' : ''}
+          ${c.pending ? '' : `<button class="cmt-re" type="button" data-reply="${c.id}"
+            aria-label="Reply to ${mine ? 'yourself' : esc(nameOf(c.from))}">${ICON.reply}</button>`}
         </div>
         <p class="cmt-body">${esc(c.body)}</p>
         ${c.pending ? '' : `<div class="cmt-foot">${footHTML(c)}</div>`}
@@ -4162,19 +4184,26 @@ function openComments(prof, iso, slot = DAY_SLOT){
 
     /* ── binding ── */
 
+    /* Two ways in, one behaviour: the mark on the head, and the Reply still in
+       the strip for anyone who learned the hold. Tapping the line you are
+       already answering puts the composer back on the thread. */
+    const wireReply = (btn) => {
+      btn.onclick = () => {
+        const id = Number(btn.dataset.reply);
+        haptic(8);
+        closePick();
+        setReply(replyTo === id ? null : id);
+        if(replyTo != null) ta.focus();
+      };
+    };
+
     const bindFoot = (foot) => {
       foot.querySelectorAll('[data-rx]').forEach(b => {
         b.onclick = () => toggleRx(Number(b.dataset.on), b.dataset.rx);
       });
 
       const reply = foot.querySelector('[data-reply]');
-      if(reply) reply.onclick = () => {
-        const id = Number(reply.dataset.reply);
-        haptic(8);
-        closePick();
-        setReply(replyTo === id ? null : id);
-        if(replyTo != null) ta.focus();
-      };
+      if(reply) wireReply(reply);
       const rm = foot.querySelector('[data-rm]');
       if(rm) rm.onclick = () => {
         const id = Number(rm.dataset.rm);
@@ -4185,6 +4214,8 @@ function openComments(prof, iso, slot = DAY_SLOT){
 
     const bindRows = () => {
       box.querySelectorAll('.cmt-foot').forEach(bindFoot);
+      // the head's mark survives a paintFoot, so it is wired with the row
+      box.querySelectorAll('.cmt-head [data-reply]').forEach(wireReply);
     };
 
     const removeComment = (id) => {
