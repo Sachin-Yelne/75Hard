@@ -40,7 +40,17 @@
 
   --safe-top:env(safe-area-inset-top,0px);
   --safe-bot:env(safe-area-inset-bottom,0px);
-  --nav:calc(56px + var(--safe-bot));
+  /*
+   * The bar is two parts: the row the icons live in, and the clearance under it
+   * for the home indicator. Splitting them is what lets the bar be short — the
+   * row is sized to the icons rather than to a guess, and the footer is sized to
+   * the indicator rather than to the whole inset. The indicator is a 5pt mark
+   * with its own margin, so 10pt off a 34pt inset still clears it comfortably
+   * and hands the difference back to the photographs.
+   */
+  --nav-row:42px;
+  --nav-foot:max(6px, calc(var(--safe-bot) - 10px));
+  --nav:calc(var(--nav-row) + var(--nav-foot));
   --col:520px;
   --pad:20px;
 }
@@ -85,11 +95,9 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
 #nav{
   position:fixed;left:0;right:0;bottom:0;z-index:40;
   height:var(--nav);
-  /* The tab row is bottom-aligned rather than centred (see .tab), so this
-     padding is the whole gap under the labels — no halving. 12px off a 34px
-     inset leaves 22px, which clears the home indicator without the labels
-     floating in the middle of the bar. */
-  padding-bottom:max(8px, calc(var(--safe-bot) - 12px));
+  /* Leaves --nav-row as the content box, so a tab centres in the icon row and
+     the clearance underneath is never something the icons have to sit inside. */
+  padding-bottom:var(--nav-foot);
   display:grid;grid-template-columns:repeat(4,1fr);
   background:rgba(10,10,11,.94);
   backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
@@ -98,26 +106,29 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
   padding-right:max(0px,calc((100% - var(--col))/2));
 }
 #nav[hidden]{display:none;}
+/*
+ * The mark alone, centred. A 10px label under every icon was costing sixteen
+ * points of bar — the label, and the gap above it — to name four destinations
+ * that are drawn plainly enough and never change. Dropping it is most of why
+ * the bar is short now, and it buys the icon room to grow to a size that
+ * carries the meaning on its own.
+ */
 .tab{
-  /* bottom-aligned, so the gap under the labels is exactly #nav's padding
-     rather than half of whatever centring leaves over */
-  display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;
+  display:flex;align-items:center;justify-content:center;
   color:var(--bone-3);transition:color .18s;position:relative;
 }
-.tab .ic{width:15px;height:15px;}
-.tab span{
-  font-family:var(--cond);font-weight:600;font-size:10px;
-  letter-spacing:.16em;text-transform:uppercase;line-height:1;
-}
+.tab .ic{width:22px;height:22px;}
 .tab.on{color:var(--bone);}
+/* Which tab you're on, twice over: the icon at full strength, and a rule at
+   the top of the row. With no label to change weight, one signal was thin. */
 .tab.on::before{
   content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);
-  width:22px;height:1px;background:var(--bone);
+  width:20px;height:1px;background:var(--bone);
 }
-/* Anchored from the bottom, because the tab's contents are bottom-aligned —
-   a top offset would leave the dot floating where the icon used to be.
-   26px clears the 10px label, the 6px gap and most of the 15px icon. */
-.tab .dot{position:absolute;bottom:26px;right:calc(50% - 15px);width:4px;height:4px;background:var(--you);}
+/* Just off the icon's top-right corner: the icon is 22px centred in the row,
+   so 11px up from the middle is its top edge and 15px across clears its side. */
+.tab .dot{position:absolute;top:calc(50% - 12px);right:calc(50% - 15px);
+  width:4px;height:4px;background:var(--you);}
 
 /* ── topbar ────────────────────────────── */
 .top{display:flex;align-items:center;justify-content:space-between;padding:4px 0 14px;}
@@ -2266,9 +2277,11 @@ function renderNav(){
   // the feed leads: it's where the app opens and the thing worth coming back to
   const tabs = [['feed','Feed'],['today','Today'],['wall','Wall'],['rivals','Rivals']];
   const badge = feedBadge();
+  // The label moved off the bar and onto the button, where a screen reader still
+  // reads it out and the four points it used to occupy go to the photographs.
   document.getElementById('nav').innerHTML = tabs.map(([id,label]) => `
-    <button class="tab ${state.tab===id?'on':''}" data-tab="${id}">
-      <span class="ic">${ICON[id]}</span><span>${label}</span>
+    <button class="tab ${state.tab===id?'on':''}" data-tab="${id}" aria-label="${label}">
+      <span class="ic">${ICON[id]}</span>
       ${id==='feed' && badge ? '<i class="dot"></i>' : ''}
     </button>`).join('');
 }
