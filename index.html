@@ -363,16 +363,34 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
  * gradient tuned for black underneath was getting wrong — it left the day line
  * to wash out over a bright frame.
  *
- * Where that stop belongs is decided by where the caption starts, so it moves
- * down as the caption shrinks. The block is a little over a third shorter than
- * it was, and holding the ramp where it had been would have been darkening a
- * band of photograph with nothing written on it.
+ * Where each stop belongs is decided by what is written over it, so both ends
+ * move as the text does. The caption is a third shorter than it was, and
+ * holding the lower ramp where it had been would have darkened a band of
+ * photograph with nothing on it. The top now carries two lines rather than
+ * one, so it holds its darkness a little further down — the extra stop at 17%
+ * is the track line, which was landing in the fade and washing out.
  */
 .post .shade{position:absolute;inset:0;pointer-events:none;
-  background:linear-gradient(180deg,rgba(0,0,0,.58) 0%,transparent 24%,
+  background:linear-gradient(180deg,rgba(0,0,0,.66) 0%,rgba(0,0,0,.3) 17%,transparent 30%,
     transparent 54%,rgba(0,0,0,.42) 76%,rgba(0,0,0,.92) 100%);}
-.post-top{position:absolute;top:calc(var(--safe-top) + 16px);left:var(--pad);right:var(--pad);
-  display:flex;justify-content:space-between;align-items:baseline;}
+/*
+ * The head of the post: who and when, and under it what the day sounds like.
+ *
+ * The track used to sit in the caption, fourth of five things stacked over the
+ * foot of the frame — the crowded end. Up here it costs a line the top of the
+ * post did not have, but the top of the post was carrying a name and a date
+ * across an otherwise empty rule, and the caption is where the stacking was
+ * actually burying photographs. It also belongs beside the chip that turns it
+ * on, which was already up here.
+ *
+ * A little smaller than it was down there: the sleeve is a mark rather than a
+ * subject, and at 22 it sits square with the two type sizes either side of it.
+ */
+.post-top{position:absolute;top:calc(var(--safe-top) + 16px);left:var(--pad);right:var(--pad);}
+.post-top .line{display:flex;justify-content:space-between;align-items:baseline;}
+.post-top .trk{margin-top:11px;}
+.post-top .trk .art{width:22px;height:22px;}
+.post-top .trk.add .box{width:22px;height:22px;font-size:13px;}
 .post-top .who{font-family:var(--cond);font-weight:700;font-size:14px;letter-spacing:.2em;text-transform:uppercase;}
 .post-top .dt{font-family:var(--cond);font-weight:500;font-size:12px;letter-spacing:.14em;
   text-transform:uppercase;color:rgba(255,255,255,.6);}
@@ -2740,11 +2758,14 @@ function viewFeed(){
       })()}
       <div class="shade"></div>
       <div class="post-top">
-        <span class="who">${own?'You':nameOf(o.p)}</span>
-        <span class="right">
-          <span class="dt">${fmtDate(o.iso)}</span>
-          ${soundHTML(o.p, o.iso)}
-        </span>
+        <div class="line">
+          <span class="who">${own?'You':nameOf(o.p)}</span>
+          <span class="right">
+            <span class="dt">${fmtDate(o.iso)}</span>
+            ${soundHTML(o.p, o.iso)}
+          </span>
+        </div>
+        ${trackHTML(o.p, o.iso)}
       </div>
       <div class="post-bot">
         <div class="day">
@@ -2756,7 +2777,6 @@ function viewFeed(){
         </div>
         <div class="rule"></div>
         <div class="state">${full ? '<b>All five complete</b>' : n + ' of ' + TASKS.length + ' complete'}</div>
-        ${trackHTML(o.p, o.iso)}
         <div class="cmt-slot">${peekHTML(o.p, o.iso)}</div>
       </div>
     </div>`;
