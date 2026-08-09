@@ -788,6 +788,9 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
 .cmt-head .rm{width:12px;height:12px;color:var(--bone-3);margin-left:auto;flex-shrink:0;}
 .cmt-head .rm:active{color:var(--you);}
 .cmt-body{margin:0;font-size:13.5px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;}
+/* A press and hold is the way to react, so the row must not spend that gesture
+   on selecting its own text or raising iOS's own callout over the top of it. */
+.cmt-main{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;}
 
 /*
  * Replies hang off the line they answer, one level deep. The indent's own
@@ -806,45 +809,37 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
   width:2px;background:var(--p);}
 
 /*
- * The row's own footer: what has been left on it, and the two ways to answer.
+ * The row's own footer: what has been left on it, and the way to answer it.
  *
- * Nothing in here is boxed. An outline around every count and every key turned
- * three quiet facts into a row of little windows, and a thread is mostly quiet
- * facts — so the emoji and the number carry themselves, and space does the
- * separating a border was doing. What's left of a border is the one thing a
- * border was actually for: saying which of them are yours.
+ * Nothing in here is boxed, and nothing in here is a button you didn't ask
+ * for. Reacting is a press and hold on the line itself, so the footer only
+ * ever carries things that actually happened.
  */
-.cmt-foot{position:relative;display:flex;align-items:center;gap:2px;flex-wrap:wrap;margin-top:9px;}
-.rx-add,.pill{
-  display:inline-flex;align-items:center;justify-content:center;gap:6px;
-  height:30px;padding:0 8px;color:var(--bone-3);
-  transition:color .16s,opacity .16s;
+.cmt-foot{position:relative;display:flex;align-items:center;gap:1px;flex-wrap:wrap;margin-top:8px;}
+.pill{
+  display:inline-flex;align-items:center;justify-content:center;
+  height:28px;padding:0 3px;
+  transition:opacity .16s;
 }
-.rx-add{width:30px;padding:0;}
-.rx-add .ic{width:10px;height:10px;}
-.rx-add[aria-expanded="true"]{color:var(--bone);}
-.rx-add:active,.pill:active{opacity:.55;}
+.pill:active{opacity:.55;}
 /*
  * Emoji are the one thing on screen the app doesn't draw — they come off the
  * keyboard and are rendered by the phone, colour and all. Name the emoji faces
- * explicitly so they don't fall back to the text font and arrive as tofu, and
- * keep them a shade under the label size: they are loud enough already.
+ * explicitly so they don't fall back to the text font and arrive as tofu.
  */
 .em{font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;
   font-size:12.5px;line-height:1;}
-.pill{margin-left:-4px;}
-.pill:first-child{margin-left:0;}
-.pill .em{font-size:15px;}
+/* a pair sits slightly over itself, the way two of anything stacks */
+.pill + .pill{margin-left:-7px;}
+.pill{font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;
+  font-size:17px;line-height:1;}
 .pill .n{font-family:var(--cond);font-weight:700;font-size:11.5px;letter-spacing:.06em;line-height:1;}
 /*
- * One you left reads in your own colour, never the colour of whoever wrote the
- * line: the count alone can't say whether you are one of the people in it, and
- * clay already means "you" everywhere else in the app. A hairline under the
- * number rather than around the whole thing — enough to answer the question,
- * quiet enough to leave the row alone.
+ * One you left carries a clay hairline under it. With two people and no count,
+ * that is the whole answer to "am I in this" — and where you have both left
+ * the same one, the pair reads as two badges with only the first marked.
  */
-.pill.mine{color:var(--you);}
-.pill.mine .n{box-shadow:0 1px 0 var(--you);}
+.pill.mine{box-shadow:0 2px 0 var(--you);}
 @keyframes rxPop{0%{transform:scale(1)}38%{transform:scale(1.3)}100%{transform:scale(1)}}
 .pill.pop{animation:rxPop .36s cubic-bezier(.2,1.1,.3,1);}
 .reply-btn{
@@ -1134,7 +1129,6 @@ const ICON = {
   comment:'<svg viewBox="0 0 512 512" aria-hidden="true"><path d="M16 64L496 64L496 384L128 384L16 464L16 64ZM48 96L48 402L118 352L464 352L464 96L48 96Z"/></svg>',
   /* an arrow that turns back on itself — the one shape everyone reads as "reply" */
   reply:'<svg viewBox="0 0 512 512" aria-hidden="true"><path d="M176 96L176 176L352 176L416 240L416 400L368 400L368 256L336 224L176 224L176 304L48 200Z"/></svg>',
-  plus:'<svg viewBox="0 0 512 512" aria-hidden="true"><path d="M232 96L280 96L280 232L416 232L416 280L280 280L280 416L232 416L232 280L96 280L96 232L232 232Z"/></svg>',
   /* The silent face of the sound chip; the audible one is the moving bars, not
      a glyph. Drawn as strokes rather than the filled outlines the rest of the
      set uses: at 13px a speaker's cone closes up into a blob when filled, and
@@ -3778,15 +3772,19 @@ function openComments(prof, iso, slot = DAY_SLOT){
           class="${iReacted(c.id, e) ? 'mine' : ''}" aria-label="React ${esc(e)}">${esc(e)}</button>`).join('')}
     </div>`;
 
-  // The reactions on one line, plus the two ways to answer it. Drawn on its own
-  // so a reaction can repaint one footer rather than the whole conversation.
+  /*
+   * The reactions on one line, and the way to answer it.
+   *
+   * One badge per person rather than one badge and a number. There are two of
+   * you: a count can only ever say 1 or 2, which is a digit doing the work a
+   * second copy of the emoji does better and quieter. Yours carries the clay
+   * hairline, so a pair still says which one you left.
+   */
   const footHTML = (c) => `
-    ${rxOn(c.id).map(r => `
-      <button class="pill${r.mine ? ' mine' : ''}" data-rx="${esc(r.e)}" data-on="${c.id}"
-        aria-pressed="${r.mine}" aria-label="${esc(r.e)} ${r.n}">
-        <span class="em">${esc(r.e)}</span><span class="n">${r.n}</span></button>`).join('')}
-    <button class="rx-add" data-add="${c.id}" aria-expanded="${picking === c.id}"
-      aria-label="Add a reaction"><span class="ic">${ICON.plus}</span></button>
+    ${rxOn(c.id).flatMap(r => Array.from({ length: r.n }, (_, i) => `
+      <button class="pill${r.mine && i === 0 ? ' mine' : ''}" data-rx="${esc(r.e)}"
+        data-on="${c.id}" aria-pressed="${r.mine}" aria-label="${esc(r.e)}"
+        >${esc(r.e)}</button>`)).join('')}
     <button class="reply-btn" data-reply="${c.id}">Reply</button>
     ${picking === c.id ? pickHTML(c) : ''}`;
 
@@ -3938,7 +3936,6 @@ function openComments(prof, iso, slot = DAY_SLOT){
       const foot = footEl(id);
       if(!foot) return;
       foot.querySelector('.rx-pick')?.remove();
-      foot.querySelector('.rx-add')?.setAttribute('aria-expanded', 'false');
     };
 
     // `pop` is the emoji that just landed: the count it belongs to is worth a
@@ -3994,8 +3991,46 @@ function openComments(prof, iso, slot = DAY_SLOT){
       setTimeout(() => b.remove(), 800);
     };
 
+    /*
+     * Press and hold a line to react to it, the way you would a message. There
+     * is no button for this on purpose: a plus under every comment was a
+     * permanent piece of furniture for something you do occasionally, and the
+     * gesture is one the phone has already taught you.
+     *
+     * A drag is a scroll, not a hold, so any real movement calls it off — and
+     * the release that opens the strip must not also read as the tap that
+     * closes it again, which is what `openedAt` is for.
+     */
+    let holdT = null, from = null, held = false, openedAt = 0;
+    const dropHold = () => { clearTimeout(holdT); holdT = null; from = null; };
+
+    box.addEventListener('pointerdown', e => {
+      if(e.target.closest('button')) return;
+      const row = e.target.closest('.cmt-row');
+      if(!row) return;
+      const id = Number(row.dataset.id);
+      if(!live(id)) return;
+      held = false;
+      from = { x:e.clientX, y:e.clientY };
+      holdT = setTimeout(() => {
+        holdT = null;
+        held = true;
+        haptic(14);
+        closePick();
+        picking = id;
+        openedAt = Date.now();
+        paintFoot(id);
+      }, 420);
+    });
+    box.addEventListener('pointermove', e => {
+      if(!from) return;
+      if(Math.abs(e.clientX - from.x) > 10 || Math.abs(e.clientY - from.y) > 10) dropHold();
+    });
+    ['pointerup','pointercancel','pointerleave'].forEach(t => box.addEventListener(t, dropHold));
+
     let tapAt = 0, tapRow = null;
     box.addEventListener('click', e => {
+      if(held){ held = false; return; }   // the release that opened the strip
       if(e.target.closest('button')) return;
       const row = e.target.closest('.cmt-row');
       if(!row) return;
@@ -4016,7 +4051,8 @@ function openComments(prof, iso, slot = DAY_SLOT){
        which is why this listens on the way down rather than on the way up. */
     sheet.addEventListener('click', e => {
       if(picking == null) return;
-      if(e.target.closest('.rx-pick') || e.target.closest('[data-add]')) return;
+      if(Date.now() - openedAt < 500) return;
+      if(e.target.closest('.rx-pick')) return;
       closePick();
     }, true);
 
@@ -4026,15 +4062,6 @@ function openComments(prof, iso, slot = DAY_SLOT){
       foot.querySelectorAll('[data-rx]').forEach(b => {
         b.onclick = () => toggleRx(Number(b.dataset.on), b.dataset.rx);
       });
-      const add = foot.querySelector('[data-add]');
-      if(add) add.onclick = () => {
-        const id = Number(add.dataset.add);
-        if(picking === id){ closePick(); return; }
-        closePick();
-        haptic(8);
-        picking = id;
-        paintFoot(id);
-      };
 
       const reply = foot.querySelector('[data-reply]');
       if(reply) reply.onclick = () => {
