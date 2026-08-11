@@ -324,9 +324,16 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
  * .post is explicitly 100% tall: a skipped element keeps that height rather
  * than guessing at one, so scrollHeight is the same number it always was and
  * no contain-intrinsic-size is needed to prop it up.
+ *
+ * A column of two: the frames, and the plate of text underneath them. The plate
+ * takes the height its own lines need and the frames take everything that is
+ * left, which is the whole of an arithmetic that was previously being guessed
+ * at — a caption block of a height nobody could name, laid over a grid that had
+ * to be shaped around it.
  */
 .post{height:100%;scroll-snap-align:start;scroll-snap-stop:always;
-  position:relative;background:#000;overflow:hidden;content-visibility:auto;}
+  position:relative;background:#000;overflow:hidden;content-visibility:auto;
+  display:flex;flex-direction:column;}
 /* horizontal reel: one slide per photo logged that day */
 .reel{
   display:flex;height:100%;width:100%;
@@ -357,22 +364,18 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
 .viewer-bot .slot-tag.edit{pointer-events:auto;}
 .slot-tag.edit .tx{border-bottom:1px solid rgba(255,255,255,.28);padding-bottom:3px;}
 /*
- * The scrim. Every post has photograph behind its text rather than black, so
- * like the viewer's it ramps early: the extra stop puts real darkness where the
- * caption block *starts* rather than only at the very bottom, which is what a
- * gradient tuned for black underneath was getting wrong — it left the day line
- * to wash out over a bright frame.
+ * The scrim, now only at the head of the post. The foot of a post is the plate,
+ * which is already black, so the long lower ramp this gradient used to carry
+ * was darkening photograph for the sake of text that has moved off it.
  *
- * Where each stop belongs is decided by what is written over it, so both ends
- * move as the text does. The caption is a third shorter than it was, and
- * holding the lower ramp where it had been would have darkened a band of
- * photograph with nothing on it. The top now carries two lines rather than
- * one, so it holds its darkness a little further down — the extra stop at 17%
- * is the track line, which was landing in the fade and washing out.
+ * Measured in points rather than percent, because what it has to cover is a
+ * fixed thing — the notch, a line of name and date, and the track row under it
+ * — and not a fraction of however tall the frames happen to be. Two stops: real
+ * darkness behind the first line, half of it behind the track, gone by the end.
  */
-.post .shade{position:absolute;inset:0;pointer-events:none;
-  background:linear-gradient(180deg,rgba(0,0,0,.66) 0%,rgba(0,0,0,.3) 17%,transparent 30%,
-    transparent 54%,rgba(0,0,0,.42) 76%,rgba(0,0,0,.92) 100%);}
+.post .shade{position:absolute;top:0;left:0;right:0;pointer-events:none;
+  height:calc(var(--safe-top) + 132px);
+  background:linear-gradient(180deg,rgba(0,0,0,.7) 0%,rgba(0,0,0,.34) 46%,transparent 100%);}
 /*
  * The head of the post: who and when, and under it what the day sounds like.
  *
@@ -412,8 +415,21 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
  * and someone else's day with no song and nothing said yet would have ended on
  * a hairline underlining nothing. Under the day it can never be the last thing
  * in the block, because the status always renders.
+ *
+ * It sits under the frames now rather than on top of them. Shortening the block
+ * bought back a line and a half and the bottom row of a six-frame day was still
+ * mostly text — three lines and a 50px numeral is simply more than can be laid
+ * over a photograph that someone wants to look at. As a plate it costs the
+ * frames about a seventh of their height and gives them back every pixel of
+ * what is left, corner to corner, with nothing written on any of it.
+ *
+ * The lower padding clears the nav. That band was never visible anyway — the
+ * bar is opaque and sits on top of it — so it is the same photograph lost, and
+ * measuring it here means the text lands the same distance above the tabs as it
+ * always did.
  */
-.post-bot{position:absolute;left:var(--pad);right:var(--pad);bottom:calc(var(--nav) + 18px);}
+.post-bot{flex:0 0 auto;position:relative;z-index:1;background:#000;
+  padding:15px var(--pad) calc(var(--nav) + 15px);}
 /*
  * The day, said rather than stamped. It used to be a bare 74px numeral under an
  * eyebrow naming the frames — two lines of caption, and the numeral alone was
@@ -621,16 +637,17 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
  * tracks are fractions now, so the frames take the room instead, and what
  * shapes a tile is how many there are rather than a fixed square (see COLLAGE).
  *
- * Corner to corner, at every count. Stopping the grid above the caption only
- * moved the black band rather than removing it, and put a hard line across the
- * middle of the post where the photographs gave out. The caption rides on the
- * frames instead, exactly as it always has over a lone one — the scrim is what
- * makes that readable, and the bottom band of a post is text territory on any
- * day, which is the fact the row fractions are chosen against.
+ * Corner to corner of what it is given, which is now the post minus its plate
+ * of text rather than the whole post. Stopping the grid above the caption used
+ * to leave a black band because the tiles were squares that wouldn't stretch to
+ * meet it; fractions have no such trouble — the grid fills whatever box it is
+ * handed. What the plate takes off the bottom is the same height the caption
+ * was covering anyway, and every frame is now whole.
  */
-.collage{position:absolute;inset:0;display:grid;gap:2px;}
-.tile{position:relative;overflow:hidden;background:#000;padding:0;min-width:0;min-height:0;}
-.tile img{width:100%;height:100%;object-fit:cover;display:block;}
+.collage{flex:1 1 auto;min-height:0;position:relative;display:grid;gap:2px;}
+.tile{position:relative;overflow:hidden;background:#000;padding:0;min-width:0;min-height:0;
+  -webkit-touch-callout:none;user-select:none;-webkit-user-select:none;}
+.tile img{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;}
 .tile:active{opacity:.72;}
 /* the lead frame, on the counts that don't divide evenly into their grid */
 .tile.w2{grid-column:span 2;}
@@ -640,6 +657,59 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
   background:rgba(0,0,0,.58);
   font-family:var(--display);font-size:26px;letter-spacing:-.01em;color:var(--bone);
 }
+
+/* ── arranging ─────────────────────────────
+ *
+ * Hold a frame on one of your own days and the collage stops being a picture
+ * and becomes a set of tiles. Nothing about the post moves; what changes is
+ * that the text recedes, the grid takes the whole gesture for itself, and the
+ * frame under your thumb comes off the surface.
+ *
+ * touch-action is the whole reason arranging is a mode rather than a gesture
+ * that ends with your thumb. The feed snaps one post to a screen, so a drag
+ * across the collage is a page turn unless the collage says otherwise — and a
+ * declaration made mid-touch is not reliably honoured. Set on entering, it is
+ * already in force by the time the next drag starts.
+ */
+.collage.arranging{touch-action:none;}
+/* The plate empties for the duration and the bar takes its place — the day, the
+   status and the last word said are all things to read around while you are
+   trying to look at photographs, and the plate keeps its height either way, so
+   the frames don't resize under the thumb that just entered. The head only
+   dims: it is not replaced by anything, and it says whose day this is. */
+.post.arranging .post-bot{opacity:0;pointer-events:none;transition:opacity .2s;}
+.post.arranging .post-top{opacity:.42;pointer-events:none;transition:opacity .2s;}
+.collage.arranging .more{display:none;}
+.collage.arranging .tile:active{opacity:1;}
+/* The hole the lifted frame left. Not empty — a dim version of itself, so the
+   run of photographs still reads as a grid while one of them is in the air. */
+.tile.lifted img{opacity:.22;}
+.tile.lifted{outline:1px solid rgba(255,255,255,.5);outline-offset:-1px;}
+/* The frame in the air. A clone parked on the body so it is free of the grid
+   that is busy rearranging itself underneath, and grown about its middle rather
+   than its corner, so it swells under the thumb instead of reaching down and to
+   the right past the edge of the screen. */
+.tile.ghost{
+  position:fixed;z-index:70;pointer-events:none;
+  transform-origin:center;
+  box-shadow:0 20px 44px rgba(0,0,0,.6);
+}
+.tile.ghost img{opacity:1;}
+/* Where the day's text was, for as long as the arranging lasts: what to do,
+   and the way out. Sat in the plate's place so nothing shifts on entry. */
+.arrange-bar{
+  position:absolute;left:var(--pad);right:var(--pad);z-index:2;
+  bottom:calc(var(--nav) + 18px);
+  display:flex;align-items:center;justify-content:space-between;gap:14px;
+}
+.arrange-bar .tx{font-family:var(--cond);font-weight:600;font-size:12px;
+  letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.72);}
+.arrange-bar .done{
+  font-family:var(--cond);font-weight:700;font-size:12px;
+  letter-spacing:.18em;text-transform:uppercase;color:var(--bone);
+  border-bottom:1px solid rgba(255,255,255,.5);padding:2px 0;flex-shrink:0;
+}
+.arrange-bar .done:active{opacity:.55;}
 
 /* full-screen viewer */
 #viewer:empty{display:none;}
@@ -1628,7 +1698,7 @@ const capText = (p, iso, slot) => {
 };
 const capVerdict = (p, iso, slot) => (isMealSlot(slot) && capOf(p, iso, slot)?.v) || '';
 
-// every captioned meal of a day, oldest first, for the Diet row summary
+// every captioned meal of a day, in the day's order, for the Diet row summary
 const mealsOf = (p, iso) => MEAL_SLOTS.flatMap(id => photosOf(p, iso, id))
   .map(slot => ({ slot, nm: capText(p, iso, slot), v: capVerdict(p, iso, slot) }))
   .filter(m => m.nm);
@@ -1674,14 +1744,34 @@ function saveVessels(list){
   localStorage.setItem('vessels:' + me(), JSON.stringify(list));
 }
 
-/* Slots for one person on one day, in carousel order. */
-const slotsFor = (p, iso) => (state.photos[p]?.[iso] || [])
-  .filter(isKnownSlot)
-  .sort((a, b) =>
-    SLOT_ORDER.indexOf(slotBase(a)) - SLOT_ORDER.indexOf(slotBase(b)) ||
-    slotStamp(a) - slotStamp(b));
+/* The order a day reads in when nobody has said otherwise: the tasks in the
+   order they are listed, and within a task the shots in the order they landed. */
+const defaultOrder = slots => [...slots].sort((a, b) =>
+  SLOT_ORDER.indexOf(slotBase(a)) - SLOT_ORDER.indexOf(slotBase(b)) ||
+  slotStamp(a) - slotStamp(b));
 
-// every shot a task holds that day, oldest first
+/*
+ * Slots for one person on one day, in the order they are read in — the collage,
+ * the viewer's swipe, the pips, the day sheet's gallery. One list, so a day
+ * arranged in the feed is arranged everywhere it appears.
+ *
+ * A day someone has dragged into shape carries `order` in the same tasks JSONB
+ * as its captions: the slots, in the order they were dropped. It is a wish
+ * rather than the truth — a slot it names that no longer has a photo is
+ * skipped, and a photo posted after the arranging isn't in it at all. Those
+ * fall in behind, in the default order, so an afternoon meal appends to the day
+ * instead of scrambling what was already set.
+ */
+const slotsFor = (p, iso) => {
+  const have = new Set((state.photos[p]?.[iso] || []).filter(isKnownSlot));
+  const wish = entryOf(p, iso).order;
+  if(!Array.isArray(wish)) return defaultOrder(have);
+  // delete() answers whether it was there, which drops the dead and the doubled
+  const out = wish.filter(s => have.delete(s));
+  return out.concat(defaultOrder(have));
+};
+
+// every shot a task holds that day, in the day's order
 const photosOf = (p, iso, taskId) =>
   slotsFor(p, iso).filter(s => slotBase(s) === taskId);
 /*
@@ -2348,6 +2438,9 @@ function render(){
   const open = el.querySelector('#feed');
   const wasAt = open ? Math.round(open.scrollTop / (open.clientHeight || 1)) : 0;
 
+  // a frame in the air does not survive the grid it came out of being replaced
+  document.querySelectorAll('.tile.ghost').forEach(g => g.remove());
+
   el.classList.toggle('flush', state.tab === 'feed');
   el.scrollTop = 0;
   el.innerHTML =
@@ -2674,11 +2767,14 @@ function cells(p, ti){
  * and the rest fall in behind it. Counts that fill their grid — 2, 4, 6, 9 —
  * need no such help and get a plain one.
  *
- * The row fractions are the only judgement here, and they are made against the
- * fact that the caption block covers the bottom third of the post. An even
- * split is right almost everywhere; a lead frame is given a little extra only
- * where it opens a three-row grid, since there the rows beneath it are clear
- * of the text anyway and can afford it.
+ * The row fractions are the only judgement here. An even split is right almost
+ * everywhere; a lead frame is given a little extra only where it spans a whole
+ * row of a three-row grid, since a frame three columns wide at an even fraction
+ * is a letterbox and the rows beneath it can spare the points.
+ *
+ * Position, not photograph, is what these describe. A day arranged by hand
+ * changes which frame is in position 0, and the lead treatment stays with the
+ * position — whatever you drag to the front is what opens the post.
  */
 const COLLAGE = {
   1:{ cols:1, rows:'1fr',            spans:[]  },
@@ -2749,7 +2845,7 @@ function viewFeed(){
              the lone frame, the pair, and the wide one that opens an odd count. */
           const size = span / g.cols >= .6 ? undefined : THUMB;
           return `
-          <button class="tile${span > 1 ? ` w${span}` : ''}" data-tile="${i}" aria-label="${slotLabel(s)}">
+          <button class="tile${span > 1 ? ` w${span}` : ''}" data-tile="${i}" data-slot="${esc(s)}" aria-label="${slotLabel(s)}">
             <img src="${api.photoUrl(o.p, o.iso, s, size)}" alt="${slotLabel(s)}" loading="lazy" draggable="false">
             ${over && i === shown.length - 1 ? `<span class="more">+${over}</span>` : ''}
           </button>`;
@@ -2979,8 +3075,15 @@ function wire(){
   el.querySelectorAll('.post').forEach(post => {
     const p = post.dataset.postP, iso = post.dataset.postIso;
     post.querySelectorAll('[data-tile]').forEach(tile => {
-      tile.onclick = e => { e.stopPropagation(); openViewer(p, iso, Number(tile.dataset.tile)); };
+      tile.onclick = e => {
+        e.stopPropagation();
+        // while the day is being arranged a tap is a mis-grab, not a way in
+        if(post.classList.contains('arranging')) return;
+        openViewer(p, iso, Number(tile.dataset.tile));
+      };
     });
+    // your own day, and only if there is more than one frame to put in an order
+    if(p === me() && post.querySelectorAll('[data-tile]').length > 1) wireArrange(post, p, iso);
     // your own frames included — a reply to their comment belongs there too
     bindComments(post, p, iso, DAY_SLOT);
     bindPostMusic(post.querySelector('.snd'), post.querySelector('.trk'), p, iso);
@@ -2991,7 +3094,18 @@ function wire(){
 
   // music belongs to the feed; anywhere else it stops rather than follows you
   const feed = el.querySelector('#feed');
-  if(feed) wireFeedMusic(feed);
+  if(feed){
+    wireFeedMusic(feed);
+    /* A day you have scrolled off is a day you have finished arranging. The
+       collage takes the whole gesture while it is open, so leaving it open on a
+       post behind you would mean coming back to one you can't scroll past. */
+    feed.addEventListener('scroll', () => {
+      const open = feed.querySelector('.post.arranging');
+      if(!open) return;
+      const r = open.getBoundingClientRect(), mid = feed.clientHeight / 2;
+      if(r.bottom < mid || r.top > mid) closeArrange(open);
+    }, { passive:true });
+  }
   else musicLeave();
 
   startCountdown();
@@ -3042,6 +3156,232 @@ function wireReel(host, p, iso){
   // scrollend lands the final state even if the last scroll frame is coalesced
   reel.addEventListener('scrollend', sync, { passive:true });
   reel._syncReel = sync;
+}
+
+/* ── arranging the frames ──────────────────
+ *
+ * Hold a frame on one of your own days and you can push it somewhere else. The
+ * order the app picks — tasks in the order they are listed, meals in the order
+ * they were eaten — is a reasonable guess at how a day reads, and a guess is
+ * all it is: the shot worth opening the post with is not reliably the first one
+ * taken, and only the person whose day it is knows which one that is.
+ *
+ * Hold rather than a mode you switch on, because there is nowhere to put the
+ * switch that wouldn't be sitting on a photograph all day for the sake of
+ * something done rarely. The hold is 380ms of stillness — long enough that a
+ * thumb on its way past to the next post is never mistaken for one that meant
+ * to stop, short enough not to feel like waiting.
+ *
+ * Once it has happened the post stays in arranging until you say otherwise, so
+ * a day that wants three frames moved is three drags and not three holds.
+ */
+const ARRANGE_HOLD = 380;   // ms of stillness that turns a press into a lift
+const ARRANGE_SLOP = 10;    // px of travel that says you meant to scroll
+
+/* Putting a post back together. Lives out here because scrolling away from a
+   day is as good as saying you're done with it, and the feed has to be able to
+   say so without holding a reference to the closure that opened it. */
+function closeArrange(post){
+  post.classList.remove('arranging');
+  post.querySelector('.collage')?.classList.remove('arranging');
+  post.querySelector('.arrange-bar')?.remove();
+}
+
+function wireArrange(post, prof, iso){
+  const collage = post.querySelector('.collage');
+  if(!collage) return;
+
+  let hold = null;    // the pending long-press
+  let press = null;   // where the finger went down, and on what
+  let drag = null;    // the live lift
+
+  const tiles = () => [...collage.querySelectorAll('.tile')];
+  const clearHold = () => { if(hold) clearTimeout(hold); hold = null; };
+
+  function enter(){
+    collage.classList.add('arranging');
+    post.classList.add('arranging');
+    if(post.querySelector('.arrange-bar')) return;
+    post.insertAdjacentHTML('beforeend', `
+      <div class="arrange-bar">
+        <span class="tx">Drag to rearrange</span>
+        <button class="done">Done</button>
+      </div>`);
+    post.querySelector('.arrange-bar .done').onclick = e => { e.stopPropagation(); exit(); };
+  }
+
+  const exit = () => { closeArrange(post); haptic(6); };
+
+  /* Lift. The frame under the thumb is cloned onto the body and the original
+     left in the grid as a dim outline — the clone is free of a grid that is
+     about to rearrange itself, and the outline keeps the hole legible. */
+  function lift(){
+    const tile = press.tile;
+    const r = tile.getBoundingClientRect();
+    const ghost = tile.cloneNode(true);
+    ghost.classList.add('ghost');
+    ghost.classList.remove('w2', 'w3');
+    ghost.removeAttribute('aria-label');
+    ghost.setAttribute('aria-hidden', 'true');
+    ghost.querySelector('.more')?.remove();
+    Object.assign(ghost.style, {
+      left: `${r.left}px`, top: `${r.top}px`,
+      width: `${r.width}px`, height: `${r.height}px`,
+      transform: 'scale(1.05)'
+    });
+    document.body.appendChild(ghost);
+    tile.classList.add('lifted');
+
+    drag = { id: press.id, tile, ghost, ox: r.left, oy: r.top,
+             gx: press.x - r.left, gy: press.y - r.top, moved: false };
+    try{ collage.setPointerCapture(press.id); }catch(_){}
+    haptic(14);
+  }
+
+  const follow = (x, y) => {
+    drag.ghost.style.transform =
+      `translate3d(${x - drag.gx - drag.ox}px, ${y - drag.gy - drag.oy}px, 0) scale(1.05)`;
+  };
+
+  /* Which frame is under the thumb, if it isn't the one in the air. The lifted
+     tile is skipped, which is also what keeps this from oscillating: every
+     reorder puts that tile under the pointer, so the next move finds nothing to
+     do until the thumb has actually travelled somewhere new. */
+  const under = (x, y) => tiles().find(t => {
+    if(t === drag.tile) return false;
+    const r = t.getBoundingClientRect();
+    return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+  });
+
+  function shuffle(target){
+    const before = tiles();
+    const from = before.indexOf(drag.tile), to = before.indexOf(target);
+    if(from < 0 || to < 0 || from === to) return;
+    const was = before.map(t => t.getBoundingClientRect());
+    if(to > from) target.after(drag.tile); else target.before(drag.tile);
+    respan();
+    // FLIP, from centre to centre: the lead position is a different size from
+    // the rest, so a tile that moves into or out of it changes shape as well as
+    // place, and matching corners would send it off on a diagonal it never took.
+    before.forEach((t, i) => {
+      if(t === drag.tile) return;
+      const a = was[i], b = t.getBoundingClientRect();
+      const dx = (a.left + a.width / 2) - (b.left + b.width / 2);
+      const dy = (a.top + a.height / 2) - (b.top + b.height / 2);
+      if(!dx && !dy) return;
+      t.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }],
+                { duration: 190, easing: 'cubic-bezier(.2,.8,.3,1)' });
+    });
+    drag.moved = true;
+    haptic(5);
+  }
+
+  /* The wide lead belongs to the position, not to the photograph in it, so the
+     span classes are dealt out again every time the order changes. data-tile
+     goes with them: it is the index the viewer opens at. */
+  function respan(){
+    const list = tiles();
+    const spans = COLLAGE[list.length]?.spans || [];
+    list.forEach((t, i) => {
+      const span = spans[i] || 1;
+      t.classList.toggle('w2', span === 2);
+      t.classList.toggle('w3', span === 3);
+      t.dataset.tile = i;
+    });
+  }
+
+  /* Set the frame down where the grid has made room for it, then write the
+     order away. Nothing re-renders: the grid is already showing the answer, and
+     a render would take the post out of arranging mid-arrange. */
+  function drop(){
+    if(!drag) return;
+    const d = drag; drag = null;
+    try{ collage.releasePointerCapture(d.id); }catch(_){}
+
+    const r = d.tile.getBoundingClientRect();
+    d.ghost.style.transition = 'transform .19s cubic-bezier(.2,.8,.3,1), width .19s, height .19s';
+    d.ghost.style.width = `${r.width}px`;
+    d.ghost.style.height = `${r.height}px`;
+    d.ghost.style.transform = `translate3d(${r.left - d.ox}px, ${r.top - d.oy}px, 0) scale(1)`;
+    setTimeout(() => { d.ghost.remove(); d.tile.classList.remove('lifted'); }, 200);
+    haptic(9);
+
+    // a lift that went nowhere — a tap while arranging — has nothing to write
+    if(!d.moved) return;
+    // the grid only holds the first TILE_CAP frames, and the rest of the day
+    // keeps the order it had behind them
+    const shown = tiles().map(t => t.dataset.slot);
+    const rest = slotsFor(prof, iso).filter(s => !shown.includes(s));
+    saveOrder(prof, iso, shown.concat(rest));
+  }
+
+  collage.addEventListener('pointerdown', e => {
+    if(e.button > 0 || drag) return;
+    const tile = e.target.closest('.tile');
+    if(!tile) return;
+    press = { x: e.clientX, y: e.clientY, id: e.pointerId, tile };
+    // already arranging: the hold has been served, so the next drag starts at once
+    if(collage.classList.contains('arranging')) lift();
+    else hold = setTimeout(() => { hold = null; enter(); lift(); }, ARRANGE_HOLD);
+  });
+
+  collage.addEventListener('pointermove', e => {
+    if(hold){
+      if(Math.hypot(e.clientX - press.x, e.clientY - press.y) > ARRANGE_SLOP) clearHold();
+      return;
+    }
+    if(!drag || e.pointerId !== drag.id) return;
+    follow(e.clientX, e.clientY);
+    const over = under(e.clientX, e.clientY);
+    if(over) shuffle(over);
+  });
+
+  /* lostpointercapture alongside the other two: if the capture goes for a
+     reason of the browser's own, the up that follows is delivered somewhere
+     else and the frame would otherwise be left in the air. */
+  for(const ev of ['pointerup', 'pointercancel', 'lostpointercapture']){
+    collage.addEventListener(ev, () => { clearHold(); drop(); });
+  }
+
+  /* The hold has to survive the browser's own idea of what a long press on a
+     photograph means, and the drag has to survive a feed that snaps. Neither
+     touch-action nor the callout suppression can be declared after the fact for
+     a touch already in flight, so the drag preventDefaults its own moves. */
+  collage.addEventListener('touchmove', e => { if(drag) e.preventDefault(); }, { passive:false });
+  collage.addEventListener('contextmenu', e => {
+    if(hold || drag || collage.classList.contains('arranging')) e.preventDefault();
+  });
+}
+
+/*
+ * The arrangement, written to the day's tasks JSONB beside its captions. Stored
+ * whole rather than as the moved frame's new index, because the list is what
+ * every reader of it wants and a day only ever has a handful of frames in it.
+ *
+ * An order that says nothing the default doesn't already say is deleted rather
+ * than saved. Days come back to the default all the time — one frame dragged
+ * and dragged back, or the frame that made the order different since deleted —
+ * and a day carrying a list identical to the one it would have computed is a
+ * thing that has to be kept true as SLOT_ORDER changes, for no gain.
+ */
+async function saveOrder(prof, iso, slots){
+  seedDay(prof, iso);
+  const entry = state.data[prof][iso];
+  const same = defaultOrder(slots).every((s, i) => s === slots[i]);
+  if(same) delete entry.order; else entry.order = slots;
+
+  try{ await api.saveDay(prof, iso, entry); state.online = true; }
+  catch(_){ toast('Offline — arrangement not saved'); }
+}
+
+/* A deleted photo takes its place in the order with it, rather than leaving the
+   list naming a frame that no longer exists. */
+function dropFromOrder(prof, iso, slot){
+  const entry = state.data[prof]?.[iso];
+  if(!Array.isArray(entry?.order) || !entry.order.includes(slot)) return false;
+  entry.order = entry.order.filter(s => s !== slot);
+  if(entry.order.length < 2) delete entry.order;
+  return true;
 }
 
 /* ═══════════ actions ═══════════ */
@@ -3420,8 +3760,10 @@ function openDay(prof, iso){
             await api.deletePhoto(prof, iso, slot);
             removePhotoLocal(prof, iso, slot);
             toast('Photo removed');
-            // the caption goes with the photo rather than outliving it
-            if(dropCaption(prof, iso, slot)){
+            // the caption and the place in the order go with the photo rather
+            // than outliving it
+            const cleared = dropCaption(prof, iso, slot);
+            if(dropFromOrder(prof, iso, slot) || cleared){
               try{ await api.saveDay(prof, iso, state.data[prof][iso]); }
               catch(_){ toast('Offline — caption not cleared'); }
             }
