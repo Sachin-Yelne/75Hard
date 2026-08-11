@@ -3267,7 +3267,10 @@ function wireArrange(post, prof, iso){
     tile.classList.add('lifted');
 
     drag = { id: press.id, tile, ghost, ox: r.left, oy: r.top,
-             gx: press.x - r.left, gy: press.y - r.top, moved: false };
+             gx: press.x - r.left, gy: press.y - r.top,
+             x: press.x, y: press.y, raf: null, cells: [], gridX: 0, gridY: 0,
+             moved: false };
+    measure();
     try{ collage.setPointerCapture(press.id); }catch(_){}
     haptic(14);
   }
@@ -3277,35 +3280,90 @@ function wireArrange(post, prof, iso){
       `translate3d(${x - drag.gx - drag.ox}px, ${y - drag.gy - drag.oy}px, 0) scale(1.05)`;
   };
 
-  /* Which frame is under the thumb, if it isn't the one in the air. The lifted
-     tile is skipped, which is also what keeps this from oscillating: every
-     reorder puts that tile under the pointer, so the next move finds nothing to
-     do until the thumb has actually travelled somewhere new. */
-  const under = (x, y) => tiles().find(t => {
-    if(t === drag.tile) return false;
-    const r = t.getBoundingClientRect();
-    return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
-  });
+  /*
+   * Where the cells are, in collage points, read off the layout rather than out
+   * of getBoundingClientRect().
+   *
+   * That distinction is the whole of a flicker this replaced. A client rect
+   * folds in transforms, and the frames spend a fifth of a second under one
+   * every time the order changes — so for that fifth of a second every frame
+   * measured where it had just been. The thumb was therefore found to be over
+   * the frame it had only now displaced, the two changed places again, and the
+   * grid sat there swapping back and forth for as long as you held still.
+   *
+   * offsetLeft and its neighbours ignore transforms and answer with where a
+   * frame is going to be, which is the only thing worth aiming at. Cached per
+   * arrangement rather than read per move: it changes when the order does and
+   * at no other time, and a pointermove can arrive 120 times a second.
+   */
+  function measure(){
+    const r = collage.getBoundingClientRect();
+    drag.gridX = r.left;
+    drag.gridY = r.top;
+    drag.cells = tiles().map(t => ({
+      el: t,
+      cx: t.offsetLeft + t.offsetWidth / 2,
+      cy: t.offsetTop + t.offsetHeight / 2,
+      w: t.offsetWidth, h: t.offsetHeight
+    }));
+  }
+
+  /*
+   * Where the thumb wants the frame: the cell whose middle it is nearest. The
+   * cell the frame is already in counts as a candidate, which is what makes
+   * staying put the default and turns the swap into "you have passed between
+   * two frames" rather than "you have crossed an edge" — a frame no longer
+   * changes places on a thumb's width of travel.
+   *
+   * The margin is the deadband, and it is not optional: the instant a swap
+   * lands the thumb is equidistant from the two cells either side of it, and
+   * without a margin the arrangement would turn over on arithmetic noise. A
+   * quarter of the carried frame's own size means you have to mean it, on the
+   * way back as much as on the way in — and since the lead cell is the big one,
+   * a frame dragged to the front is the hardest one to knock out again.
+   */
+  function wanted(x, y){
+    const lx = x - drag.gridX, ly = y - drag.gridY;
+    let own = null, best = null, bestD = Infinity, mine = null;
+    for(const c of drag.cells){
+      const d = Math.hypot(lx - c.cx, ly - c.cy);
+      if(c.el === drag.tile){ own = d; mine = c; }
+      if(d < bestD){ bestD = d; best = c.el; }
+    }
+    if(!mine || best === drag.tile) return null;
+    return bestD < own - Math.min(mine.w, mine.h) * .25 ? best : null;
+  }
 
   function shuffle(target){
     const before = tiles();
     const from = before.indexOf(drag.tile), to = before.indexOf(target);
     if(from < 0 || to < 0 || from === to) return;
+    // where every frame looks *now*, mid-flight transforms included, so a swap
+    // landing on top of an unfinished one carries on from where it had got to
     const was = before.map(t => t.getBoundingClientRect());
+
     if(to > from) target.after(drag.tile); else target.before(drag.tile);
     respan();
+
+    // clear the old animations before reading, or the new resting place would
+    // be measured through the transform still carrying the frames to it
+    for(const t of before) if(t !== drag.tile) for(const a of t.getAnimations()) a.cancel();
+    const now = before.map(t => t.getBoundingClientRect());
+
     // FLIP, from centre to centre: the lead position is a different size from
     // the rest, so a tile that moves into or out of it changes shape as well as
     // place, and matching corners would send it off on a diagonal it never took.
     before.forEach((t, i) => {
       if(t === drag.tile) return;
-      const a = was[i], b = t.getBoundingClientRect();
+      const a = was[i], b = now[i];
       const dx = (a.left + a.width / 2) - (b.left + b.width / 2);
       const dy = (a.top + a.height / 2) - (b.top + b.height / 2);
       if(!dx && !dy) return;
       t.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }],
                 { duration: 190, easing: 'cubic-bezier(.2,.8,.3,1)' });
     });
+
+    measure();
     drag.moved = true;
     haptic(5);
   }
@@ -3330,6 +3388,7 @@ function wireArrange(post, prof, iso){
   function drop(){
     if(!drag) return;
     const d = drag; drag = null;
+    if(d.raf !== null) cancelAnimationFrame(d.raf);
     try{ collage.releasePointerCapture(d.id); }catch(_){}
 
     const r = d.tile.getBoundingClientRect();
@@ -3359,15 +3418,27 @@ function wireArrange(post, prof, iso){
     else hold = setTimeout(() => { hold = null; enter(); lift(); }, ARRANGE_HOLD);
   });
 
+  /* A move only records where the thumb is; the frame is painted and the grid
+     is asked its opinion once per displayed frame. A pointermove can arrive
+     more often than the screen refreshes, and answering every one of them with
+     a transform and a hit test is work nobody sees. */
+  function step(){
+    if(!drag) return;
+    drag.raf = null;
+    follow(drag.x, drag.y);
+    const target = wanted(drag.x, drag.y);
+    if(target) shuffle(target);
+  }
+
   collage.addEventListener('pointermove', e => {
     if(hold){
       if(Math.hypot(e.clientX - press.x, e.clientY - press.y) > ARRANGE_SLOP) clearHold();
       return;
     }
     if(!drag || e.pointerId !== drag.id) return;
-    follow(e.clientX, e.clientY);
-    const over = under(e.clientX, e.clientY);
-    if(over) shuffle(over);
+    drag.x = e.clientX;
+    drag.y = e.clientY;
+    if(drag.raf === null) drag.raf = requestAnimationFrame(step);
   });
 
   /* lostpointercapture alongside the other two: if the capture goes for a
