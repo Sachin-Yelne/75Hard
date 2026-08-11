@@ -416,12 +416,16 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
  * a hairline underlining nothing. Under the day it can never be the last thing
  * in the block, because the status always renders.
  *
- * It sits under the frames now rather than on top of them. Shortening the block
- * bought back a line and a half and the bottom row of a six-frame day was still
- * mostly text — three lines and a 50px numeral is simply more than can be laid
- * over a photograph that someone wants to look at. As a plate it costs the
- * frames about a seventh of their height and gives them back every pixel of
- * what is left, corner to corner, with nothing written on any of it.
+ * Most of it sits under the frames now rather than on top of them. Shortening
+ * the block bought back a line and a half and the bottom row of a six-frame day
+ * was still mostly text — three stacked lines is more than can be laid over a
+ * photograph that someone wants to look at.
+ *
+ * The day is the exception, and stays over the picture. A numeral and two
+ * glyphs on one line is what a lone frame has carried all along and it never
+ * buried anything; the hairline under it is the honest edge of the photographs,
+ * which now run all the way down to it. Everything below the line — what the
+ * day came to, and the last word said about it — is on black.
  *
  * The lower padding clears the nav. That band was never visible anyway — the
  * bar is opaque and sits on top of it — so it is the same photograph lost, and
@@ -429,18 +433,44 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
  * always did.
  */
 .post-bot{flex:0 0 auto;position:relative;z-index:1;background:#000;
-  padding:15px var(--pad) calc(var(--nav) + 15px);}
+  padding:0 var(--pad) calc(var(--nav) + 15px);}
+/*
+ * The scrim the day rides on, hung above the plate rather than inside it, so it
+ * darkens photograph and not the black that is already there. Gone by well
+ * above the numeral: what it has to carry is one line, and a taller ramp would
+ * be shading frames for no reason.
+ *
+ * The middle stop is where the top of the numeral lands, and it is set to the
+ * darkness the old full-height scrim happened to be at that point — this line
+ * was legible over a photograph before and has to stay so. Below it the ramp
+ * goes further than the old one did, because the hairline is now the edge of
+ * the photographs and wants a definite end rather than a fade into more of
+ * them. Checked against the worst case there is: a frame blown to pure white.
+ */
+.post-bot::before{
+  content:'';position:absolute;left:0;right:0;bottom:100%;height:108px;
+  pointer-events:none;
+  background:linear-gradient(180deg,transparent 0%,rgba(0,0,0,.2) 34%,
+    rgba(0,0,0,.47) 56%,rgba(0,0,0,.82) 100%);
+}
 /*
  * The day, said rather than stamped. It used to be a bare 74px numeral under an
  * eyebrow naming the frames — two lines of caption, and the numeral alone was
  * the tallest thing in the post. Now the label carries the word and the number
  * only has to be the number, on one line.
+ *
+ * Lifted clear of the plate's flow and hung on top of it, which is what puts it
+ * over the frames and the hairline hard against them. It costs the plate none
+ * of its height, so the grid gets the whole of that line back.
  */
-.post-bot .day{display:flex;align-items:baseline;gap:9px;}
+.post-bot .day{display:flex;align-items:baseline;gap:9px;
+  position:absolute;left:var(--pad);right:var(--pad);bottom:100%;padding-bottom:9px;}
 .post-bot .day .lb{font-family:var(--cond);font-weight:600;font-size:12px;
   letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.72);}
 .post-bot .day .n{font-size:50px;line-height:.82;letter-spacing:-.03em;}
-.post-bot .rule{background:rgba(255,255,255,.28);margin:11px 0 10px;}
+/* No margin above it: the line is where the photographs stop, so anything
+   between the two would read as a gap rather than an edge. */
+.post-bot .rule{background:rgba(255,255,255,.28);margin:0 0 10px;}
 .post-bot .state{font-family:var(--cond);font-weight:600;font-size:13px;
   letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.72);}
 .post-bot .state b{color:var(--p);font-weight:600;}
@@ -672,12 +702,13 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
  * already in force by the time the next drag starts.
  */
 .collage.arranging{touch-action:none;}
-/* The plate empties for the duration and the bar takes its place — the day, the
-   status and the last word said are all things to read around while you are
-   trying to look at photographs, and the plate keeps its height either way, so
-   the frames don't resize under the thumb that just entered. The head only
-   dims: it is not replaced by anything, and it says whose day this is. */
-.post.arranging .post-bot{opacity:0;pointer-events:none;transition:opacity .2s;}
+/* The plate empties for the duration and the bar takes the day's place, on the
+   day's own scrim — the day, the status and the last word said are all things
+   to read around while you are trying to look at photographs. The plate keeps
+   its height either way, so the frames don't resize under the thumb that just
+   entered. The head only dims: it is not replaced by anything, and it says
+   whose day this is. */
+.post.arranging .post-bot > :not(.arrange-bar){opacity:0;pointer-events:none;transition:opacity .2s;}
 .post.arranging .post-top{opacity:.42;pointer-events:none;transition:opacity .2s;}
 .collage.arranging .more{display:none;}
 .collage.arranging .tile:active{opacity:1;}
@@ -695,11 +726,12 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
   box-shadow:0 20px 44px rgba(0,0,0,.6);
 }
 .tile.ghost img{opacity:1;}
-/* Where the day's text was, for as long as the arranging lasts: what to do,
-   and the way out. Sat in the plate's place so nothing shifts on entry. */
+/* Where the day was, for as long as the arranging lasts: what to do, and the
+   way out. Hung off the plate exactly as the day row is, so it lands on the
+   scrim that line already has and keeps its distance from the frames. */
 .arrange-bar{
-  position:absolute;left:var(--pad);right:var(--pad);z-index:2;
-  bottom:calc(var(--nav) + 18px);
+  position:absolute;left:var(--pad);right:var(--pad);bottom:100%;z-index:2;
+  padding-bottom:13px;
   display:flex;align-items:center;justify-content:space-between;gap:14px;
 }
 .arrange-bar .tx{font-family:var(--cond);font-weight:600;font-size:12px;
@@ -3202,7 +3234,9 @@ function wireArrange(post, prof, iso){
     collage.classList.add('arranging');
     post.classList.add('arranging');
     if(post.querySelector('.arrange-bar')) return;
-    post.insertAdjacentHTML('beforeend', `
+    // into the plate rather than the post, so it hangs off the same edge the
+    // day line does and rides the scrim that comes with it
+    post.querySelector('.post-bot').insertAdjacentHTML('beforeend', `
       <div class="arrange-bar">
         <span class="tx">Drag to rearrange</span>
         <button class="done">Done</button>
