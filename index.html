@@ -324,16 +324,9 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
  * .post is explicitly 100% tall: a skipped element keeps that height rather
  * than guessing at one, so scrollHeight is the same number it always was and
  * no contain-intrinsic-size is needed to prop it up.
- *
- * A column of two: the frames, and the plate of text underneath them. The plate
- * takes the height its own lines need and the frames take everything that is
- * left, which is the whole of an arithmetic that was previously being guessed
- * at — a caption block of a height nobody could name, laid over a grid that had
- * to be shaped around it.
  */
 .post{height:100%;scroll-snap-align:start;scroll-snap-stop:always;
-  position:relative;background:#000;overflow:hidden;content-visibility:auto;
-  display:flex;flex-direction:column;}
+  position:relative;background:#000;overflow:hidden;content-visibility:auto;}
 /* horizontal reel: one slide per photo logged that day */
 .reel{
   display:flex;height:100%;width:100%;
@@ -364,18 +357,22 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
 .viewer-bot .slot-tag.edit{pointer-events:auto;}
 .slot-tag.edit .tx{border-bottom:1px solid rgba(255,255,255,.28);padding-bottom:3px;}
 /*
- * The scrim, now only at the head of the post. The foot of a post is the plate,
- * which is already black, so the long lower ramp this gradient used to carry
- * was darkening photograph for the sake of text that has moved off it.
+ * The scrim. Every post has photograph behind its text rather than black, so
+ * like the viewer's it ramps early: the extra stop puts real darkness where the
+ * caption block *starts* rather than only at the very bottom, which is what a
+ * gradient tuned for black underneath was getting wrong — it left the day line
+ * to wash out over a bright frame.
  *
- * Measured in points rather than percent, because what it has to cover is a
- * fixed thing — the notch, a line of name and date, and the track row under it
- * — and not a fraction of however tall the frames happen to be. Two stops: real
- * darkness behind the first line, half of it behind the track, gone by the end.
+ * Where each stop belongs is decided by what is written over it, so both ends
+ * move as the text does. The caption is a third shorter than it was, and
+ * holding the lower ramp where it had been would have darkened a band of
+ * photograph with nothing on it. The top now carries two lines rather than
+ * one, so it holds its darkness a little further down — the extra stop at 17%
+ * is the track line, which was landing in the fade and washing out.
  */
-.post .shade{position:absolute;top:0;left:0;right:0;pointer-events:none;
-  height:calc(var(--safe-top) + 132px);
-  background:linear-gradient(180deg,rgba(0,0,0,.7) 0%,rgba(0,0,0,.34) 46%,transparent 100%);}
+.post .shade{position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(180deg,rgba(0,0,0,.66) 0%,rgba(0,0,0,.3) 17%,transparent 30%,
+    transparent 54%,rgba(0,0,0,.42) 76%,rgba(0,0,0,.92) 100%);}
 /*
  * The head of the post: who and when, and under it what the day sounds like.
  *
@@ -416,61 +413,37 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
  * a hairline underlining nothing. Under the day it can never be the last thing
  * in the block, because the status always renders.
  *
- * Most of it sits under the frames now rather than on top of them. Shortening
- * the block bought back a line and a half and the bottom row of a six-frame day
- * was still mostly text — three stacked lines is more than can be laid over a
- * photograph that someone wants to look at.
- *
- * The day is the exception, and stays over the picture. A numeral and two
- * glyphs on one line is what a lone frame has carried all along and it never
- * buried anything; the hairline under it is the honest edge of the photographs,
- * which now run all the way down to it. Everything below the line — what the
- * day came to, and the last word said about it — is on black.
- *
- * The lower padding clears the nav. That band was never visible anyway — the
- * bar is opaque and sits on top of it — so it is the same photograph lost, and
- * measuring it here means the text lands the same distance above the tabs as it
- * always did.
+ * It rides the frames rather than sitting under them. Moving it onto a plate of
+ * its own did buy the grid a seventh of its height, and the frames were whole
+ * for it — but a post stopped being a photograph across the whole screen, and
+ * that is the thing this tab is for. The frames get the screen back. What made
+ * the block worth burying in the first place — that the bottom of a six-frame
+ * day was unreadable under it — is answered now by being able to drag the frame
+ * you want seen out from under the text, which is a better answer than shrinking
+ * every photograph in the feed to make room for five lines of type.
  */
-.post-bot{flex:0 0 auto;position:relative;z-index:1;background:#000;
-  padding:0 var(--pad) calc(var(--nav) + 15px);}
 /*
- * The scrim the day rides on, hung above the plate rather than inside it, so it
- * darkens photograph and not the black that is already there. Gone by well
- * above the numeral: what it has to carry is one line, and a taller ramp would
- * be shading frames for no reason.
- *
- * The middle stop is where the top of the numeral lands, and it is set to the
- * darkness the old full-height scrim happened to be at that point — this line
- * was legible over a photograph before and has to stay so. Below it the ramp
- * goes further than the old one did, because the hairline is now the edge of
- * the photographs and wants a definite end rather than a fade into more of
- * them. Checked against the worst case there is: a frame blown to pure white.
+ * Transparent to the thumb except where it is actually a control, the way the
+ * viewer's own caption has always been. The block covers the bottom third of
+ * the post, and as a solid target it was swallowing every press that landed
+ * there — which is the bottom row of the grid, and so exactly the frames
+ * someone would be reaching for to drag out from under it. The two counts and
+ * the last word said are the only things in here anyone can press.
  */
-.post-bot::before{
-  content:'';position:absolute;left:0;right:0;bottom:100%;height:108px;
-  pointer-events:none;
-  background:linear-gradient(180deg,transparent 0%,rgba(0,0,0,.2) 34%,
-    rgba(0,0,0,.47) 56%,rgba(0,0,0,.82) 100%);
-}
+.post-bot{position:absolute;left:var(--pad);right:var(--pad);bottom:calc(var(--nav) + 18px);
+  pointer-events:none;}
+.post-bot .acts,.post-bot .cmt-peek{pointer-events:auto;}
 /*
  * The day, said rather than stamped. It used to be a bare 74px numeral under an
  * eyebrow naming the frames — two lines of caption, and the numeral alone was
  * the tallest thing in the post. Now the label carries the word and the number
  * only has to be the number, on one line.
- *
- * Lifted clear of the plate's flow and hung on top of it, which is what puts it
- * over the frames and the hairline hard against them. It costs the plate none
- * of its height, so the grid gets the whole of that line back.
  */
-.post-bot .day{display:flex;align-items:baseline;gap:9px;
-  position:absolute;left:var(--pad);right:var(--pad);bottom:100%;padding-bottom:9px;}
+.post-bot .day{display:flex;align-items:baseline;gap:9px;}
 .post-bot .day .lb{font-family:var(--cond);font-weight:600;font-size:12px;
   letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.72);}
 .post-bot .day .n{font-size:50px;line-height:.82;letter-spacing:-.03em;}
-/* No margin above it: the line is where the photographs stop, so anything
-   between the two would read as a gap rather than an edge. */
-.post-bot .rule{background:rgba(255,255,255,.28);margin:0 0 10px;}
+.post-bot .rule{background:rgba(255,255,255,.28);margin:11px 0 10px;}
 .post-bot .state{font-family:var(--cond);font-weight:600;font-size:13px;
   letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.72);}
 .post-bot .state b{color:var(--p);font-weight:600;}
@@ -667,14 +640,16 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
  * tracks are fractions now, so the frames take the room instead, and what
  * shapes a tile is how many there are rather than a fixed square (see COLLAGE).
  *
- * Corner to corner of what it is given, which is now the post minus its plate
- * of text rather than the whole post. Stopping the grid above the caption used
- * to leave a black band because the tiles were squares that wouldn't stretch to
- * meet it; fractions have no such trouble — the grid fills whatever box it is
- * handed. What the plate takes off the bottom is the same height the caption
- * was covering anyway, and every frame is now whole.
+ * Corner to corner, at every count. Stopping the grid above the caption only
+ * moved the black band rather than removing it, and put a hard line across the
+ * middle of the post where the photographs gave out. Giving the caption a black
+ * plate of its own instead removed the band and kept every frame whole, but at
+ * the price of the thing this tab is for — the photograph is no longer the
+ * screen. The caption rides on the frames, as it always has over a lone one:
+ * the scrim is what makes that readable, and a frame that lands badly under the
+ * text is dragged out from under it now rather than designed around.
  */
-.collage{flex:1 1 auto;min-height:0;position:relative;display:grid;gap:2px;}
+.collage{position:absolute;inset:0;display:grid;gap:2px;}
 .tile{position:relative;overflow:hidden;background:#000;padding:0;min-width:0;min-height:0;
   -webkit-touch-callout:none;user-select:none;-webkit-user-select:none;}
 .tile img{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;}
@@ -702,13 +677,12 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
  * already in force by the time the next drag starts.
  */
 .collage.arranging{touch-action:none;}
-/* The plate empties for the duration and the bar takes the day's place, on the
-   day's own scrim — the day, the status and the last word said are all things
-   to read around while you are trying to look at photographs. The plate keeps
-   its height either way, so the frames don't resize under the thumb that just
-   entered. The head only dims: it is not replaced by anything, and it says
-   whose day this is. */
-.post.arranging .post-bot > :not(.arrange-bar){opacity:0;pointer-events:none;transition:opacity .2s;}
+/* The caption goes for the duration and the bar takes its place — the day, the
+   status and the last word said are all things to read around while you are
+   trying to look at photographs, and getting a frame out from under them is
+   most of the reason to be arranging at all. The head only dims: it is not
+   replaced by anything, and it says whose day this is. */
+.post.arranging .post-bot{opacity:0;pointer-events:none;transition:opacity .2s;}
 .post.arranging .post-top{opacity:.42;pointer-events:none;transition:opacity .2s;}
 .collage.arranging .more{display:none;}
 .collage.arranging .tile:active{opacity:1;}
@@ -726,12 +700,13 @@ svg{width:100%;height:100%;fill:currentColor;display:block;}
   box-shadow:0 20px 44px rgba(0,0,0,.6);
 }
 .tile.ghost img{opacity:1;}
-/* Where the day was, for as long as the arranging lasts: what to do, and the
-   way out. Hung off the plate exactly as the day row is, so it lands on the
-   scrim that line already has and keeps its distance from the frames. */
+/* Where the caption was, for as long as the arranging lasts: what to do, and
+   the way out. On the same line the status sits on, so nothing about the post
+   moves when the caption goes — and on the scrim the caption already had, which
+   is what keeps it readable over the frames. */
 .arrange-bar{
-  position:absolute;left:var(--pad);right:var(--pad);bottom:100%;z-index:2;
-  padding-bottom:13px;
+  position:absolute;left:var(--pad);right:var(--pad);z-index:2;
+  bottom:calc(var(--nav) + 18px);
   display:flex;align-items:center;justify-content:space-between;gap:14px;
 }
 .arrange-bar .tx{font-family:var(--cond);font-weight:600;font-size:12px;
@@ -2799,14 +2774,16 @@ function cells(p, ti){
  * and the rest fall in behind it. Counts that fill their grid — 2, 4, 6, 9 —
  * need no such help and get a plain one.
  *
- * The row fractions are the only judgement here. An even split is right almost
- * everywhere; a lead frame is given a little extra only where it spans a whole
- * row of a three-row grid, since a frame three columns wide at an even fraction
- * is a letterbox and the rows beneath it can spare the points.
+ * The row fractions are the only judgement here, and they are made against the
+ * fact that the caption block covers the bottom third of the post. An even
+ * split is right almost everywhere; a lead frame is given a little extra only
+ * where it opens a three-row grid, since there the rows beneath it are clear
+ * of the text anyway and can afford it.
  *
  * Position, not photograph, is what these describe. A day arranged by hand
  * changes which frame is in position 0, and the lead treatment stays with the
- * position — whatever you drag to the front is what opens the post.
+ * position — whatever you drag to the front is what opens the post, and
+ * whatever you drag off the bottom row is out from under the caption.
  */
 const COLLAGE = {
   1:{ cols:1, rows:'1fr',            spans:[]  },
@@ -3234,9 +3211,9 @@ function wireArrange(post, prof, iso){
     collage.classList.add('arranging');
     post.classList.add('arranging');
     if(post.querySelector('.arrange-bar')) return;
-    // into the plate rather than the post, so it hangs off the same edge the
-    // day line does and rides the scrim that comes with it
-    post.querySelector('.post-bot').insertAdjacentHTML('beforeend', `
+    // onto the post rather than into the caption block, which is the thing it
+    // stands in for and is hidden for the duration
+    post.insertAdjacentHTML('beforeend', `
       <div class="arrange-bar">
         <span class="tx">Drag to rearrange</span>
         <button class="done">Done</button>
